@@ -47,9 +47,14 @@ public class MCStats {
     private final Map<String, Server> servers = new ConcurrentHashMap<String, Server>();
 
     /**
-     * A map of all of the currently loaded plugins
+     * A map of all of the currently loaded pluginsByName, by the plugin's name
      */
-    private final Map<String, Plugin> plugins = new ConcurrentHashMap<String, Plugin>();
+    private final Map<String, Plugin> pluginsByName = new ConcurrentHashMap<String, Plugin>();
+
+    /**
+     * A map of all of the currently loaded pluginsByName, by the plugin's internal id
+     */
+    private final Map<Integer, Plugin> pluginsById = new ConcurrentHashMap<Integer, Plugin>();
 
     /**
      * Starts the MCStats backend
@@ -67,11 +72,11 @@ public class MCStats {
         // Connect to the database
         connectToDatabase();
 
-        // Load all of the plugins
+        // Load all of the pluginsByName
         for (Plugin plugin : database.loadPlugins()) {
-            plugins.put(plugin.getName(), plugin);
+            addPlugin(plugin);
         }
-        logger.info("Loaded " + plugins.size() + " plugins");
+        logger.info("Loaded " + pluginsByName.size() + " plugins");
 
         // Create & open the webserver
         createWebServer();
@@ -134,17 +139,14 @@ public class MCStats {
     }
 
     /**
-     * Load a plugin using its id. A lot less efficient than its loadPlugin(String name) counterpart.
+     * Load a plugin using its id
      *
      * @param id
      * @return
      */
     public Plugin loadPlugin(int id) {
-        // Oh my
-        for (Plugin plugin : plugins.values()) {
-            if (plugin.getId() == id) {
-                return plugin;
-            }
+        if (pluginsById.containsKey(id)) {
+            return pluginsById.get(id);
         }
 
         // Attempt to load from the database
@@ -161,7 +163,7 @@ public class MCStats {
         }
 
         // Cache it
-        plugins.put(plugin.getName(), plugin);
+        addPlugin(plugin);
 
         // and go !
         return plugin;
@@ -174,8 +176,8 @@ public class MCStats {
      * @return
      */
     public Plugin loadPlugin(String name) {
-        if (plugins.containsKey(name)) {
-            return plugins.get(name);
+        if (pluginsByName.containsKey(name)) {
+            return pluginsByName.get(name);
         }
 
         // Attempt to load from the database
@@ -199,7 +201,7 @@ public class MCStats {
         }
 
         // Cache it
-        plugins.put(name, plugin);
+        addPlugin(plugin);
 
         // and go !
         return plugin;
@@ -302,6 +304,16 @@ public class MCStats {
      */
     public DatabaseQueue getDatabaseQueue() {
         return databaseQueue;
+    }
+
+    /**
+     * Add a plugin to the cache
+     *
+     * @param plugin
+     */
+    private void addPlugin(Plugin plugin) {
+        pluginsById.put(plugin.getId(), plugin);
+        pluginsByName.put(plugin.getName(), plugin);
     }
 
 }
