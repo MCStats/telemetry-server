@@ -1,8 +1,9 @@
-package org.mcstats;
+package org.mcstats.handler;
 
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.mcstats.MCStats;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
@@ -20,22 +21,21 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
-public class RequestHandler extends AbstractHandler {
-    private Logger logger = Logger.getLogger("RequestHandler");
+public class ReportHandler extends AbstractHandler {
+    private Logger logger = Logger.getLogger("ReportHandler");
 
     /**
      * The MCStats object
      */
     private MCStats mcstats;
 
-    public RequestHandler(MCStats mcstats) {
+    public ReportHandler(MCStats mcstats) {
         this.mcstats = mcstats;
     }
 
     public void handle(String target, Request request, HttpServletRequest servletRequest, HttpServletResponse response) throws IOException, ServletException {
         // If they aren't posting to us, we don't want to know about them :p
         if (!request.getMethod().equals("POST")) {
-            response.sendError(403, "This service cannot be accessed directly");
             return;
         }
 
@@ -153,26 +153,28 @@ public class RequestHandler extends AbstractHandler {
         }
 
         // Custom Data
-        if (revision >= 5) {
-            Map<Graph, Map<Column, Integer>> customData = extractCustomData(plugin, post);
+        if (revision >= 4) {
+            Map<Column, Integer> customData;
 
-            if (customData.size() > 0) {
+            // Extract custom data
+            if (revision >= 5) {
+                customData = extractCustomData(plugin, post);
+            } else { // legacy
+                customData = extractCustomDataLegacy(plugin, post);
+            }
+
+            if (customData != null && customData.size() > 0) {
                 // Begin building the query
                 String query = "INSERT INTO CustomData (Server, Plugin, ColumnID, DataPoint, Updated) VALUES";
                 int currentSeconds = (int) (System.currentTimeMillis() / 1000);
 
-                for (Map.Entry<Graph, Map<Column, Integer>> entry : customData.entrySet()) {
-                    Graph graph = entry.getKey();
-                    Map<Column, Integer> columns = entry.getValue();
+                // Iterate through each column
+                for (Map.Entry<Column, Integer> entry : customData.entrySet()) {
+                    Column column = entry.getKey();
+                    int value = entry.getValue();
 
-                    // Iterate through each column
-                    for (Map.Entry<Column, Integer> entry2 : columns.entrySet()) {
-                        Column column = entry2.getKey();
-                        int value = entry2.getValue();
-
-                        // append the query
-                        query += " (" + server.getId() + ", " + plugin.getId() + ", " + column.getId() + ", " + value + ", " + currentSeconds + "),";
-                    }
+                    // append the query
+                    query += " (" + server.getId() + ", " + plugin.getId() + ", " + column.getId() + ", " + value + ", " + currentSeconds + "),";
                 }
 
                 // Remove the last comma
@@ -231,11 +233,12 @@ public class RequestHandler extends AbstractHandler {
     /**
      * Extract the custom data from a post request
      *
+     * @param plugin
      * @param post
      * @return
      */
-    private Map<Graph, Map<Column, Integer>> extractCustomData(Plugin plugin, Map<String, String> post) {
-        Map<Graph, Map<Column, Integer>> customData = new HashMap<Graph, Map<Column, Integer>>();
+    private Map<Column, Integer> extractCustomData(Plugin plugin, Map<String, String> post) {
+        Map<Column, Integer> customData = new HashMap<Column, Integer>();
 
         for (Map.Entry<String, String> entry : post.entrySet()) {
             String postKey = entry.getKey();
@@ -271,19 +274,61 @@ public class RequestHandler extends AbstractHandler {
                 continue;
             }
 
-            // Add it to the map
-            Map<Column, Integer> columns = customData.get(graph);
+            // Load the column
+            Column column = graph.loadColumn(columnName);
 
-            if (columns == null) {
-                columns = new HashMap<Column, Integer>();
-                customData.put(graph, columns);
+            if (column != null) {
+                customData.put(column, value);
+            }
+        }
+
+        return customData;
+    }
+
+    /**
+     * Extract custom data from a Metrics R4 reporter
+     *
+     * @param plugin
+     * @param post
+     * @return
+     */
+    private Map<Column, Integer> extractCustomDataLegacy(Plugin plugin, Map<String, String> post) {
+        Map<Column, Integer> customData = new HashMap<Column, Integer>();
+
+        // All of the custom data is thrown onto the 'Default' graph since we have no
+        // idea what a "graph" is back in R4
+        Graph graph = mcstats.loadGraph(plugin, "Default");
+
+        for (Map.Entry<String, String> entry : post.entrySet()) {
+            String postKey = entry.getKey();
+            String postValue = entry.getValue();
+
+            // we only want numeric values, skip the rest
+            int value;
+
+            try {
+                value = Integer.parseInt(postValue);
+            } catch (NumberFormatException e) {
+                continue;
+            }
+
+            // Look for the magic string
+            if (!postKey.startsWith("Custom")) {
+                continue;
+            }
+
+            // Extract the column name
+            String columnName = postKey.substring(6).replaceAll("_", " ");
+
+            if (graph == null) {
+                continue;
             }
 
             // Load the column
             Column column = graph.loadColumn(columnName);
 
             if (column != null) {
-                columns.put(column, value);
+                customData.put(column, value);
             }
         }
 

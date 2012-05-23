@@ -22,7 +22,7 @@ public class DatabaseQueue {
 
     public DatabaseQueue() {
         // Create workers
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 16; i++) {
             new Thread(new QueueWorker(), "DatabaseQueue Worker #" + (i + 1)).start();
             logger.info("Started DatabaseQueue Worker #" + (i + 1));
         }
@@ -37,6 +37,14 @@ public class DatabaseQueue {
         queue.offer(savable);
     }
 
+    /**
+     * Get the current queue size
+     * @return
+     */
+    public int size() {
+        return queue.size();
+    }
+
     private class QueueWorker implements Runnable {
 
         public void run() {
@@ -44,7 +52,7 @@ public class DatabaseQueue {
             while (true) {
 
                 try {
-                    Thread.sleep(10L);
+                    Thread.sleep(50L);
                 } catch (InterruptedException e) {
                     continue;
                 }

@@ -3,6 +3,7 @@ package org.mcstats;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.PluginVersion;
@@ -30,11 +31,6 @@ public class MCStats {
      * The database we are connected to
      */
     private Database database;
-
-    /**
-     * The handler that handles every request
-     */
-    private RequestHandler requestHandler = new RequestHandler(this);
 
     /**
      * The database save queue
@@ -245,7 +241,7 @@ public class MCStats {
     private void createWebServer() {
         int listenPort = Integer.parseInt(config.getProperty("listen.port"));
         org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server();
-        server.setHandler(requestHandler);
+        server.setHandler(new ReportHandler(this));
 
         SelectChannelConnector connector = new SelectChannelConnector();
         connector.setPort(listenPort);
