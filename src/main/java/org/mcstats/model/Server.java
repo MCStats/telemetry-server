@@ -1,0 +1,169 @@
+package org.mcstats.model;
+
+import org.mcstats.MCStats;
+import org.mcstats.sql.Savable;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+public class Server implements Savable {
+
+    /**
+     * The MCStats object
+     */
+    private final MCStats mcstats;
+
+    /**
+     * The server's id
+     */
+    private int id;
+
+    /**
+     * The server's guid
+     */
+    private String guid;
+
+    /**
+     * The server's country
+     */
+    private String country;
+
+    /**
+     * The amount of players currently on the server
+     */
+    private int players;
+
+    /**
+     * The server's software version
+     */
+    private String serverVersion;
+
+    /**
+     * Unix timestamp of when the server was created
+     */
+    private int created;
+
+    /**
+     * If the server was modified
+     */
+    private boolean modified = false;
+
+    /**
+     * A map of all of the plugins this server is known to have
+     */
+    private final Map<Plugin, ServerPlugin> plugins = new HashMap<Plugin, ServerPlugin>();
+
+    public Server(MCStats mcstats) {
+        this.mcstats = mcstats;
+    }
+
+    /**
+     * Get all of the plugins that are on the server
+     *
+     * @return
+     */
+    public Map<Plugin, ServerPlugin> getPlugins() {
+        return Collections.unmodifiableMap(plugins);
+    }
+
+    /**
+     * Get the ServerPlugin object for the given plugin
+     *
+     * @param plugin
+     * @return
+     */
+    public ServerPlugin getPlugin(Plugin plugin) {
+        return plugins.get(plugin);
+    }
+
+    /**
+     * Add a server plugin to this server
+     *
+     * @param serverPlugin
+     */
+    public void addPlugin(ServerPlugin serverPlugin) {
+        if (serverPlugin == null) {
+            throw new IllegalArgumentException("Server plugin cannot be null");
+        }
+        if (serverPlugin.getServer() != this) {
+            throw new IllegalArgumentException("Server plugin must be assigned to the server it belongs to");
+        }
+
+        plugins.put(serverPlugin.getPlugin(), serverPlugin);
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        modified = true;
+    }
+
+    public String getGUID() {
+        return guid;
+    }
+
+    public void setGUID(String guid) {
+        this.guid = guid;
+        modified = true;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+        modified = true;
+    }
+
+    public int getPlayers() {
+        return players;
+    }
+
+    public void setPlayers(int players) {
+        this.players = players;
+        modified = true;
+    }
+
+    public String getServerVersion() {
+        return serverVersion;
+    }
+
+    public void setServerVersion(String serverVersion) {
+        this.serverVersion = serverVersion;
+        modified = true;
+    }
+
+    public int getCreated() {
+        return created;
+    }
+
+    public void setCreated(int created) {
+        this.created = created;
+        modified = true;
+    }
+
+    public boolean isModified() {
+        return modified;
+    }
+
+    public void setModified(boolean modified) {
+        this.modified = modified;
+    }
+
+    public void save() {
+        if (modified) {
+            mcstats.getDatabaseQueue().offer(this);
+            modified = false;
+        }
+    }
+
+    public void saveNow() {
+        mcstats.getDatabase().saveServer(this);
+        modified = false;
+    }
+}
