@@ -182,7 +182,7 @@ public class RequestHandler extends AbstractHandler {
                 query += " ON DUPLICATE KEY UPDATE DataPoint = VALUES(DataPoint) , Updated = VALUES(Updated)";
 
                 // queue the query
-                mcstats.getDatabaseQueue().offer(new RawQuery(mcstats, query));
+                new RawQuery(mcstats, query).save();
             }
         }
 

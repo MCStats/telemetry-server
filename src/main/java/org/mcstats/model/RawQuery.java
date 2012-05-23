@@ -23,7 +23,7 @@ public final class RawQuery implements Savable {
     }
 
     public void save() {
-        throw new UnsupportedOperationException("This query cannot be saved later");
+        mcstats.getDatabaseQueue().offer(this);
     }
 
     public void saveNow() {
