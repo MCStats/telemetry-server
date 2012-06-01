@@ -73,14 +73,17 @@ public class MySQLDatabase implements Database {
     }
 
     public Plugin createPlugin(String name) {
+        Connection connection = null;
+
         try {
-            Connection connection = ds.getConnection();
+            connection = ds.getConnection();
             PreparedStatement statement = connection.prepareStatement("INSERT INTO Plugin (Name, Author, Hidden, GlobalHits) VALUES (?, '', 0, 0)");
             statement.setString(1, name);
             statement.executeUpdate();
-            safeClose(connection);
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            safeClose(connection);
         }
 
         // re-load the plugin
@@ -169,15 +172,18 @@ public class MySQLDatabase implements Database {
     }
 
     public PluginVersion createPluginVersion(Plugin plugin, String version) {
+        Connection connection = null;
+
         try {
-            Connection connection = ds.getConnection();
+            connection = ds.getConnection();
             PreparedStatement statement = connection.prepareStatement("INSERT INTO Versions (Plugin, Version, Created) VALUES (?, ?, UNIX_TIMESTAMP())");
             statement.setInt(1, plugin.getId());
             statement.setString(2, version);
             statement.executeUpdate();
-            safeClose(connection);
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            safeClose(connection);
         }
 
         return loadPluginVersion(plugin, version);
@@ -345,6 +351,21 @@ public class MySQLDatabase implements Database {
         }
     }
 
+    public void addPluginVersionHistory(Server server, PluginVersion version) {
+        try {
+            Connection connection = ds.getConnection();
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO VersionHistory (Plugin, Server, Version, Created) VALUES (?, ?, ?, UNIX_TIMESTAMP())");
+            statement.setInt(1, version.getPlugin().getId());
+            statement.setInt(2, server.getId());
+            statement.setInt(3, version.getId());
+
+            statement.executeUpdate();
+            safeClose(connection);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public Server createServer(String guid) {
         Connection connection = null;
 
@@ -406,8 +427,10 @@ public class MySQLDatabase implements Database {
     }
 
     public Graph createGraph(Plugin plugin, String name) {
+        Connection connection = null;
+
         try {
-            Connection connection = ds.getConnection();
+            connection = ds.getConnection();
             PreparedStatement statement = connection.prepareStatement("INSERT INTO Graph (Plugin, Type, Active, Name, DisplayName, Scale) VALUES (?, ?, ?, ?, ?, ?)");
             statement.setInt(1, plugin.getId());
             statement.setInt(2, 0); // line
@@ -416,9 +439,10 @@ public class MySQLDatabase implements Database {
             statement.setString(5, name);
             statement.setString(6, "linear");
             statement.executeUpdate();
-            safeClose(connection);
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            safeClose(connection);
         }
 
         return loadGraph(plugin, name);
@@ -448,16 +472,19 @@ public class MySQLDatabase implements Database {
     }
 
     public Column createColumn(Graph graph, String name) {
+        Connection connection = null;
+
         try {
-            Connection connection = ds.getConnection();
+            connection = ds.getConnection();
             PreparedStatement statement = connection.prepareStatement("INSERT INTO CustomColumn (Plugin, Graph, Name) VALUES (?, ?, ?)");
             statement.setInt(1, graph.getPlugin().getId());
             statement.setInt(2, graph.getId());
             statement.setString(3, name);
             statement.executeUpdate();
-            safeClose(connection);
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            safeClose(connection);
         }
 
         return loadColumn(graph, name);
@@ -484,6 +511,46 @@ public class MySQLDatabase implements Database {
         }
 
         return null;
+    }
+
+    public void blacklistServer(Server server) {
+        try {
+            Connection connection = ds.getConnection();
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO ServerBlacklist (Server, Violations) VALUES (?, ?)");
+            statement.setInt(1, server.getId());
+            statement.setInt(2, server.getViolationCount());
+            statement.executeUpdate();
+
+            // Now remove any version history
+            statement = connection.prepareStatement("DELETE FROM VersionHistory WHERE Server = ?");
+            statement.setInt(1, server.getId());
+
+            // all good !
+            safeClose(connection);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean isServerBlacklisted(Server server) {
+        try {
+            Connection connection = ds.getConnection();
+            PreparedStatement statement = connection.prepareStatement("SELECT Violations FROM ServerBlacklist WHERE Server = ?");
+            statement.setInt(1, server.getId());
+
+            ResultSet set = statement.executeQuery();
+            int violations = -1;
+            if (set.next()) {
+                violations = set.getInt("Violations");
+            }
+
+            set.close();
+            safeClose(connection);
+            return violations >= 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**

@@ -50,12 +50,31 @@ public class Server implements Savable {
     private boolean modified = false;
 
     /**
+     * Violation count
+     */
+    private int violations = 0;
+
+    /**
+     * If the server was blacklisted or not already
+     */
+    private boolean blacklisted = false;
+
+    /**
      * A map of all of the plugins this server is known to have
      */
     private final Map<Plugin, ServerPlugin> plugins = new HashMap<Plugin, ServerPlugin>();
 
     public Server(MCStats mcstats) {
         this.mcstats = mcstats;
+    }
+
+    /**
+     *
+     *
+     * @param version
+     */
+    public void addVersionHistory(PluginVersion version) {
+        mcstats.getDatabase().addPluginVersionHistory(this, version);
     }
 
     /**
@@ -153,6 +172,22 @@ public class Server implements Savable {
 
     public void setModified(boolean modified) {
         this.modified = modified;
+    }
+
+    public int getViolationCount() {
+        return violations;
+    }
+
+    public void setViolationCount(int violations) {
+        this.violations = violations;
+    }
+
+    public boolean isBlacklisted() {
+        return blacklisted;
+    }
+
+    public void setBlacklisted(boolean blacklisted) {
+        this.blacklisted = blacklisted;
     }
 
     public void save() {

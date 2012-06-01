@@ -7,6 +7,7 @@ import org.mcstats.MCStats;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
+import org.mcstats.model.PluginVersion;
 import org.mcstats.model.RawQuery;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
@@ -23,6 +24,11 @@ import java.util.Map;
 
 public class ReportHandler extends AbstractHandler {
     private Logger logger = Logger.getLogger("ReportHandler");
+
+    /**
+     * The maximum amount of allowable version switches in a graph interval before they are blacklisted;
+     */
+    private static final int MAX_VIOLATIONS_ALLOWED = 7;
 
     /**
      * The MCStats object
@@ -112,6 +118,23 @@ public class ReportHandler extends AbstractHandler {
         Server server = mcstats.loadServer(guid);
         // logger.info("server [ id => " + server.getId() + " , guid => " + server.getGUID() + " ]");
 
+        // Check violations
+        if (server.getViolationCount() < MAX_VIOLATIONS_ALLOWED && mcstats.getDatabase().isServerBlacklisted(server)) {
+            server.setViolationCount(MAX_VIOLATIONS_ALLOWED);
+            server.setBlacklisted(true);
+        }
+
+        if (server.isBlacklisted()) {
+            request.setHandled(true);
+            response.getWriter().println("ERR Your server is blacklisted for running multiple servers on the same GUID.");
+            return;
+        }
+
+        if (server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) {
+            server.setBlacklisted(true);
+            mcstats.getDatabase().blacklistServer(server);
+        }
+
         // Something bad happened
         if (plugin == null || server == null) {
             request.setHandled(true);
@@ -133,7 +156,17 @@ public class ReportHandler extends AbstractHandler {
 
         // Now check the basic stuff
         if (!serverPlugin.getVersion().equals(pluginVersion)) {
-            // TODO version history
+            // only add version history if their current version isn't blank
+            // if their current version is blank, that means they just
+            // installed the plugin
+            if (!server.getServerVersion().isEmpty()) {
+                PluginVersion version = mcstats.loadPluginVersion(plugin, pluginVersion);
+
+                if (version != null) {
+                    server.addVersionHistory(version);
+                }
+            }
+
             serverPlugin.setVersion(pluginVersion);
         }
         if (!server.getServerVersion().equals(serverVersion)) {
@@ -142,6 +175,7 @@ public class ReportHandler extends AbstractHandler {
         if (server.getPlayers() != players && players >= 0) {
             server.setPlayers(players);
         }
+
         if (geoipCountryCode != null && !geoipCountryCode.isEmpty() && !server.getCountry().equals(geoipCountryCode)) {
             server.setCountry(geoipCountryCode);
         }
@@ -197,6 +231,7 @@ public class ReportHandler extends AbstractHandler {
         int lastGraphUpdate = normalizeTime();
 
         if (lastGraphUpdate > serverPlugin.getUpdated()) {
+            server.setViolationCount(0);
             response.getWriter().println("OK This is your first update this hour.");
         } else {
             response.getWriter().println("OK");

@@ -79,6 +79,37 @@ public class MCStats {
     }
 
     /**
+     * Load a version for the given plugin
+     *
+     * @param plugin
+     * @param version
+     * @return
+     */
+    public PluginVersion loadPluginVersion(Plugin plugin, String version) {
+        PluginVersion pluginVersion = plugin.getVersionByName(version);
+
+        if (pluginVersion != null) {
+            return pluginVersion;
+        }
+
+        // attempt to load it
+        pluginVersion = database.loadPluginVersion(plugin, version);
+
+        if (pluginVersion == null) {
+            // Create it
+            pluginVersion = database.createPluginVersion(plugin, version);
+        }
+
+        if (pluginVersion == null) {
+            // ????
+            return null;
+        }
+
+        plugin.addVersion(pluginVersion);
+        return pluginVersion;
+    }
+
+    /**
      * Load the graph for the given plugin or create if it is does not already exist
      *
      * @param plugin

@@ -113,6 +113,14 @@ public interface Database {
     public void saveServerPlugin(ServerPlugin serverPlugin);
 
     /**
+     * Add version history for the given server/plugin combo to the database
+     *
+     * @param server
+     * @param version
+     */
+    public void addPluginVersionHistory(Server server, PluginVersion version);
+
+    /**
      * Create a server in the database using the given guid
      *
      * @param guid
@@ -170,5 +178,20 @@ public interface Database {
      * @return
      */
     public Column loadColumn(Graph graph, String name);
+
+    /**
+     * Blacklist a server
+     *
+     * @param server
+     */
+    public void blacklistServer(Server server);
+
+    /**
+     * Check if a server is blacklisted.
+     *
+     * @param server
+     * @return
+     */
+    public boolean isServerBlacklisted(Server server);
 
 }
