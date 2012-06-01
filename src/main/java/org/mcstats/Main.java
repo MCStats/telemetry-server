@@ -9,7 +9,7 @@ public class Main {
         BasicConfigurator.configure();
 
         // start
-        new MCStats().start();
+        MCStats.getInstance().start();
     }
 
 }

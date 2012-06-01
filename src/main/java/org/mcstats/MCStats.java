@@ -1,8 +1,11 @@
 package org.mcstats;
 
 import org.apache.log4j.Logger;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.eclipse.jetty.webapp.WebAppContext;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
@@ -14,6 +17,7 @@ import org.mcstats.sql.MySQLDatabase;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,6 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MCStats {
 
     private Logger logger = Logger.getLogger("MCStats");
+
+    /**
+     * The MCStats instance
+     */
+    private static final MCStats instance = new MCStats();
 
     /**
      * MCStats configuration
@@ -51,6 +60,9 @@ public class MCStats {
      * A map of all of the currently loaded pluginsByName, by the plugin's internal id
      */
     private final Map<Integer, Plugin> pluginsById = new ConcurrentHashMap<Integer, Plugin>();
+
+    private MCStats() {
+    }
 
     /**
      * Starts the MCStats backend
@@ -272,7 +284,18 @@ public class MCStats {
     private void createWebServer() {
         int listenPort = Integer.parseInt(config.getProperty("listen.port"));
         org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server();
-        server.setHandler(new ReportHandler(this));
+
+        // TODO put these somewhere else :p
+        String WEB_APP = "org/mcstats/webapp";
+        String CONTEXT_PATH = "/webapp";
+        URL warURL = getClass().getClassLoader().getResource(WEB_APP);
+        WebAppContext webAppContext = new WebAppContext(warURL.toExternalForm(), CONTEXT_PATH);
+
+        // Create the handler list
+        HandlerList handlers = new HandlerList();
+        handlers.setHandlers(new Handler[] { new ReportHandler(this) , webAppContext });
+
+        server.setHandler(handlers);
 
         SelectChannelConnector connector = new SelectChannelConnector();
         connector.setPort(listenPort);
@@ -341,6 +364,15 @@ public class MCStats {
     private void addPlugin(Plugin plugin) {
         pluginsById.put(plugin.getId(), plugin);
         pluginsByName.put(plugin.getName(), plugin);
+    }
+
+    /**
+     * Get the MCStats instance
+     *
+     * @return
+     */
+    public static MCStats getInstance() {
+        return instance;
     }
 
 }

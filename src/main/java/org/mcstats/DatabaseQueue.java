@@ -3,6 +3,9 @@ package org.mcstats;
 import org.apache.log4j.Logger;
 import org.mcstats.sql.Savable;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -20,11 +23,18 @@ public class DatabaseQueue {
      */
     private final Queue<Savable> queue = new ConcurrentLinkedQueue<Savable>();
 
+    /**
+     * The database workers
+     */
+    private final List<QueueWorker> workers = new ArrayList<QueueWorker>();
+
     public DatabaseQueue() {
         // Create workers
         for (int i = 0; i < 16; i++) {
-            new Thread(new QueueWorker(), "DatabaseQueue Worker #" + (i + 1)).start();
-            logger.info("Started DatabaseQueue Worker #" + (i + 1));
+            QueueWorker worker = new QueueWorker(i + 1);
+            workers.add(worker);
+            new Thread(worker, "DatabaseQueue Worker #" + worker.getId()).start();
+            logger.info("Started DatabaseQueue Worker #" + worker.getId());
         }
     }
 
@@ -45,14 +55,44 @@ public class DatabaseQueue {
         return queue.size();
     }
 
-    private class QueueWorker implements Runnable {
+    /**
+     * Get an unmodifiable list of all the queue workers
+     *
+     * @return
+     */
+    public List<QueueWorker> getWorkers() {
+        return Collections.unmodifiableList(workers);
+    }
+
+    public class QueueWorker implements Runnable {
+
+        /**
+         * This worker's unique id
+         */
+        private int id;
+
+        /**
+         * If this worker is currently busy
+         */
+        private boolean busy = false;
+
+        /**
+         * The time the current running job started at
+         */
+        private long jobStart = 0L;
+
+        public QueueWorker(int id) {
+            this.id = id;
+        }
 
         public void run() {
 
             while (true) {
 
                 try {
+                    busy = false;
                     Thread.sleep(50L);
+                    busy = true;
                 } catch (InterruptedException e) {
                     continue;
                 }
@@ -61,7 +101,7 @@ public class DatabaseQueue {
                 int flushed = 0;
 
                 // when we started flushing entities
-                long start = System.currentTimeMillis();
+                jobStart = System.currentTimeMillis();
 
                 // Flush each entity
                 Savable savable;
@@ -82,11 +122,23 @@ public class DatabaseQueue {
 
                 // just so we don't spam the console if there's only 0 entities which we don't need to know about
                 if (flushed > 0) {
-                    logger.debug("Flushed " + flushed + "/" + queue.size() + " entities to the database in " + (System.currentTimeMillis() - start) + "ms");
+                    // logger.debug("Flushed " + flushed + "/" + queue.size() + " entities to the database in " + (System.currentTimeMillis() - start) + "ms");
                 }
 
             }
 
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public boolean isBusy() {
+            return busy;
+        }
+
+        public long getJobStart() {
+            return jobStart;
         }
 
     }
