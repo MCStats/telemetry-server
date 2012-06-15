@@ -14,6 +14,11 @@ public class DatabaseQueue {
     private Logger logger = Logger.getLogger("DatabaseQueue");
 
     /**
+     * The number of database queue workers
+     */
+    private static final int WORKER_COUNT = 13;
+
+    /**
      * Max amount of flushes per round
      */
     private static final int FLUSHES_PER_ROUND = 10000;
@@ -30,7 +35,7 @@ public class DatabaseQueue {
 
     public DatabaseQueue() {
         // Create workers
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < WORKER_COUNT; i++) {
             QueueWorker worker = new QueueWorker(i + 1);
             workers.add(worker);
             new Thread(worker, "DatabaseQueue Worker #" + worker.getId()).start();

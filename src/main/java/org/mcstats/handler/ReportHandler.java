@@ -39,17 +39,22 @@ public class ReportHandler extends AbstractHandler {
         this.mcstats = mcstats;
     }
 
-    public void handle(String target, Request request, HttpServletRequest servletRequest, HttpServletResponse response) throws IOException, ServletException {
+    public void handle(String target, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        request.setCharacterEncoding("UTF-8");
+
         // If they aren't posting to us, we don't want to know about them :p
         if (!request.getMethod().equals("POST")) {
             return;
         }
 
+        // request counter
+        mcstats.incrementAndGetRequests();
+
         // Get the plugin name
-        String pluginName = getPluginName(request);
+        String pluginName = URLUtils.decode(getPluginName(request));
 
         if (pluginName == null) {
-            request.setHandled(true);
+            r.setHandled(true);
             response.getWriter().println("ERR Invalid arguments.");
             return;
         }
@@ -58,7 +63,7 @@ public class ReportHandler extends AbstractHandler {
         String content = "";
 
         // Read the request
-        BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream()));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"));
         String line;
 
         while ((line = reader.readLine()) != null) {
@@ -76,7 +81,7 @@ public class ReportHandler extends AbstractHandler {
 
         // Check for required values
         if (!post.containsKey("guid")) {
-            request.setHandled(true);
+            r.setHandled(true);
             response.getWriter().println("ERR Invalid arguments.");
             return;
         }
@@ -97,16 +102,18 @@ public class ReportHandler extends AbstractHandler {
             revision = post.containsKey("revision") ? Integer.parseInt(post.get("revision")) : 4;
             players = post.containsKey("players") ? Integer.parseInt(post.get("players")) : 0;
         } catch (NumberFormatException e) {
-            request.setHandled(true);
             response.getWriter().println("ERR Invalid arguments.");
+            r.setHandled(true);
+            r.getConnection().getEndPoint().close();
             e.printStackTrace();
             return;
         }
 
         // Check for nulls
         if (guid == null || serverVersion == null || pluginVersion == null) {
-            request.setHandled(true);
+            r.setHandled(true);
             response.getWriter().println("ERR Invalid arguments.");
+            r.getConnection().getEndPoint().close();
             return;
         }
 
@@ -118,6 +125,14 @@ public class ReportHandler extends AbstractHandler {
         Server server = mcstats.loadServer(guid);
         // logger.info("server [ id => " + server.getId() + " , guid => " + server.getGUID() + " ]");
 
+        /// TODO
+        if (server.getCountry().equals("SG") || (geoipCountryCode != null && geoipCountryCode.equals("SG"))) {
+            response.getWriter().println("OK");
+            r.setHandled(true);
+            r.getConnection().getEndPoint().close();
+            return;
+        }
+
         // Check violations
         if (server.getViolationCount() < MAX_VIOLATIONS_ALLOWED && mcstats.getDatabase().isServerBlacklisted(server)) {
             server.setViolationCount(MAX_VIOLATIONS_ALLOWED);
@@ -125,8 +140,9 @@ public class ReportHandler extends AbstractHandler {
         }
 
         if (server.isBlacklisted()) {
-            request.setHandled(true);
-            response.getWriter().println("ERR Your server is blacklisted for running multiple servers on the same GUID.");
+            response.getWriter().println("OK");
+            r.setHandled(true);
+            r.getConnection().getEndPoint().close();
             return;
         }
 
@@ -137,8 +153,9 @@ public class ReportHandler extends AbstractHandler {
 
         // Something bad happened
         if (plugin == null || server == null) {
-            request.setHandled(true);
             response.getWriter().println("ERR Something bad happened..");
+            r.setHandled(true);
+            r.getConnection().getEndPoint().close();
             return;
         }
 
@@ -149,8 +166,9 @@ public class ReportHandler extends AbstractHandler {
 
         // Something bad happened????
         if (serverPlugin == null) {
-            request.setHandled(true);
             response.getWriter().println("ERR Something bad happened..");
+            r.setHandled(true);
+            r.getConnection().getEndPoint().close();
             return;
         }
 
@@ -207,6 +225,17 @@ public class ReportHandler extends AbstractHandler {
                     Column column = entry.getKey();
                     int value = entry.getValue();
 
+                    String graphName = column.getGraph().getName();
+                    if (plugin.getId() == 138 && ((graphName.startsWith("E") && !graphName.equals("EnabledFeatures")) || (graphName.startsWith("M") && !graphName.equals("Modules Used"))
+                                                    || (graphName.startsWith("D") && !graphName.equals("Dependencies")))) {
+                        logger.info("==== BEGIN DUMP ====");
+                        logger.info("Graph Name: " + graphName);
+                        logger.info("POST: " + post);
+                        logger.info("Raw content: " + content);
+                        logger.info("customData: " + customData);
+                        logger.info("==== END DUMP ====");
+                    }
+
                     // append the query
                     query += " (" + server.getId() + ", " + plugin.getId() + ", " + column.getId() + ", " + value + ", " + currentSeconds + "),";
                 }
@@ -225,7 +254,7 @@ public class ReportHandler extends AbstractHandler {
         // Begin sending the response
         response.setContentType("text/html;charset=utf-8");
         response.setStatus(HttpServletResponse.SC_OK);
-        request.setHandled(true);
+        r.setHandled(true);
 
         // get the last graph time
         int lastGraphUpdate = normalizeTime();
@@ -236,6 +265,9 @@ public class ReportHandler extends AbstractHandler {
         } else {
             response.getWriter().println("OK");
         }
+
+        // close the connection
+        // r.getConnection().getEndPoint().close();
 
         // force the server plugin to update
         serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000));
@@ -376,11 +408,15 @@ public class ReportHandler extends AbstractHandler {
      * @param request
      * @return
      */
-    private String getPluginName(Request request) {
+    private String getPluginName(HttpServletRequest request) {
         String url = request.getRequestURI();
 
         // /report/PluginName
-        if (url.startsWith("/report/")) {
+        if (url.startsWith("//report/")) {
+            return url.substring("//report/".length());
+        }
+
+        else if (url.startsWith("/report/")) {
             return url.substring("/report/".length());
         }
 

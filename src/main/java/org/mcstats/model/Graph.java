@@ -59,6 +59,21 @@ public class Graph {
         this.plugin = plugin;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Graph)) {
+            return false;
+        }
+
+        Graph other = (Graph) o;
+        return id == other.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+
     /**
      * Load a column for the given graph or created it if necessary
      *

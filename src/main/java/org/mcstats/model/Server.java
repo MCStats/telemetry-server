@@ -68,6 +68,21 @@ public class Server implements Savable {
         this.mcstats = mcstats;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Server)) {
+            return false;
+        }
+
+        Server other = (Server) o;
+        return id == other.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+
     /**
      *
      *

@@ -52,7 +52,7 @@ public class MySQLDatabase implements Database {
         ds.setPassword(password);
         ds.setUrl("jdbc:mysql://" + hostname + "/" + databaseName);
         ds.setInitialSize(2);
-        ds.setMaxActive(20);
+        ds.setMaxActive(125);
     }
 
     public void executeUpdate(String query) throws SQLException {
@@ -95,7 +95,7 @@ public class MySQLDatabase implements Database {
 
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, Name, Author, Hidden, GlobalHits FROM Plugin");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits FROM Plugin WHERE Parent = -1");
             ResultSet set = statement.executeQuery();
 
             while (set.next()) {
@@ -115,7 +115,7 @@ public class MySQLDatabase implements Database {
     public Plugin loadPlugin(int id) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, Name, Author, Hidden, GlobalHits FROM Plugin WHERE ID = ?");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits FROM Plugin WHERE ID = ?");
             statement.setInt(1, id);
             ResultSet set = statement.executeQuery();
 
@@ -136,7 +136,7 @@ public class MySQLDatabase implements Database {
     public Plugin loadPlugin(String name) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, Name, Author, Hidden, GlobalHits FROM Plugin WHERE Name = ?");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits FROM Plugin WHERE Name = ?");
             statement.setString(1, name);
             ResultSet set = statement.executeQuery();
 
@@ -339,10 +339,18 @@ public class MySQLDatabase implements Database {
     public void saveServerPlugin(ServerPlugin serverPlugin) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("UPDATE ServerPlugin SET Version = ? , Updated = UNIX_TIMESTAMP() WHERE Server = ? AND Plugin = ?");
-            statement.setString(1, serverPlugin.getVersion());
-            statement.setInt(2, serverPlugin.getServer().getId());
-            statement.setInt(3, serverPlugin.getPlugin().getId());
+            PreparedStatement statement;
+
+            if (serverPlugin.isVersionModified()) {
+                statement = connection.prepareStatement("UPDATE ServerPlugin SET Version = ? , Updated = UNIX_TIMESTAMP() WHERE Server = ? AND Plugin = ?");
+                statement.setString(1, serverPlugin.getVersion());
+                statement.setInt(2, serverPlugin.getServer().getId());
+                statement.setInt(3, serverPlugin.getPlugin().getId());
+            } else {
+                statement = connection.prepareStatement("UPDATE ServerPlugin SET Updated = UNIX_TIMESTAMP() WHERE Server = ? AND Plugin = ?");
+                statement.setInt(1, serverPlugin.getServer().getId());
+                statement.setInt(2, serverPlugin.getPlugin().getId());
+            }
 
             statement.executeUpdate();
             safeClose(connection);
@@ -645,6 +653,7 @@ public class MySQLDatabase implements Database {
     private Plugin resolvePlugin(ResultSet set) throws SQLException {
         Plugin plugin = new Plugin(mcstats);
         plugin.setId(set.getInt("ID"));
+        plugin.setParent(set.getInt("Parent"));
         plugin.setName(set.getString("Name"));
         plugin.setAuthors(set.getString("Author"));
         plugin.setHidden(set.getInt("Hidden"));

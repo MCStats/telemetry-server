@@ -1,6 +1,7 @@
 package org.mcstats;
 
 import org.apache.log4j.Logger;
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
@@ -14,13 +15,19 @@ import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
 import org.mcstats.sql.Database;
 import org.mcstats.sql.MySQLDatabase;
+import org.mcstats.util.RequestCalculator;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class MCStats {
 
@@ -30,6 +37,16 @@ public class MCStats {
      * The MCStats instance
      */
     private static final MCStats instance = new MCStats();
+
+    /**
+     * The web server object
+     */
+    private org.eclipse.jetty.server.Server webServer;
+
+    /**
+     * The amount of requests that have been served
+     */
+    private AtomicLong requests = new AtomicLong(0);
 
     /**
      * MCStats configuration
@@ -47,6 +64,16 @@ public class MCStats {
     private DatabaseQueue databaseQueue = new DatabaseQueue();
 
     /**
+     * The request calculator for requests per second since the server started
+     */
+    private final RequestCalculator requestsAllTime;
+
+    /**
+     * The request calculator for requests per second for the last 5 seconds
+     */
+    private final RequestCalculator requestsFiveSeconds;
+
+    /**
      * A map of all of the currently loaded servers
      */
     private final Map<String, Server> servers = new ConcurrentHashMap<String, Server>();
@@ -62,6 +89,15 @@ public class MCStats {
     private final Map<Integer, Plugin> pluginsById = new ConcurrentHashMap<Integer, Plugin>();
 
     private MCStats() {
+        // create the request callable
+        Callable<Long> requestsCallable = new Callable<Long>() {
+            public Long call() throws Exception {
+                return requests.get();
+            }
+        };
+
+        requestsAllTime = new RequestCalculator(RequestCalculator.CalculationMethod.ALL_TIME, requestsCallable);
+        requestsFiveSeconds = new RequestCalculator(RequestCalculator.CalculationMethod.FIVE_SECONDS, requestsCallable);
     }
 
     /**
@@ -88,6 +124,33 @@ public class MCStats {
 
         // Create & open the webserver
         createWebServer();
+    }
+
+    /**
+     * Get an unmodifiable list of the cached servers
+     *
+     * @return
+     */
+    public List<Server> getCachedServers() {
+        return Collections.unmodifiableList(new ArrayList<Server>(servers.values()));
+    }
+
+    /**
+     * Get an unmodifiable list of the cached plugins
+     *
+     * @return
+     */
+    public List<Plugin> getCachedPlugins() {
+        return Collections.unmodifiableList(new ArrayList<Plugin>(pluginsById.values()));
+    }
+
+    /**
+     * Increment and return the amount of requests server on the server
+     *
+     * @return
+     */
+    public long incrementAndGetRequests() {
+        return requests.incrementAndGet();
     }
 
     /**
@@ -169,8 +232,13 @@ public class MCStats {
             return serverPlugin;
         }
 
-        // we just need to create it
-        serverPlugin = database.createServerPlugin(server, plugin, version);
+        // attempt to load the plugin
+        serverPlugin = database.loadServerPlugin(server, plugin);
+
+        if (serverPlugin == null) {
+            // we just need to create it
+            serverPlugin = database.createServerPlugin(server, plugin, version);
+        }
 
         // now cache it
         server.addPlugin(serverPlugin);
@@ -196,6 +264,19 @@ public class MCStats {
             return null;
         }
 
+        // Check if the plugin is just a child
+        if (plugin.getParent() != -1) {
+            // Load the parent
+            Plugin parent = loadPlugin(plugin.getParent());
+
+            if (parent != null) {
+                // cache the child's plugin name via the parent
+                addPlugin(plugin.getName(), parent);
+            }
+
+            return parent;
+        }
+
         // Load the versions
         for (PluginVersion version : database.loadPluginVersions(plugin)) {
             plugin.addVersion(version);
@@ -215,9 +296,13 @@ public class MCStats {
      * @return
      */
     public Plugin loadPlugin(String name) {
-        if (pluginsByName.containsKey(name)) {
-            return pluginsByName.get(name);
+        String cacheKey = name.toLowerCase();
+
+        if (pluginsByName.containsKey(cacheKey)) {
+            return pluginsByName.get(cacheKey);
         }
+
+        logger.info("Plugin not cached: " + name);
 
         // Attempt to load from the database
         Plugin plugin = database.loadPlugin(name);
@@ -232,6 +317,19 @@ public class MCStats {
         if (plugin == null) {
             logger.error("Failed to create plugin for \"" + name + "\"");
             return null;
+        }
+
+        // Check if the plugin is just a child
+        if (plugin.getParent() != -1) {
+            // Load the parent
+            Plugin parent = loadPlugin(plugin.getParent());
+
+            if (parent != null) {
+                // cache the child's plugin name via the parent
+                addPlugin(plugin.getName(), parent);
+            }
+
+            return parent;
         }
 
         // Load the versions
@@ -279,11 +377,26 @@ public class MCStats {
     }
 
     /**
+     * Get the number of currently open connections
+     *
+     * @return
+     */
+    public int countOpenConnections() {
+        int conn = 0;
+
+        for (Connector connector : webServer.getConnectors()) {
+            conn += connector.getConnectionsOpen();
+        }
+
+        return conn;
+    }
+
+    /**
      * Create and open the web server
      */
     private void createWebServer() {
         int listenPort = Integer.parseInt(config.getProperty("listen.port"));
-        org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server();
+        webServer = new org.eclipse.jetty.server.Server();
 
         // TODO put these somewhere else :p
         String WEB_APP = "org/mcstats/webapp";
@@ -295,23 +408,25 @@ public class MCStats {
         HandlerList handlers = new HandlerList();
         handlers.setHandlers(new Handler[] { new ReportHandler(this) , webAppContext });
 
-        server.setHandler(handlers);
+        webServer.setHandler(handlers);
 
         SelectChannelConnector connector = new SelectChannelConnector();
         connector.setPort(listenPort);
         connector.setThreadPool(new QueuedThreadPool(50));
         connector.setAcceptors(2);
+        // connector.setReuseAddress(true);
+        connector.setStatsOn(true);
 
         // add the connector to the server
-        server.addConnector(connector);
+        webServer.addConnector(connector);
 
         try {
             // Start the server
-            server.start();
+            webServer.start();
             logger.info("Created web server on port " + listenPort);
 
             // and now join it
-            server.join();
+            webServer.join();
         } catch (Exception e) {
             logger.error("Failed to create web server");
             e.printStackTrace();
@@ -357,13 +472,42 @@ public class MCStats {
     }
 
     /**
+     * Get the request calculator for all-time requests
+     *
+     * @return
+     */
+    public RequestCalculator getRequestCalculatorAllTime() {
+        return requestsAllTime;
+    }
+
+    /**
+     * Get the request calculator for requests in the last 5 seconds
+     *
+     * @return
+     */
+    public RequestCalculator getRequestCalculatorFiveSeconds() {
+        return requestsFiveSeconds;
+    }
+
+    /**
      * Add a plugin to the cache
      *
      * @param plugin
      */
     private void addPlugin(Plugin plugin) {
         pluginsById.put(plugin.getId(), plugin);
-        pluginsByName.put(plugin.getName(), plugin);
+        pluginsByName.put(plugin.getName().toLowerCase(), plugin);
+    }
+
+    /**
+     * Add a plugin to the cache with the given name
+     *
+     * @param name
+     * @param plugin
+     */
+    private void addPlugin(String name, Plugin plugin) {
+        pluginsById.put(plugin.getId(), plugin);
+        pluginsByName.put(name.toLowerCase().toLowerCase(), plugin);
     }
 
     /**

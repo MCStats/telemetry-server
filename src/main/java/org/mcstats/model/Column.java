@@ -35,6 +35,11 @@ public class Column {
         this.plugin = plugin;
     }
 
+    @Override
+    public String toString() {
+        return String.format("Column(Plugin = %s, Graph = %s, Name = %s)", plugin.getName(), graph.getName(), name);
+    }
+
     public int getId() {
         return id;
     }

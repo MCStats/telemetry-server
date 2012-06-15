@@ -19,6 +19,11 @@ public class Plugin implements Savable {
     private int id;
 
     /**
+     * This plugin's parent, that data should be forwarded to instead
+     */
+    private int parent;
+
+    /**
      * The plugin's name
      */
     private String name;
@@ -60,6 +65,21 @@ public class Plugin implements Savable {
 
     public Plugin(MCStats mcstats) {
         this.mcstats = mcstats;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Plugin)) {
+            return false;
+        }
+
+        Plugin other = (Plugin) o;
+        return id == other.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
     }
 
     /**
@@ -174,5 +194,13 @@ public class Plugin implements Savable {
     public void saveNow() {
         mcstats.getDatabase().savePlugin(this);
         modified = false;
+    }
+
+    public int getParent() {
+        return parent;
+    }
+
+    public void setParent(int parent) {
+        this.parent = parent;
     }
 }

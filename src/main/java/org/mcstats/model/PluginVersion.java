@@ -34,6 +34,21 @@ public class PluginVersion {
         this.plugin = plugin;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof PluginVersion)) {
+            return false;
+        }
+
+        PluginVersion other = (PluginVersion) o;
+        return id == other.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+
     public int getId() {
         return id;
     }
