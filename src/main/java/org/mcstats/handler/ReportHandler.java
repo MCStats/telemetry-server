@@ -40,243 +40,253 @@ public class ReportHandler extends AbstractHandler {
     }
 
     public void handle(String target, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        request.setCharacterEncoding("UTF-8");
-
-        // If they aren't posting to us, we don't want to know about them :p
-        if (!request.getMethod().equals("POST")) {
-            return;
-        }
-
-        // request counter
-        mcstats.incrementAndGetRequests();
-
-        // Get the plugin name
-        String pluginName = URLUtils.decode(getPluginName(request));
-
-        if (pluginName == null) {
-            r.setHandled(true);
-            response.getWriter().println("ERR Invalid arguments.");
-            return;
-        }
-
-        // the full request contents
-        String content = "";
-
-        // Read the request
-        BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"));
-        String line;
-
-        while ((line = reader.readLine()) != null) {
-            content += line;
-        }
-
-        // System.out.println("content => " + content);
-
-        // Close our reader, no longer needed
-        reader.close();
-
-        // Decode the post request
-        Map<String, String> post = processPostRequest(content);
-        // System.out.println(post);
-
-        // Check for required values
-        if (!post.containsKey("guid")) {
-            r.setHandled(true);
-            response.getWriter().println("ERR Invalid arguments.");
-            return;
-        }
-
-        // GeoIP
-        String geoipCountryCode = request.getHeader("GEOIP_COUNTRY_CODE");
-
-        // Data that was posted to us
-        String guid = post.get("guid");
-        String serverVersion = post.get("server");
-        String pluginVersion = post.get("version");
-        boolean isPing = post.containsKey("ping");
-        int revision;
-        int players;
-
-        // gracefully pull out numbers incase they send malformed numbers
         try {
-            revision = post.containsKey("revision") ? Integer.parseInt(post.get("revision")) : 4;
-            players = post.containsKey("players") ? Integer.parseInt(post.get("players")) : 0;
-        } catch (NumberFormatException e) {
-            response.getWriter().println("ERR Invalid arguments.");
-            r.setHandled(true);
-            r.getConnection().getEndPoint().close();
-            e.printStackTrace();
-            return;
-        }
+            request.setCharacterEncoding("UTF-8");
 
-        // Check for nulls
-        if (guid == null || serverVersion == null || pluginVersion == null) {
-            r.setHandled(true);
-            response.getWriter().println("ERR Invalid arguments.");
-            r.getConnection().getEndPoint().close();
-            return;
-        }
+            // If they aren't posting to us, we don't want to know about them :p
+            if (!request.getMethod().equals("POST")) {
+                return;
+            }
 
-        // Load the plugin
-        Plugin plugin = mcstats.loadPlugin(pluginName);
-        // logger.info("plugin [ id => " + plugin.getId() + " , name => " + plugin.getName() + " ]");
+            // request counter
+            mcstats.incrementAndGetRequests();
 
-        // Load the server
-        Server server = mcstats.loadServer(guid);
-        // logger.info("server [ id => " + server.getId() + " , guid => " + server.getGUID() + " ]");
+            // Get the plugin name
+            String pluginName = URLUtils.decode(getPluginName(request));
 
-        /// TODO
-        if (server.getCountry().equals("SG") || (geoipCountryCode != null && geoipCountryCode.equals("SG"))) {
-            response.getWriter().println("OK");
-            r.setHandled(true);
-            r.getConnection().getEndPoint().close();
-            return;
-        }
+            if (pluginName == null) {
+                r.setHandled(true);
+                response.getWriter().println("ERR Invalid arguments.");
+                return;
+            }
 
-        // Check violations
-        if (server.getViolationCount() < MAX_VIOLATIONS_ALLOWED && mcstats.getDatabase().isServerBlacklisted(server)) {
-            server.setViolationCount(MAX_VIOLATIONS_ALLOWED);
-            server.setBlacklisted(true);
-        }
+            // the full request contents
+            String content = "";
 
-        if (server.isBlacklisted()) {
-            response.getWriter().println("OK");
-            r.setHandled(true);
-            r.getConnection().getEndPoint().close();
-            return;
-        }
+            // Read the request
+            BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"));
+            String line;
 
-        if (server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) {
-            server.setBlacklisted(true);
-            mcstats.getDatabase().blacklistServer(server);
-        }
+            while ((line = reader.readLine()) != null) {
+                content += line;
+            }
 
-        // Something bad happened
-        if (plugin == null || server == null) {
-            response.getWriter().println("ERR Something bad happened..");
-            r.setHandled(true);
-            r.getConnection().getEndPoint().close();
-            return;
-        }
+            // System.out.println("content => " + content);
 
-        // Load the server plugin object which stores data shared between this server and plugin
-        ServerPlugin serverPlugin = mcstats.loadServerPlugin(server, plugin, pluginVersion);
+            // Close our reader, no longer needed
+            reader.close();
 
-        // logger.info("ServerPlugin => " + serverPlugin.getVersion() + " , " + serverPlugin.getUpdated());
+            // Decode the post request
+            Map<String, String> post = processPostRequest(content);
+            // System.out.println(post);
 
-        // Something bad happened????
-        if (serverPlugin == null) {
-            response.getWriter().println("ERR Something bad happened..");
-            r.setHandled(true);
-            r.getConnection().getEndPoint().close();
-            return;
-        }
+            // Check for required values
+            if (!post.containsKey("guid")) {
+                r.setHandled(true);
+                response.getWriter().println("ERR Invalid arguments.");
+                return;
+            }
 
-        // Now check the basic stuff
-        if (!serverPlugin.getVersion().equals(pluginVersion)) {
-            // only add version history if their current version isn't blank
-            // if their current version is blank, that means they just
-            // installed the plugin
-            if (!server.getServerVersion().isEmpty()) {
-                PluginVersion version = mcstats.loadPluginVersion(plugin, pluginVersion);
+            // GeoIP
+            String geoipCountryCode = request.getHeader("GEOIP_COUNTRY_CODE");
 
-                if (version != null) {
-                    server.addVersionHistory(version);
+            // Data that was posted to us
+            String guid = post.get("guid");
+            String serverVersion = post.get("server");
+            String pluginVersion = post.get("version");
+            boolean isPing = post.containsKey("ping");
+            int revision;
+            int players;
+
+            // gracefully pull out numbers incase they send malformed numbers
+            try {
+                revision = post.containsKey("revision") ? Integer.parseInt(post.get("revision")) : 4;
+                players = post.containsKey("players") ? Integer.parseInt(post.get("players")) : 0;
+            } catch (NumberFormatException e) {
+                response.getWriter().println("ERR Invalid arguments.");
+                r.setHandled(true);
+                r.getConnection().getEndPoint().close();
+                e.printStackTrace();
+                return;
+            }
+
+            // Check for nulls
+            if (guid == null || serverVersion == null || pluginVersion == null) {
+                r.setHandled(true);
+                response.getWriter().println("ERR Invalid arguments.");
+                r.getConnection().getEndPoint().close();
+                return;
+            }
+
+            // Load the plugin
+            Plugin plugin = mcstats.loadPlugin(pluginName);
+            // logger.info("plugin [ id => " + plugin.getId() + " , name => " + plugin.getName() + " ]");
+
+            // Load the server
+            Server server = mcstats.loadServer(guid);
+            // logger.info("server [ id => " + server.getId() + " , guid => " + server.getGUID() + " ]");
+
+            /// TODO
+            if (server.getCountry().equals("SG") || (geoipCountryCode != null && geoipCountryCode.equals("SG"))) {
+                response.getWriter().println("OK");
+                r.setHandled(true);
+                r.getConnection().getEndPoint().close();
+                return;
+            }
+
+            // Check violations
+            if (server.getViolationCount() < MAX_VIOLATIONS_ALLOWED && mcstats.getDatabase().isServerBlacklisted(server)) {
+                server.setViolationCount(MAX_VIOLATIONS_ALLOWED);
+                server.setBlacklisted(true);
+            }
+
+            if (server.isBlacklisted()) {
+                response.getWriter().println("OK");
+                r.setHandled(true);
+                r.getConnection().getEndPoint().close();
+                return;
+            }
+
+            if (server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) {
+                server.setBlacklisted(true);
+                mcstats.getDatabase().blacklistServer(server);
+            }
+
+            // Something bad happened
+            if (plugin == null || server == null) {
+                response.getWriter().println("ERR Something bad happened..");
+                r.setHandled(true);
+                r.getConnection().getEndPoint().close();
+                return;
+            }
+
+            // Load the server plugin object which stores data shared between this server and plugin
+            ServerPlugin serverPlugin = mcstats.loadServerPlugin(server, plugin, pluginVersion);
+
+            // logger.info("ServerPlugin => " + serverPlugin.getVersion() + " , " + serverPlugin.getUpdated());
+
+            // Something bad happened????
+            if (serverPlugin == null) {
+                response.getWriter().println("ERR Something bad happened..");
+                r.setHandled(true);
+                r.getConnection().getEndPoint().close();
+                return;
+            }
+
+            // Now check the basic stuff
+            if (!serverPlugin.getVersion().equals(pluginVersion)) {
+                // only add version history if their current version isn't blank
+                // if their current version is blank, that means they just
+                // installed the plugin
+                if (!server.getServerVersion().isEmpty()) {
+                    PluginVersion version = mcstats.loadPluginVersion(plugin, pluginVersion);
+
+                    if (version != null) {
+                        server.addVersionHistory(version);
+                    }
                 }
+
+                serverPlugin.setVersion(pluginVersion);
+            }
+            if (!server.getServerVersion().equals(serverVersion)) {
+                server.setServerVersion(serverVersion);
+            }
+            if (server.getPlayers() != players && players >= 0) {
+                server.setPlayers(players);
             }
 
-            serverPlugin.setVersion(pluginVersion);
-        }
-        if (!server.getServerVersion().equals(serverVersion)) {
-            server.setServerVersion(serverVersion);
-        }
-        if (server.getPlayers() != players && players >= 0) {
-            server.setPlayers(players);
-        }
-
-        if (geoipCountryCode != null && !geoipCountryCode.isEmpty() && !server.getCountry().equals(geoipCountryCode)) {
-            server.setCountry(geoipCountryCode);
-        }
-
-        // Increment start counters if needed
-        if (!isPing) {
-            plugin.setGlobalHits(plugin.getGlobalHits() + 1);
-            // remove server startups ?
-        }
-
-        // Custom Data
-        if (revision >= 4) {
-            Map<Column, Integer> customData;
-
-            // Extract custom data
-            if (revision >= 5) {
-                customData = extractCustomData(plugin, post);
-            } else { // legacy
-                customData = extractCustomDataLegacy(plugin, post);
+            if (geoipCountryCode != null && !geoipCountryCode.isEmpty() && !server.getCountry().equals(geoipCountryCode)) {
+                server.setCountry(geoipCountryCode);
             }
 
-            if (customData != null && customData.size() > 0) {
-                // Begin building the query
-                String query = "INSERT INTO CustomData (Server, Plugin, ColumnID, DataPoint, Updated) VALUES";
-                int currentSeconds = (int) (System.currentTimeMillis() / 1000);
+            // Increment start counters if needed
+            if (!isPing) {
+                plugin.setGlobalHits(plugin.getGlobalHits() + 1);
+                // remove server startups ?
+            }
 
-                // Iterate through each column
-                for (Map.Entry<Column, Integer> entry : customData.entrySet()) {
-                    Column column = entry.getKey();
-                    int value = entry.getValue();
+            // Custom Data
+            if (revision >= 4) {
+                Map<Column, Integer> customData;
 
-                    String graphName = column.getGraph().getName();
-                    if (plugin.getId() == 138 && ((graphName.startsWith("E") && !graphName.equals("EnabledFeatures")) || (graphName.startsWith("M") && !graphName.equals("Modules Used"))
-                                                    || (graphName.startsWith("D") && !graphName.equals("Dependencies")))) {
-                        logger.info("==== BEGIN DUMP ====");
-                        logger.info("Graph Name: " + graphName);
-                        logger.info("POST: " + post);
-                        logger.info("Raw content: " + content);
-                        logger.info("customData: " + customData);
-                        logger.info("==== END DUMP ====");
+                // Extract custom data
+                if (revision >= 5) {
+                    customData = extractCustomData(plugin, post);
+                } else { // legacy
+                    customData = extractCustomDataLegacy(plugin, post);
+                }
+
+                if (customData != null && customData.size() > 0) {
+                    // Begin building the query
+                    String query = "INSERT INTO CustomData (Server, Plugin, ColumnID, DataPoint, Updated) VALUES";
+                    int currentSeconds = (int) (System.currentTimeMillis() / 1000);
+
+                    // Iterate through each column
+                    for (Map.Entry<Column, Integer> entry : customData.entrySet()) {
+                        Column column = entry.getKey();
+                        int value = entry.getValue();
+
+                        String graphName = column.getGraph().getName();
+                        if (plugin.getId() == 138 && ((graphName.startsWith("E") && !graphName.equals("EnabledFeatures")) || (graphName.startsWith("M") && !graphName.equals("Modules Used"))
+                                || (graphName.startsWith("D") && !graphName.equals("Dependencies")))) {
+                            logger.info("==== BEGIN DUMP ====");
+                            logger.info("Graph Name: " + graphName);
+                            logger.info("POST: " + post);
+                            logger.info("Raw content: " + content);
+                            logger.info("customData: " + customData);
+                            logger.info("==== END DUMP ====");
+                        }
+
+                        // append the query
+                        query += " (" + server.getId() + ", " + plugin.getId() + ", " + column.getId() + ", " + value + ", " + currentSeconds + "),";
                     }
 
-                    // append the query
-                    query += " (" + server.getId() + ", " + plugin.getId() + ", " + column.getId() + ", " + value + ", " + currentSeconds + "),";
+                    // Remove the last comma
+                    query = query.substring(0, query.length() - 1);
+
+                    // add the duplicate key entry
+                    query += " ON DUPLICATE KEY UPDATE DataPoint = VALUES(DataPoint) , Updated = VALUES(Updated)";
+
+                    // queue the query
+                    new RawQuery(mcstats, query).save();
                 }
-
-                // Remove the last comma
-                query = query.substring(0, query.length() - 1);
-
-                // add the duplicate key entry
-                query += " ON DUPLICATE KEY UPDATE DataPoint = VALUES(DataPoint) , Updated = VALUES(Updated)";
-
-                // queue the query
-                new RawQuery(mcstats, query).save();
             }
-        }
 
-        // Begin sending the response
-        response.setContentType("text/html;charset=utf-8");
-        response.setStatus(HttpServletResponse.SC_OK);
-        r.setHandled(true);
+            // Begin sending the response
+            response.setContentType("text/html;charset=utf-8");
+            response.setStatus(HttpServletResponse.SC_OK);
+            r.setHandled(true);
 
-        // get the last graph time
-        int lastGraphUpdate = normalizeTime();
+            // get the last graph time
+            int lastGraphUpdate = normalizeTime();
 
-        if (lastGraphUpdate > serverPlugin.getUpdated()) {
-            server.setViolationCount(0);
-            response.getWriter().println("OK This is your first update this hour.");
-        } else {
+            if (lastGraphUpdate > serverPlugin.getUpdated()) {
+                server.setViolationCount(0);
+                response.getWriter().println("OK This is your first update this hour.");
+            } else {
+                response.getWriter().println("OK");
+            }
+
+            // close the connection
+            // r.getConnection().getEndPoint().close();
+
+            // force the server plugin to update
+            serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000));
+
+            // Save everything
+            // They keep flags internally to know if something was modified so all is well
+            server.save();
+            plugin.save();
+            serverPlugin.save();
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            // pretend nothing happened
+            response.setContentType("text/html;charset=utf-8");
+            response.setStatus(HttpServletResponse.SC_OK);
+            r.setHandled(true);
             response.getWriter().println("OK");
         }
-
-        // close the connection
-        // r.getConnection().getEndPoint().close();
-
-        // force the server plugin to update
-        serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000));
-
-        // Save everything
-        // They keep flags internally to know if something was modified so all is well
-        server.save();
-        plugin.save();
-        serverPlugin.save();
     }
 
     /**
