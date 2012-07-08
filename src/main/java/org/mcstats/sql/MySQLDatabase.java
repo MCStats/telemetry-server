@@ -52,7 +52,7 @@ public class MySQLDatabase implements Database {
         ds.setPassword(password);
         ds.setUrl("jdbc:mysql://" + hostname + "/" + databaseName);
         ds.setInitialSize(2);
-        ds.setMaxActive(125);
+        ds.setMaxActive(30);
     }
 
     public void executeUpdate(String query) throws SQLException {
@@ -157,12 +157,12 @@ public class MySQLDatabase implements Database {
     public void savePlugin(Plugin plugin) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("UPDATE Plugin SET Name = ?, Author = ?, Hidden = ?, GlobalHits = ? WHERE ID = ?");
+            PreparedStatement statement = connection.prepareStatement("UPDATE Plugin SET Name = ?, Hidden = ?, GlobalHits = ? WHERE ID = ?");
             statement.setString(1, plugin.getName());
-            statement.setString(2, plugin.getAuthors());
-            statement.setInt(3, plugin.getHidden());
-            statement.setInt(4, plugin.getGlobalHits());
-            statement.setInt(5, plugin.getId());
+            // statement.setString(2, plugin.getAuthors()); // TODO
+            statement.setInt(2, plugin.getHidden());
+            statement.setInt(3, plugin.getGlobalHits());
+            statement.setInt(4, plugin.getId());
 
             statement.executeUpdate();
             safeClose(connection);

@@ -1,6 +1,5 @@
 package org.mcstats;
 
-import com.google.common.collect.MapMaker;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -28,7 +27,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MCStats {
@@ -78,7 +76,7 @@ public class MCStats {
     /**
      * A map of all of the currently loaded servers
      */
-    private final Map<String, Server> servers = new MapMaker().concurrencyLevel(32).expiration(7, TimeUnit.DAYS).softKeys().makeMap();
+    private final Map<String, Server> servers = new ConcurrentHashMap<String, Server>();
 
     /**
      * A map of all of the currently loaded pluginsByName, by the plugin's name
@@ -414,7 +412,7 @@ public class MCStats {
 
         SelectChannelConnector connector = new SelectChannelConnector();
         connector.setPort(listenPort);
-        connector.setThreadPool(new QueuedThreadPool(50));
+        connector.setThreadPool(new QueuedThreadPool(10));
         connector.setAcceptors(2);
         // connector.setReuseAddress(true);
         connector.setStatsOn(true);

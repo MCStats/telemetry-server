@@ -55,8 +55,9 @@ public class ReportHandler extends AbstractHandler {
             String pluginName = URLUtils.decode(getPluginName(request));
 
             if (pluginName == null) {
-                r.setHandled(true);
+                response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().println("ERR Invalid arguments.");
+                r.setHandled(true);
                 return;
             }
 
@@ -82,8 +83,9 @@ public class ReportHandler extends AbstractHandler {
 
             // Check for required values
             if (!post.containsKey("guid")) {
-                r.setHandled(true);
+                response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().println("ERR Invalid arguments.");
+                r.setHandled(true);
                 return;
             }
 
@@ -103,18 +105,18 @@ public class ReportHandler extends AbstractHandler {
                 revision = post.containsKey("revision") ? Integer.parseInt(post.get("revision")) : 4;
                 players = post.containsKey("players") ? Integer.parseInt(post.get("players")) : 0;
             } catch (NumberFormatException e) {
+                response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().println("ERR Invalid arguments.");
                 r.setHandled(true);
-                r.getConnection().getEndPoint().close();
                 e.printStackTrace();
                 return;
             }
 
             // Check for nulls
             if (guid == null || serverVersion == null || pluginVersion == null) {
-                r.setHandled(true);
+                response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().println("ERR Invalid arguments.");
-                r.getConnection().getEndPoint().close();
+                r.setHandled(true);
                 return;
             }
 
@@ -128,9 +130,9 @@ public class ReportHandler extends AbstractHandler {
 
             /// TODO
             if (server.getCountry().equals("SG") || (geoipCountryCode != null && geoipCountryCode.equals("SG"))) {
+                response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().println("OK");
                 r.setHandled(true);
-                r.getConnection().getEndPoint().close();
                 return;
             }
 
@@ -141,9 +143,9 @@ public class ReportHandler extends AbstractHandler {
             }
 
             if (server.isBlacklisted()) {
+                response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().println("OK");
                 r.setHandled(true);
-                r.getConnection().getEndPoint().close();
                 return;
             }
 
@@ -154,9 +156,9 @@ public class ReportHandler extends AbstractHandler {
 
             // Something bad happened
             if (plugin == null || server == null) {
-                response.getWriter().println("ERR Something bad happened..");
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.getWriter().println("ERR Something bad happened");
                 r.setHandled(true);
-                r.getConnection().getEndPoint().close();
                 return;
             }
 
@@ -167,9 +169,9 @@ public class ReportHandler extends AbstractHandler {
 
             // Something bad happened????
             if (serverPlugin == null) {
-                response.getWriter().println("ERR Something bad happened..");
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.getWriter().println("OK");
                 r.setHandled(true);
-                r.getConnection().getEndPoint().close();
                 return;
             }
 
