@@ -7,7 +7,7 @@ echo -e " [\e[1;33m++\e[00m] Compiling"
 mvn --quiet clean package
 
 echo -e " [\e[1;33m++\e[00m] Uploading build"
-rsync -avzq --progress --exclude 'mysql.properties' ./ root@mcstats.org:/home/mcstats/
+rsync -av --progress --exclude=*.tar.gz --exclude=archive-tmp --exclude=classes --exclude=maven-archiver --exclude=surefire target/ root@mcstats.org:/home/mcstats/
 
 echo -e " [\e[1;33m++\e[00m] Fixing permissions"
 ssh root@mcstats.org "chown -R mcstats:mcstats /home/mcstats/"
