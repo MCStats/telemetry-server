@@ -124,6 +124,13 @@ public class ReportHandler extends AbstractHandler {
             Plugin plugin = mcstats.loadPlugin(pluginName);
             // logger.info("plugin [ id => " + plugin.getId() + " , name => " + plugin.getName() + " ]");
 
+            if (plugin.getId() == -1) {
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.getWriter().println("ERR Rejected.");
+                r.setHandled(true);
+                return;
+            }
+
             // Load the server
             Server server = mcstats.loadServer(guid);
             // logger.info("server [ id => " + server.getId() + " , guid => " + server.getGUID() + " ]");
