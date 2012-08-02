@@ -1,5 +1,9 @@
 package org.mcstats;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.MapMaker;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -27,6 +31,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MCStats {
@@ -76,7 +81,31 @@ public class MCStats {
     /**
      * A map of all of the currently loaded servers
      */
-    private final Map<String, Server> servers = new ConcurrentHashMap<String, Server>();
+    private final LoadingCache<String, Server> servers = CacheBuilder.newBuilder()
+            .maximumSize(100000) // 100k
+            .build(new CacheLoader<String, Server>() {
+
+                public Server load(String key) {
+                    Server server = database.loadServer(key);
+
+                    if (server == null) {
+                        server = database.createServer(key);
+                    }
+
+                    if (server == null) {
+                        logger.error("Failed to create server for \"" + key + "\"");
+                        return null;
+                    }
+
+                    // Now load the plugins
+                    for (ServerPlugin serverPlugin : database.loadServerPlugins(server)) {
+                        server.addPlugin(serverPlugin);
+                    }
+
+                    return server;
+                }
+
+            });
 
     /**
      * A map of all of the currently loaded pluginsByName, by the plugin's name
@@ -132,7 +161,7 @@ public class MCStats {
      * @return
      */
     public List<Server> getCachedServers() {
-        return Collections.unmodifiableList(new ArrayList<Server>(servers.values()));
+        return Collections.unmodifiableList(new ArrayList<Server>(servers.asMap().values()));
     }
 
     /**
@@ -351,29 +380,12 @@ public class MCStats {
      * @return
      */
     public Server loadServer(String guid) {
-        if (servers.containsKey(guid)) {
-            return servers.get(guid);
-        }
-
-        // Load from the database
-        Server server = database.loadServer(guid);
-
-        if (server == null) {
-            server = database.createServer(guid);
-        }
-
-        if (server == null) {
-            logger.error("Failed to create server for \"" + guid + "\"");
+        try {
+            return servers.get(guid); /* automatically loaded by CacheLoader if needed */
+        } catch (ExecutionException e) {
+            logger.error("Exception occurred while loading server (loadServer(" + guid + "))",  e);
             return null;
         }
-
-        // Now load the plugins
-        for (ServerPlugin serverPlugin : database.loadServerPlugins(server)) {
-            server.addPlugin(serverPlugin);
-        }
-
-        servers.put(guid, server);
-        return server;
     }
 
     /**
