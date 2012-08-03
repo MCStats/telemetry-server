@@ -92,6 +92,11 @@ public class ReportHandler extends AbstractHandler {
             // GeoIP
             String geoipCountryCode = request.getHeader("GEOIP_COUNTRY_CODE");
 
+            // fallback incase it's being proxied
+            if (geoipCountryCode == null) {
+                geoipCountryCode = request.getHeader("HTTP_X_GEOIP");
+            }
+
             // Data that was posted to us
             String guid = post.get("guid");
             String serverVersion = post.get("server");
