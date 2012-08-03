@@ -318,7 +318,7 @@ public class ReportHandler extends AbstractHandler {
         // calculate the devisor denominator
         int denom = interval * 60;
 
-        return Math.round((currentTimeSeconds - (denom / 2)) / denom) * denom;
+        return (int) Math.round((currentTimeSeconds - (denom / 2d)) / denom) * denom;
     }
 
     /**
