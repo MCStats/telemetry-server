@@ -44,6 +44,11 @@ public class Plugin implements Savable {
     private int globalHits;
 
     /**
+     * The unix epoch the plugin was created at
+     */
+    private int created;
+
+    /**
      * If this plugin was modified
      */
     private boolean modified = false;
@@ -202,5 +207,13 @@ public class Plugin implements Savable {
 
     public void setParent(int parent) {
         this.parent = parent;
+    }
+
+    public int getCreated() {
+        return created;
+    }
+
+    public void setCreated(int created) {
+        this.created = created;
     }
 }
