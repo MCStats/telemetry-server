@@ -1,0 +1,27 @@
+# Transforms Server Version strings into a canonical string
+# These are parsed in the order they appear, so if the first line matches
+# it is used. This is an important detail for things such as CraftBukkit
+# which only use `git-Bukkit-xxxxx'
+
+git-Bukkit-jenkins-CraftBukkit256   CraftBukkit256
+git-Bukkit-jenkins-CraftBukkit++X   CraftBukkit++X
+git-Bukkit-jenkins-CraftBukkit++    CraftBukkit++
+git-Bukkit-jenkins-CraftBukkit---   CraftBukkit--
+git-Bukkit-jenkins-J2CB             J2CB
+git-Bukkit-jenkins-MultiModWorld    MultiModWorld
+git-Bukkit-jenkins-Spigot-Legacy    Spigot-Legacy
+git-Bukkit-jenkins-Spigot           Spigot
+git-CraftBukkitJ                    CraftBukkitJ
+git-Cubixlaunch                     Cubixlaunch
+git-Spout                           Spout
+git-Glowstone                       Glowstone
+
+IceCraftBukkit                      CraftBukkit
+FrozenBukkit                        CraftBukkit
+Tk-ModServerPack                    CraftBukkit
+#git-Bukkit-jenkins-CommunityCraft CraftBukkit
+#git-Bukkit-jenkins-AmazoCraft CraftBukkit
+#git-Bukkit-Infinity CraftBukkit
+
+git-Bukkit-jenkins-CraftBukkit      CraftBukkit
+git-Bukkit                          CraftBukkit

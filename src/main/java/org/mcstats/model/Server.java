@@ -45,6 +45,16 @@ public class Server implements Savable {
     private int created;
 
     /**
+     * The software the server is running
+     */
+    private String serverSoftware;
+
+    /**
+     * The minecraft version the server is
+     */
+    private String minecraftVersion;
+
+    /**
      * If the server was modified
      */
     private boolean modified = false;
@@ -215,5 +225,23 @@ public class Server implements Savable {
     public void saveNow() {
         mcstats.getDatabase().saveServer(this);
         modified = false;
+    }
+
+    public String getMinecraftVersion() {
+        return minecraftVersion;
+    }
+
+    public void setMinecraftVersion(String minecraftVersion) {
+        this.minecraftVersion = minecraftVersion;
+        modified = true;
+    }
+
+    public String getServerSoftware() {
+        return serverSoftware;
+    }
+
+    public void setServerSoftware(String serverSoftware) {
+        this.serverSoftware = serverSoftware;
+        modified = true;
     }
 }

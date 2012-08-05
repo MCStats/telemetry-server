@@ -213,6 +213,18 @@ public class ReportHandler extends AbstractHandler {
                 server.setCountry(geoipCountryCode);
             }
 
+            // Identify the server & minecraft version
+            String canonicalServerVersion = mcstats.getServerBuildIdentifier().getServerVersion(serverVersion);
+            String minecraftVersion = mcstats.getServerBuildIdentifier().getMinecraftVersion(serverVersion);
+
+            if (!server.getServerSoftware().equals(canonicalServerVersion)) {
+                server.setServerSoftware(canonicalServerVersion);
+            }
+
+            if (!server.getMinecraftVersion().equals(minecraftVersion)) {
+                server.setMinecraftVersion(minecraftVersion);
+            }
+
             // Increment start counters if needed
             if (!isPing) {
                 plugin.setGlobalHits(plugin.getGlobalHits() + 1);

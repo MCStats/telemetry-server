@@ -3,7 +3,6 @@ package org.mcstats;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.MapMaker;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -20,6 +19,7 @@ import org.mcstats.model.ServerPlugin;
 import org.mcstats.sql.Database;
 import org.mcstats.sql.MySQLDatabase;
 import org.mcstats.util.RequestCalculator;
+import org.mcstats.util.ServerBuildIdentifier;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -67,6 +67,11 @@ public class MCStats {
      * The database save queue
      */
     private DatabaseQueue databaseQueue = new DatabaseQueue();
+
+    /**
+     * The server build identifier
+     */
+    private final ServerBuildIdentifier serverBuildIdentifier = new ServerBuildIdentifier();
 
     /**
      * The request calculator for requests per second since the server started
@@ -531,4 +536,7 @@ public class MCStats {
         return instance;
     }
 
+    public ServerBuildIdentifier getServerBuildIdentifier() {
+        return serverBuildIdentifier;
+    }
 }
