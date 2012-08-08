@@ -380,7 +380,7 @@ public class MySQLDatabase implements Database {
 
         try {
             connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO Server (GUID, Players, Country, ServerVersion, Hits, Created) VALUES (?, 0, 'ZZ', '', 0, UNIX_TIMESTAMP())");
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO Server (GUID, Players, Country, ServerVersion, Created) VALUES (?, 0, 'ZZ', '', UNIX_TIMESTAMP())");
             statement.setString(1, guid);
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -397,7 +397,7 @@ public class MySQLDatabase implements Database {
     public Server loadServer(String guid) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, GUID, Players, Country, ServerVersion, Hits, Created, ServerSoftware, MinecraftVersion FROM Server WHERE GUID = ?");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, GUID, Players, Country, ServerVersion, Created, ServerSoftware, MinecraftVersion FROM Server WHERE GUID = ?");
             statement.setString(1, guid);
             ResultSet set = statement.executeQuery();
 
@@ -419,16 +419,15 @@ public class MySQLDatabase implements Database {
     public void saveServer(Server server) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("UPDATE Server SET GUID = ?, ServerVersion = ?, Hits = ?, Players = ?, Country = ?, Created = ?, ServerSoftware = ?, MinecraftVersion = ? WHERE ID = ?");
+            PreparedStatement statement = connection.prepareStatement("UPDATE Server SET GUID = ?, ServerVersion = ?, Players = ?, Country = ?, Created = ?, ServerSoftware = ?, MinecraftVersion = ? WHERE ID = ?");
             statement.setString(1, server.getGUID());
             statement.setString(2, server.getServerVersion());
-            statement.setInt(3, 0); // TODO server starts again ???
-            statement.setInt(4, server.getPlayers());
-            statement.setString(5, server.getCountry());
-            statement.setInt(6, server.getCreated());
-            statement.setString(7, server.getServerSoftware());
-            statement.setString(8, server.getMinecraftVersion());
-            statement.setInt(9, server.getId());
+            statement.setInt(3, server.getPlayers());
+            statement.setString(4, server.getCountry());
+            statement.setInt(5, server.getCreated());
+            statement.setString(6, server.getServerSoftware());
+            statement.setString(7, server.getMinecraftVersion());
+            statement.setInt(8, server.getId());
 
             statement.executeUpdate();
             safeClose(connection);

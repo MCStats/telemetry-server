@@ -1,10 +1,13 @@
 package org.mcstats;
 
 import org.apache.log4j.Logger;
+import org.mcstats.model.RawQuery;
+import org.mcstats.model.ServerPlugin;
 import org.mcstats.sql.Savable;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -16,12 +19,17 @@ public class DatabaseQueue {
     /**
      * The number of database queue workers
      */
-    private static final int WORKER_COUNT = 2;
+    private static final int WORKER_COUNT = 4;
 
     /**
      * Max amount of flushes per round
      */
     private static final int FLUSHES_PER_ROUND = 10000;
+
+    /**
+     * The mcstats object
+     */
+    private final MCStats mcstats;
 
     /**
      * The queue of objects waiting to be saved to the database
@@ -33,7 +41,9 @@ public class DatabaseQueue {
      */
     private final List<QueueWorker> workers = new ArrayList<QueueWorker>();
 
-    public DatabaseQueue() {
+    public DatabaseQueue(MCStats mcstats) {
+        this.mcstats = mcstats;
+
         // Create workers
         for (int i = 0; i < WORKER_COUNT; i++) {
             QueueWorker worker = new QueueWorker(i + 1);
@@ -108,21 +118,42 @@ public class DatabaseQueue {
                 // when we started flushing entities
                 jobStart = System.currentTimeMillis();
 
+                // group together server plugins
+                List<ServerPlugin> serverPlugins = new LinkedList<ServerPlugin>();
+
                 // Flush each entity
                 Savable savable;
                 while ((savable = queue.poll()) != null) {
                     // save it now
-                    try {
-                        savable.saveNow();
-                        flushed++;
-                    } catch (Exception e) {
-                        // Fallback gracefully so we don't exit the thread
-                        e.printStackTrace();
+                    if (savable instanceof ServerPlugin) {
+                        serverPlugins.add((ServerPlugin) savable);
+                    } else {
+                        try {
+                            savable.saveNow();
+                            flushed++;
+                        } catch (Exception e) {
+                            // Fallback gracefully so we don't exit the thread
+                            e.printStackTrace();
+                        }
                     }
 
                     if (flushed >= FLUSHES_PER_ROUND) {
                         break;
                     }
+                }
+
+                if (serverPlugins.size() > 0) {
+                    String query = "UPDATE ServerPlugin SET Updated = UNIX_TIMESTAMP() WHERE ";
+
+                    for (ServerPlugin serverPlugin : serverPlugins) {
+                        query += "(Server = " + serverPlugin.getServer() + " AND Plugin = " + serverPlugin.getPlugin() + ") OR";
+                    }
+
+                    // cut off the last OR
+                    query = query.substring(0, query.length() - 3);
+                    serverPlugins = null;
+                    // execute it
+                    new RawQuery(mcstats, query).saveNow();
                 }
 
                 // just so we don't spam the console if there's only 0 entities which we don't need to know about

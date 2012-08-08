@@ -66,7 +66,7 @@ public class MCStats {
     /**
      * The database save queue
      */
-    private DatabaseQueue databaseQueue = new DatabaseQueue();
+    private DatabaseQueue databaseQueue = new DatabaseQueue(this);
 
     /**
      * The server build identifier
@@ -430,7 +430,7 @@ public class MCStats {
         SelectChannelConnector connector = new SelectChannelConnector();
         connector.setPort(listenPort);
         connector.setThreadPool(new QueuedThreadPool(10));
-        connector.setAcceptors(2);
+        connector.setAcceptors(3);
         // connector.setReuseAddress(true);
         connector.setStatsOn(true);
 
