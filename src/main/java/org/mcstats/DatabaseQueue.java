@@ -19,7 +19,7 @@ public class DatabaseQueue {
     /**
      * The number of database queue workers
      */
-    private static final int WORKER_COUNT = 8;
+    private static final int WORKER_COUNT = 4;
 
     /**
      * Max amount of flushes per round
