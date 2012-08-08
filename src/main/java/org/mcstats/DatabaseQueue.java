@@ -19,7 +19,7 @@ public class DatabaseQueue {
     /**
      * The number of database queue workers
      */
-    private static final int WORKER_COUNT = 4;
+    private static final int WORKER_COUNT = 8;
 
     /**
      * Max amount of flushes per round
@@ -146,11 +146,11 @@ public class DatabaseQueue {
                     String query = "UPDATE ServerPlugin SET Updated = UNIX_TIMESTAMP() WHERE ";
 
                     for (ServerPlugin serverPlugin : serverPlugins) {
-                        query += "(Server = " + serverPlugin.getServer() + " AND Plugin = " + serverPlugin.getPlugin() + ") OR";
+                        query += "(Server = " + serverPlugin.getServer().getId() + " AND Plugin = " + serverPlugin.getPlugin().getId() + ") OR ";
                     }
 
                     // cut off the last OR
-                    query = query.substring(0, query.length() - 3);
+                    query = query.substring(0, query.length() - 4);
                     serverPlugins = null;
                     // execute it
                     new RawQuery(mcstats, query).saveNow();
