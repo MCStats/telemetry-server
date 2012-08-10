@@ -156,15 +156,14 @@ public class MySQLDatabase implements Database {
 
     public void savePlugin(Plugin plugin) {
         try {
-            plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000));
             Connection connection = ds.getConnection();
             PreparedStatement statement = connection.prepareStatement("UPDATE Plugin SET Name = ?, Hidden = ?, GlobalHits = ?, Created = ?, LastUpdated = UNIX_TIMESTAMP() WHERE ID = ?");
             statement.setString(1, plugin.getName());
             // statement.setString(2, plugin.getAuthors()); // TODO
             statement.setInt(2, plugin.getHidden());
             statement.setInt(3, plugin.getGlobalHits());
-            statement.setInt(4, plugin.getId());
-            statement.setInt(5, plugin.getCreated());
+            statement.setInt(4, plugin.getCreated());
+            statement.setInt(5, plugin.getId());
 
             statement.executeUpdate();
             safeClose(connection);

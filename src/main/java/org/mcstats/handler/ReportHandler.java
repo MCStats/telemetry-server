@@ -298,6 +298,7 @@ public class ReportHandler extends AbstractHandler {
 
             // force the server plugin to update
             serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000));
+            plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000));
 
             // Save everything
             // They keep flags internally to know if something was modified so all is well

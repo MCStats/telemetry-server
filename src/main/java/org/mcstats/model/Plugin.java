@@ -228,6 +228,6 @@ public class Plugin implements Savable {
 
     public void setLastUpdated(int lastUpdated) {
         this.lastUpdated = lastUpdated;
-        modified = false;
+        modified = true;
     }
 }
