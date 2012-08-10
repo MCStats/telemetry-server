@@ -95,7 +95,7 @@ public class MySQLDatabase implements Database {
 
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Created FROM Plugin WHERE Parent = -1");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Created, LastUpdated FROM Plugin WHERE Parent = -1");
             ResultSet set = statement.executeQuery();
 
             while (set.next()) {
@@ -115,7 +115,7 @@ public class MySQLDatabase implements Database {
     public Plugin loadPlugin(int id) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Created FROM Plugin WHERE ID = ?");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Created, LastUpdated FROM Plugin WHERE ID = ?");
             statement.setInt(1, id);
             ResultSet set = statement.executeQuery();
 
@@ -136,7 +136,7 @@ public class MySQLDatabase implements Database {
     public Plugin loadPlugin(String name) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Created FROM Plugin WHERE Name = ?");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Created, LastUpdated FROM Plugin WHERE Name = ?");
             statement.setString(1, name);
             ResultSet set = statement.executeQuery();
 
@@ -156,8 +156,9 @@ public class MySQLDatabase implements Database {
 
     public void savePlugin(Plugin plugin) {
         try {
+            plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000));
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("UPDATE Plugin SET Name = ?, Hidden = ?, GlobalHits = ?, Created = ? WHERE ID = ?");
+            PreparedStatement statement = connection.prepareStatement("UPDATE Plugin SET Name = ?, Hidden = ?, GlobalHits = ?, Created = ?, LastUpdated = UNIX_TIMESTAMP() WHERE ID = ?");
             statement.setString(1, plugin.getName());
             // statement.setString(2, plugin.getAuthors()); // TODO
             statement.setInt(2, plugin.getHidden());
@@ -663,6 +664,7 @@ public class MySQLDatabase implements Database {
         plugin.setHidden(set.getInt("Hidden"));
         plugin.setGlobalHits(set.getInt("GlobalHits"));
         plugin.setCreated(set.getInt("Created"));
+        plugin.setLastUpdated(set.getInt("LastUpdated"));
         plugin.setModified(false);
         return plugin;
     }

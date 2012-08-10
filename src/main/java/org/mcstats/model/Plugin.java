@@ -49,6 +49,11 @@ public class Plugin implements Savable {
     private int created;
 
     /**
+     * When a server last used this plugin
+     */
+    private int lastUpdated;
+
+    /**
      * If this plugin was modified
      */
     private boolean modified = false;
@@ -215,5 +220,14 @@ public class Plugin implements Savable {
 
     public void setCreated(int created) {
         this.created = created;
+    }
+
+    public int getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(int lastUpdated) {
+        this.lastUpdated = lastUpdated;
+        modified = false;
     }
 }
