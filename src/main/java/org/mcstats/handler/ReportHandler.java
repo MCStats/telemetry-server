@@ -217,6 +217,24 @@ public class ReportHandler extends AbstractHandler {
             String canonicalServerVersion = mcstats.getServerBuildIdentifier().getServerVersion(serverVersion);
             String minecraftVersion = mcstats.getServerBuildIdentifier().getMinecraftVersion(serverVersion);
 
+            // Improve CB++ detection
+            if (canonicalServerVersion.equals("CraftBukkit")) {
+                for (Map.Entry<Plugin, ServerPlugin> entry : server.getPlugins().entrySet()) {
+                    ServerPlugin serverPlugin1 = entry.getValue();
+
+                    // CB++
+                    if (entry.getKey().getId() == 137) {
+                        // make sure it's within the last day
+                        if ((System.currentTimeMillis() / 1000) - serverPlugin1.getUpdated() < 86400) {
+                            // CB++ !
+                            canonicalServerVersion = "CraftBukkit++";
+                        }
+
+                        break;
+                    }
+                }
+            }
+
             if (!server.getServerSoftware().equals(canonicalServerVersion)) {
                 server.setServerSoftware(canonicalServerVersion);
             }
