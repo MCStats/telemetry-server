@@ -19,12 +19,12 @@ public class DatabaseQueue {
     /**
      * The number of database queue workers
      */
-    private static final int WORKER_COUNT = 4;
+    private static final int WORKER_COUNT = 2;
 
     /**
      * Max amount of flushes per round
      */
-    private static final int FLUSHES_PER_ROUND = 10000;
+    private static final int FLUSHES_PER_ROUND = 5000;
 
     /**
      * The mcstats object

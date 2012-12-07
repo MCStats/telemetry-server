@@ -162,6 +162,14 @@ public interface Database {
     public Graph loadGraph(Plugin plugin, String name);
 
     /**
+     * Load all of the graphs for a given plugin
+     *
+     * @param plugin
+     * @return
+     */
+    public List<Graph> loadGraphs(Plugin plugin);
+
+    /**
      * Create a column for the given graph
      *
      * @param graph
@@ -178,6 +186,14 @@ public interface Database {
      * @return
      */
     public Column loadColumn(Graph graph, String name);
+
+    /**
+     * Load all columns for the given graph
+     *
+     * @param graph
+     * @return
+     */
+    public List<Column> loadColumns(Graph graph);
 
     /**
      * Blacklist a server

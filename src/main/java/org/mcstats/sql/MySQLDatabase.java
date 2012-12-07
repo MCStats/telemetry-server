@@ -52,7 +52,7 @@ public class MySQLDatabase implements Database {
         ds.setPassword(password);
         ds.setUrl("jdbc:mysql://" + hostname + "/" + databaseName);
         ds.setInitialSize(2);
-        ds.setMaxActive(30);
+        ds.setMaxActive(50);
     }
 
     public void executeUpdate(String query) throws SQLException {
@@ -157,13 +157,13 @@ public class MySQLDatabase implements Database {
     public void savePlugin(Plugin plugin) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("UPDATE Plugin SET Name = ?, Hidden = ?, GlobalHits = ?, Created = ?, LastUpdated = UNIX_TIMESTAMP() WHERE ID = ?");
+            PreparedStatement statement = connection.prepareStatement("UPDATE Plugin SET Name = ?, Hidden = ?, GlobalHits = ?, Created = ?, LastUpdated = ? WHERE ID = ?");
             statement.setString(1, plugin.getName());
-            // statement.setString(2, plugin.getAuthors()); // TODO
             statement.setInt(2, plugin.getHidden());
             statement.setInt(3, plugin.getGlobalHits());
             statement.setInt(4, plugin.getCreated());
-            statement.setInt(5, plugin.getId());
+            statement.setInt(5, plugin.getLastUpdated());
+            statement.setInt(6, plugin.getId());
 
             statement.executeUpdate();
             safeClose(connection);
@@ -481,6 +481,28 @@ public class MySQLDatabase implements Database {
         return null;
     }
 
+    public List<Graph> loadGraphs(Plugin plugin) {
+        List<Graph> graphs = new ArrayList<Graph>();
+        try {
+            Connection connection = ds.getConnection();
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Type, Active, Name, DisplayName, Scale FROM Graph WHERE Plugin = ?");
+            statement.setInt(1, plugin.getId());
+            ResultSet set = statement.executeQuery();
+
+            while (set.next()) {
+                Graph graph = resolveGraph(plugin, set);
+                graphs.add(graph);
+            }
+
+            set.close();
+            safeClose(connection);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return graphs;
+    }
+
     public Column createColumn(Graph graph, String name) {
         Connection connection = null;
 
@@ -521,6 +543,28 @@ public class MySQLDatabase implements Database {
         }
 
         return null;
+    }
+
+    public List<Column> loadColumns(Graph graph) {
+        List<Column> columns = new ArrayList<Column>();
+        try {
+            Connection connection = ds.getConnection();
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Name FROM CustomColumn WHERE Graph = ?");
+            statement.setInt(1, graph.getId());
+            ResultSet set = statement.executeQuery();
+
+            while (set.next()) {
+                Column column = resolveColumn(graph.getPlugin(), graph, set);
+                columns.add(column);
+            }
+
+            set.close();
+            safeClose(connection);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return columns;
     }
 
     public void blacklistServer(Server server) {

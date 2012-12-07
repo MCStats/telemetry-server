@@ -7,10 +7,10 @@ echo -e " [\e[1;33m++\e[00m] Compiling"
 mvn --quiet clean package
 
 echo -e " [\e[1;33m++\e[00m] Uploading build"
-rsync -av --progress --exclude=*.tar.gz --exclude=archive-tmp --exclude=classes --exclude=maven-archiver --exclude=surefire target/ root@mcstats.org:/home/mcstats/
+rsync -av --progress --exclude=*.tar.gz --exclude=archive-tmp --exclude=classes --exclude=maven-archiver --exclude=surefire target/ root@backend1:/home/mcstats/
 
 echo -e " [\e[1;33m++\e[00m] Fixing permissions"
-ssh root@mcstats.org "chown -R mcstats:mcstats /home/mcstats/"
+ssh root@backend1 "chown -R mcstats:mcstats /home/mcstats/"
 
 # finish timestamp, calculate runtime
 FINISH=`date +%s`

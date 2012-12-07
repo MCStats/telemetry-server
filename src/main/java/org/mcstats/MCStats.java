@@ -107,6 +107,10 @@ public class MCStats {
                         server.addPlugin(serverPlugin);
                     }
 
+                    if (database.isServerBlacklisted(server)) {
+                        server.setBlacklisted(true);
+                    }
+
                     return server;
                 }
 
@@ -232,15 +236,12 @@ public class MCStats {
             return graph;
         }
 
-        // try to load it from the database
         graph = database.loadGraph(plugin, name);
 
-        // create if it is isn't created yet
         if (graph == null) {
             graph = database.createGraph(plugin, name);
         }
 
-        // none yet ????
         if (graph == null) {
             logger.error("Failed to create graph for " + plugin.getName() + ", \"" + name + "\"");
             return null;
@@ -429,10 +430,12 @@ public class MCStats {
 
         SelectChannelConnector connector = new SelectChannelConnector();
         connector.setPort(listenPort);
-        connector.setThreadPool(new QueuedThreadPool(10));
-        connector.setAcceptors(3);
-        // connector.setReuseAddress(true);
+        connector.setThreadPool(new QueuedThreadPool(50));
+        connector.setAcceptors(2);
+
         connector.setStatsOn(true);
+        connector.setMaxIdleTime(10000);
+        connector.setSoLingerTime(0);
 
         // add the connector to the server
         webServer.addConnector(connector);

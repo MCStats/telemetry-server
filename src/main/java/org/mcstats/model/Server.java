@@ -60,6 +60,11 @@ public class Server implements Savable {
     private boolean modified = false;
 
     /**
+     * If the plugin has been queued to save
+     */
+    private boolean queuedForSave = false;
+
+    /**
      * Violation count
      */
     private int violations = 0;
@@ -216,15 +221,22 @@ public class Server implements Savable {
     }
 
     public void save() {
+        if (queuedForSave) {
+            modified = false;
+            return;
+        }
+
         if (modified) {
             mcstats.getDatabaseQueue().offer(this);
             modified = false;
+            queuedForSave = true;
         }
     }
 
     public void saveNow() {
         mcstats.getDatabase().saveServer(this);
         modified = false;
+        queuedForSave = false;
     }
 
     public String getMinecraftVersion() {

@@ -11,6 +11,7 @@ git-Bukkit-jenkins-J2CB             J2CB
 git-Bukkit-jenkins-MultiModWorld    MultiModWorld
 git-Bukkit-jenkins-Spigot-Legacy    Spigot-Legacy
 git-Bukkit-jenkins-Spigot           Spigot
+git-Spigot                          Spigot
 git-CraftBukkitJ                    CraftBukkitJ
 git-Cubixlaunch                     Cubixlaunch
 git-Spout                           Spout

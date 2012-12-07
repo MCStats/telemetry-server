@@ -59,6 +59,11 @@ public class Plugin implements Savable {
     private boolean modified = false;
 
     /**
+     * If the plugin has been queued to save
+     */
+    private boolean queuedForSave = false;
+
+    /**
      * Map of the graphs for the plugin
      */
     private Map<String, Graph> graphs = new HashMap<String, Graph>();
@@ -195,15 +200,22 @@ public class Plugin implements Savable {
     }
 
     public void save() {
+        if (queuedForSave) {
+            modified = false;
+            return;
+        }
+
         if (modified) {
             mcstats.getDatabaseQueue().offer(this);
             modified = false;
+            queuedForSave = true;
         }
     }
 
     public void saveNow() {
         mcstats.getDatabase().savePlugin(this);
         modified = false;
+        queuedForSave = false;
     }
 
     public int getParent() {

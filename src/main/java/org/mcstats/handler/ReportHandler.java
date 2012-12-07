@@ -3,6 +3,7 @@ package org.mcstats.handler;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.util.ByteArrayISO8859Writer;
 import org.mcstats.MCStats;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
@@ -19,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,14 +41,41 @@ public class ReportHandler extends AbstractHandler {
         this.mcstats = mcstats;
     }
 
-    public void handle(String target, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        try {
-            request.setCharacterEncoding("UTF-8");
+    /**
+     * Finish a request and end it by closing it immediately
+     *
+     * @param message
+     * @param baseRequest
+     * @param response
+     * @throws IOException
+     */
+    private void finishRequest(String message, Request baseRequest, HttpServletResponse response) throws IOException {
+        ByteArrayISO8859Writer writer = new ByteArrayISO8859Writer(1500);
+        writer.write(message);
+        writer.flush();
 
+        response.setContentLength(writer.size());
+
+        OutputStream outputStream = response.getOutputStream();
+        writer.writeTo(outputStream);
+
+        outputStream.close();
+        writer.close();
+        baseRequest.getConnection().getEndPoint().close();
+    }
+
+    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        try {
             // If they aren't posting to us, we don't want to know about them :p
             if (!request.getMethod().equals("POST")) {
                 return;
             }
+
+            request.setCharacterEncoding("UTF-8");
+            response.setHeader("Connection", "close");
+            baseRequest.setHandled(true);
+            response.setStatus(200);
+            response.setContentType("text/plain");
 
             // request counter
             mcstats.incrementAndGetRequests();
@@ -55,9 +84,7 @@ public class ReportHandler extends AbstractHandler {
             String pluginName = URLUtils.decode(getPluginName(request));
 
             if (pluginName == null) {
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().println("ERR Invalid arguments.");
-                r.setHandled(true);
+                finishRequest("ERR Invalid arguments.", baseRequest, response);
                 return;
             }
 
@@ -83,9 +110,7 @@ public class ReportHandler extends AbstractHandler {
 
             // Check for required values
             if (!post.containsKey("guid")) {
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().println("ERR Invalid arguments.");
-                r.setHandled(true);
+                finishRequest("ERR Invalid arguments.", baseRequest, response);
                 return;
             }
 
@@ -110,18 +135,18 @@ public class ReportHandler extends AbstractHandler {
                 revision = post.containsKey("revision") ? Integer.parseInt(post.get("revision")) : 4;
                 players = post.containsKey("players") ? Integer.parseInt(post.get("players")) : 0;
             } catch (NumberFormatException e) {
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().println("ERR Invalid arguments.");
-                r.setHandled(true);
-                e.printStackTrace();
+                finishRequest("ERR Invalid arguments.", baseRequest, response);
                 return;
             }
 
             // Check for nulls
             if (guid == null || serverVersion == null || pluginVersion == null) {
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().println("ERR Invalid arguments.");
-                r.setHandled(true);
+                finishRequest("ERR Invalid arguments.", baseRequest, response);
+                return;
+            }
+
+            if (players < 0 || players > 2000) {
+                finishRequest("ERR Invalid arguments.", baseRequest, response);
                 return;
             }
 
@@ -130,9 +155,7 @@ public class ReportHandler extends AbstractHandler {
             // logger.info("plugin [ id => " + plugin.getId() + " , name => " + plugin.getName() + " ]");
 
             if (plugin.getId() == -1) {
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().println("ERR Rejected.");
-                r.setHandled(true);
+                finishRequest("ERR Rejected.", baseRequest, response);
                 return;
             }
 
@@ -140,37 +163,20 @@ public class ReportHandler extends AbstractHandler {
             Server server = mcstats.loadServer(guid);
             // logger.info("server [ id => " + server.getId() + " , guid => " + server.getGUID() + " ]");
 
-            /// TODO
-            if (server.getCountry().equals("SG") || (geoipCountryCode != null && geoipCountryCode.equals("SG"))) {
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().println("OK");
-                r.setHandled(true);
-                return;
-            }
-
             // Check violations
-            if (server.getViolationCount() < MAX_VIOLATIONS_ALLOWED && mcstats.getDatabase().isServerBlacklisted(server)) {
+            if (server.getViolationCount() < MAX_VIOLATIONS_ALLOWED && !server.isBlacklisted()) {
                 server.setViolationCount(MAX_VIOLATIONS_ALLOWED);
                 server.setBlacklisted(true);
             }
 
-            if (server.isBlacklisted()) {
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().println("OK");
-                r.setHandled(true);
-                return;
-            }
-
-            if (server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) {
+            if (server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED && !server.isBlacklisted()) {
                 server.setBlacklisted(true);
                 mcstats.getDatabase().blacklistServer(server);
             }
 
             // Something bad happened
             if (plugin == null || server == null) {
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().println("ERR Something bad happened");
-                r.setHandled(true);
+                finishRequest("ERR Something bad happened", baseRequest, response);
                 return;
             }
 
@@ -181,14 +187,12 @@ public class ReportHandler extends AbstractHandler {
 
             // Something bad happened????
             if (serverPlugin == null) {
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().println("OK");
-                r.setHandled(true);
+                finishRequest("OK", baseRequest, response);
                 return;
             }
 
             // Now check the basic stuff
-            if (!serverPlugin.getVersion().equals(pluginVersion)) {
+            if (!serverPlugin.getVersion().equals(pluginVersion) && !server.isBlacklisted()) {
                 // only add version history if their current version isn't blank
                 // if their current version is blank, that means they just
                 // installed the plugin
@@ -196,15 +200,18 @@ public class ReportHandler extends AbstractHandler {
                     PluginVersion version = mcstats.loadPluginVersion(plugin, pluginVersion);
 
                     if (version != null) {
-                        server.addVersionHistory(version);
+                        String query = "INSERT INTO VersionHistory (Plugin, Server, Version, Created) VALUES (" + plugin.getId() + ", " + server.getId() + ", " + version.getId() + ", UNIX_TIMESTAMP())";
+                        new RawQuery(this.mcstats, query).save();
                     }
                 }
 
                 serverPlugin.setVersion(pluginVersion);
             }
+
             if (!server.getServerVersion().equals(serverVersion)) {
                 server.setServerVersion(serverVersion);
             }
+
             if (server.getPlayers() != players && players >= 0) {
                 server.setPlayers(players);
             }
@@ -250,7 +257,7 @@ public class ReportHandler extends AbstractHandler {
             }
 
             // Custom Data
-            if (revision >= 4) {
+            if (revision >= 4 && !server.getCountry().equals("SG") && (geoipCountryCode == null || !geoipCountryCode.equals("SG"))) {
                 Map<Column, Integer> customData;
 
                 // Extract custom data
@@ -270,17 +277,6 @@ public class ReportHandler extends AbstractHandler {
                         Column column = entry.getKey();
                         int value = entry.getValue();
 
-                        String graphName = column.getGraph().getName();
-                        if (plugin.getId() == 138 && ((graphName.startsWith("E") && !graphName.equals("EnabledFeatures")) || (graphName.startsWith("M") && !graphName.equals("Modules Used"))
-                                || (graphName.startsWith("D") && !graphName.equals("Dependencies")))) {
-                            logger.info("==== BEGIN DUMP ====");
-                            logger.info("Graph Name: " + graphName);
-                            logger.info("POST: " + post);
-                            logger.info("Raw content: " + content);
-                            logger.info("customData: " + customData);
-                            logger.info("==== END DUMP ====");
-                        }
-
                         // append the query
                         query += " (" + server.getId() + ", " + plugin.getId() + ", " + column.getId() + ", " + value + ", " + currentSeconds + "),";
                     }
@@ -296,40 +292,33 @@ public class ReportHandler extends AbstractHandler {
                 }
             }
 
-            // Begin sending the response
-            response.setContentType("text/html;charset=utf-8");
-            response.setStatus(HttpServletResponse.SC_OK);
-            r.setHandled(true);
-
             // get the last graph time
             int lastGraphUpdate = normalizeTime();
 
             if (lastGraphUpdate > serverPlugin.getUpdated()) {
                 server.setViolationCount(0);
-                response.getWriter().println("OK This is your first update this hour.");
+                finishRequest("OK This is your first update this hour.", baseRequest, response);
             } else {
-                response.getWriter().println("OK");
+                finishRequest("OK", baseRequest, response);
             }
 
             // close the connection
             // r.getConnection().getEndPoint().close();
 
             // force the server plugin to update
-            serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000));
+            serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
+            plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
 
             // Save everything
             // They keep flags internally to know if something was modified so all is well
             server.save();
-            plugin.save();
             serverPlugin.save();
+            plugin.save();
         } catch (Exception e) {
             e.printStackTrace();
 
             // pretend nothing happened
-            response.setContentType("text/html;charset=utf-8");
-            response.setStatus(HttpServletResponse.SC_OK);
-            r.setHandled(true);
-            response.getWriter().println("OK");
+            finishRequest("OK", baseRequest, response);
         }
     }
 
