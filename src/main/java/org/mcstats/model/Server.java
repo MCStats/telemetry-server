@@ -40,6 +40,36 @@ public class Server implements Savable {
     private String serverVersion;
 
     /**
+     * Metrics revision
+     */
+    private int revision;
+
+    /**
+     * The name of the OS the server is running
+     */
+    private String osname;
+
+    /**
+     * The OS arch the server is running on
+     */
+    private String osarch;
+
+    /**
+     * The version of OS the server is running
+     */
+    private String osversion;
+
+    /**
+     * How many cores the server has
+     */
+    private int cores;
+
+    /**
+     * If the server is in online mode or not
+     */
+    private boolean online_mode;
+
+    /**
      * Unix timestamp of when the server was created
      */
     private int created;
@@ -218,6 +248,60 @@ public class Server implements Savable {
 
     public void setBlacklisted(boolean blacklisted) {
         this.blacklisted = blacklisted;
+    }
+
+    public String getOSName() {
+        return osname;
+    }
+
+    public void setOSName(String osname) {
+        this.osname = osname;
+        modified = true;
+    }
+
+    public String getOSArch() {
+        return osarch;
+    }
+
+    public void setOSArch(String osarch) {
+        this.osarch = osarch;
+        modified = true;
+    }
+
+    public String getOSVersion() {
+        return osversion;
+    }
+
+    public void setOSVersion(String osversion) {
+        this.osversion = osversion;
+        modified = true;
+    }
+
+    public int getCores() {
+        return cores;
+    }
+
+    public void setCores(int cores) {
+        this.cores = cores;
+        modified = true;
+    }
+
+    public boolean isOnlineMode() {
+        return online_mode;
+    }
+
+    public void setOnlineMode(boolean online_mode) {
+        this.online_mode = online_mode;
+        modified = true;
+    }
+
+    public int getRevision() {
+        return revision;
+    }
+
+    public void setRevision(int revision) {
+        this.revision = revision;
+        modified = true;
     }
 
     public void save() {

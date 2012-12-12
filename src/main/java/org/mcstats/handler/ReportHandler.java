@@ -208,6 +208,10 @@ public class ReportHandler extends AbstractHandler {
                 serverPlugin.setVersion(pluginVersion);
             }
 
+            if (server.getRevision() != revision) {
+                server.setRevision(revision);
+            }
+
             if (!server.getServerVersion().equals(serverVersion)) {
                 server.setServerVersion(serverVersion);
             }
@@ -289,6 +293,66 @@ public class ReportHandler extends AbstractHandler {
 
                     // queue the query
                     new RawQuery(mcstats, query).save();
+                }
+            }
+
+            // R6 additions
+            if (revision >= 6) {
+                String osname = post.get("osname");
+                String osarch = post.get("osarch");
+                String osversion = post.get("osversion");
+                int cores;
+                boolean online_mode;
+
+                if (osname == null) {
+                    osname = "Unknown";
+                    osversion = "Unknown";
+                }
+
+                if (osversion == null) {
+                    osversion = "Unknown";
+                }
+
+                if (osname != null) {
+                    try {
+                        cores = Integer.parseInt(post.get("cores"));
+                        online_mode = Boolean.parseBoolean(post.get("online_mode"));
+                    } catch (Exception e) {
+                        cores = 0;
+                        online_mode = true;
+                    }
+
+                    // Windows' version is just 6.1, 5.1, etc, so make the version just the name
+                    // so name = "Windows", version = "7", "Server 2008 R2", "XP", etc
+                    if (osname.startsWith("Windows")) {
+                        osversion = osname.substring(8);
+                        osname = "Windows";
+                    }
+
+                    if (osversion.equals("6.1")) {
+                        osversion = "7";
+                        osname = "Windows";
+                    }
+
+                    if (!osname.equals(server.getOSName())) {
+                        server.setOSName(osname);
+                    }
+
+                    if (osarch != null && !osarch.equals(server.getOSArch())) {
+                        server.setOSArch(osarch);
+                    }
+
+                    if (!osversion.equals(server.getOSVersion())) {
+                        server.setOSVersion(osversion);
+                    }
+
+                    if (server.getCores() != cores) {
+                        server.setCores(cores);
+                    }
+
+                    if (server.isOnlineMode() != online_mode) {
+                        server.setOnlineMode(online_mode);
+                    }
                 }
             }
 

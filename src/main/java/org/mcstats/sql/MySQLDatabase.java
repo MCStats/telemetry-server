@@ -23,6 +23,8 @@ import java.util.Map;
 public class MySQLDatabase implements Database {
     private Logger logger = Logger.getLogger("Database");
 
+    public static long QUERIES = 0;
+
     /**
      * The mcstats object
      */
@@ -63,6 +65,7 @@ public class MySQLDatabase implements Database {
             connection = ds.getConnection();
             statement = connection.createStatement();
             statement.executeUpdate(query);
+            QUERIES ++;
         } finally {
             if (statement != null) {
                 statement.close();
@@ -80,6 +83,7 @@ public class MySQLDatabase implements Database {
             PreparedStatement statement = connection.prepareStatement("INSERT INTO Plugin (Name, Author, Hidden, GlobalHits, Created) VALUES (?, '', 0, 0, UNIX_TIMESTAMP())");
             statement.setString(1, name);
             statement.executeUpdate();
+            QUERIES ++;
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
@@ -167,6 +171,7 @@ public class MySQLDatabase implements Database {
 
             statement.executeUpdate();
             safeClose(connection);
+            QUERIES ++;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -181,6 +186,7 @@ public class MySQLDatabase implements Database {
             statement.setInt(1, plugin.getId());
             statement.setString(2, version);
             statement.executeUpdate();
+            QUERIES ++;
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
@@ -205,6 +211,7 @@ public class MySQLDatabase implements Database {
 
             set.close();
             safeClose(connection);
+            QUERIES ++;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -228,6 +235,7 @@ public class MySQLDatabase implements Database {
             }
 
             safeClose(connection);
+            QUERIES ++;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -264,6 +272,7 @@ public class MySQLDatabase implements Database {
             safeClose(connection);
         }
 
+        QUERIES ++;
         return loadServerPlugin(server, plugin);
     }
 
@@ -274,6 +283,7 @@ public class MySQLDatabase implements Database {
             statement.setInt(1, server.getId());
             statement.setInt(2, plugin.getId());
             ResultSet set = statement.executeQuery();
+            QUERIES ++;
 
             if (set.next()) {
                 String version = set.getString("Version");
@@ -305,6 +315,7 @@ public class MySQLDatabase implements Database {
             PreparedStatement statement = connection.prepareStatement("SELECT Plugin, Version, Updated FROM ServerPlugin WHERE Server = ?");
             statement.setInt(1, server.getId());
             ResultSet set = statement.executeQuery();
+            QUERIES ++;
 
             while (set.next()) {
                 int pluginId = set.getInt("Plugin");
@@ -338,8 +349,9 @@ public class MySQLDatabase implements Database {
     }
 
     public void saveServerPlugin(ServerPlugin serverPlugin) {
+        Connection connection = null;
         try {
-            Connection connection = ds.getConnection();
+            connection = ds.getConnection();
             PreparedStatement statement;
 
             if (serverPlugin.isVersionModified()) {
@@ -354,9 +366,11 @@ public class MySQLDatabase implements Database {
             }
 
             statement.executeUpdate();
-            safeClose(connection);
+            QUERIES ++;
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            safeClose(connection);
         }
     }
 
@@ -383,6 +397,7 @@ public class MySQLDatabase implements Database {
             PreparedStatement statement = connection.prepareStatement("INSERT INTO Server (GUID, Players, Country, ServerVersion, Created) VALUES (?, 0, 'ZZ', '', UNIX_TIMESTAMP())");
             statement.setString(1, guid);
             statement.executeUpdate();
+            QUERIES ++;
         } catch (SQLException e) {
             logger.info("createServer() => " + e.getMessage());
             return loadServer(guid);
@@ -397,9 +412,10 @@ public class MySQLDatabase implements Database {
     public Server loadServer(String guid) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, GUID, Players, Country, ServerVersion, Created, ServerSoftware, MinecraftVersion FROM Server WHERE GUID = ?");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, GUID, Players, Country, ServerVersion, Created, ServerSoftware, MinecraftVersion, Revision, osname, osarch, osversion, cores, online_mode FROM Server WHERE GUID = ?");
             statement.setString(1, guid);
             ResultSet set = statement.executeQuery();
+            QUERIES ++;
 
             if (set.next()) {
                 Server server = resolveServer(set);
@@ -417,9 +433,10 @@ public class MySQLDatabase implements Database {
     }
 
     public void saveServer(Server server) {
+        Connection connection = null;
         try {
-            Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("UPDATE Server SET GUID = ?, ServerVersion = ?, Players = ?, Country = ?, Created = ?, ServerSoftware = ?, MinecraftVersion = ? WHERE ID = ?");
+            connection = ds.getConnection();
+            PreparedStatement statement = connection.prepareStatement("UPDATE Server SET GUID = ?, ServerVersion = ?, Players = ?, Country = ?, Created = ?, ServerSoftware = ?, MinecraftVersion = ?, Revision = ?, osname = ?, osarch = ?, osversion = ?, cores = ?, online_mode = ? WHERE ID = ?");
             statement.setString(1, server.getGUID());
             statement.setString(2, server.getServerVersion());
             statement.setInt(3, server.getPlayers());
@@ -427,12 +444,20 @@ public class MySQLDatabase implements Database {
             statement.setInt(5, server.getCreated());
             statement.setString(6, server.getServerSoftware());
             statement.setString(7, server.getMinecraftVersion());
-            statement.setInt(8, server.getId());
+            statement.setInt(8, server.getRevision());
+            statement.setString(9, server.getOSName());
+            statement.setString(10, server.getOSArch());
+            statement.setString(11, server.getOSVersion());
+            statement.setInt(12, server.getCores());
+            statement.setBoolean(13, server.isOnlineMode());
+            statement.setInt(14, server.getId());
 
             statement.executeUpdate();
-            safeClose(connection);
+            QUERIES ++;
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            safeClose(connection);
         }
     }
 
@@ -513,6 +538,7 @@ public class MySQLDatabase implements Database {
             statement.setInt(2, graph.getId());
             statement.setString(3, name);
             statement.executeUpdate();
+            QUERIES ++;
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
@@ -529,6 +555,7 @@ public class MySQLDatabase implements Database {
             statement.setInt(1, graph.getId());
             statement.setString(2, name);
             ResultSet set = statement.executeQuery();
+            QUERIES ++;
 
             if (set.next()) {
                 Column column = resolveColumn(graph.getPlugin(), graph, set);
@@ -552,6 +579,7 @@ public class MySQLDatabase implements Database {
             PreparedStatement statement = connection.prepareStatement("SELECT ID, Name FROM CustomColumn WHERE Graph = ?");
             statement.setInt(1, graph.getId());
             ResultSet set = statement.executeQuery();
+            QUERIES ++;
 
             while (set.next()) {
                 Column column = resolveColumn(graph.getPlugin(), graph, set);
@@ -574,6 +602,7 @@ public class MySQLDatabase implements Database {
             statement.setInt(1, server.getId());
             statement.setInt(2, server.getViolationCount());
             statement.executeUpdate();
+            QUERIES ++;
 
             // Now remove any version history
             statement = connection.prepareStatement("DELETE FROM VersionHistory WHERE Server = ?");
@@ -591,6 +620,7 @@ public class MySQLDatabase implements Database {
             Connection connection = ds.getConnection();
             PreparedStatement statement = connection.prepareStatement("SELECT Violations FROM ServerBlacklist WHERE Server = ?");
             statement.setInt(1, server.getId());
+            QUERIES ++;
 
             ResultSet set = statement.executeQuery();
             int violations = -1;
@@ -673,6 +703,12 @@ public class MySQLDatabase implements Database {
         server.setCreated(set.getInt("Created"));
         server.setServerSoftware(set.getString("ServerSoftware"));
         server.setMinecraftVersion(set.getString("MinecraftVersion"));
+        server.setRevision(set.getInt("Revision"));
+        server.setOSName(set.getString("osname"));
+        server.setOSArch(set.getString("osarch"));
+        server.setOSVersion(set.getString("osversion"));
+        server.setCores(set.getInt("cores"));
+        server.setOnlineMode(set.getBoolean("online_mode"));
         server.setModified(false);
         return server;
     }

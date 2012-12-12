@@ -3,6 +3,7 @@
 <%@ page import="org.mcstats.MCStats" %>
 <%@ page import="org.mcstats.util.TimeUtils" %>
 <%@ page import="java.text.DecimalFormat" %>
+<%@ page import="org.mcstats.sql.MySQLDatabase" %>
 <%
     MCStats mcstats = MCStats.getInstance();
     long requests = mcstats.incrementAndGetRequests();
@@ -135,6 +136,15 @@
                             </td>
                             <td style="width: 100px; text-align: center;">
                                 <%= numberFormatter.format(mcstats.getRequestCalculatorAllTime().calculateRequestsPerSecond()) %>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td style="width: 20px; text-align: center;">
+                                Total queries
+                            </td>
+                            <td style="width: 100px; text-align: center;">
+                                <%= numberFormatter.format(MySQLDatabase.QUERIES) %>
                             </td>
                         </tr>
 
