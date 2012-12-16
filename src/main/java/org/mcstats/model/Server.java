@@ -60,6 +60,16 @@ public class Server implements Savable {
     private String osversion;
 
     /**
+     * The server's java name (e.g 1.5)
+     */
+    private String java_name;
+
+    /**
+     * The server's version of Java (e.g 0_10)
+     */
+    private String java_version;
+
+    /**
      * How many cores the server has
      */
     private int cores;
@@ -67,7 +77,7 @@ public class Server implements Savable {
     /**
      * If the server is in online mode or not
      */
-    private boolean online_mode;
+    private int online_mode;
 
     /**
      * Unix timestamp of when the server was created
@@ -286,12 +296,30 @@ public class Server implements Savable {
         modified = true;
     }
 
-    public boolean isOnlineMode() {
+    public int getOnlineMode() {
         return online_mode;
     }
 
-    public void setOnlineMode(boolean online_mode) {
+    public void setOnlineMode(int online_mode) {
         this.online_mode = online_mode;
+        modified = true;
+    }
+
+    public String getJavaName() {
+        return java_name;
+    }
+
+    public void setJavaName(String java_name) {
+        this.java_name = java_name;
+        modified = true;
+    }
+
+    public String getJavaVersion() {
+        return java_version;
+    }
+
+    public void setJavaVersion(String java_version) {
+        this.java_version = java_version;
         modified = true;
     }
 

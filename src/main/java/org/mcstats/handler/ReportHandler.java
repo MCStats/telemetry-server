@@ -301,8 +301,10 @@ public class ReportHandler extends AbstractHandler {
                 String osname = post.get("osname");
                 String osarch = post.get("osarch");
                 String osversion = post.get("osversion");
+                String java_name = "";
+                String java_version = post.get("java_version");
                 int cores;
-                boolean online_mode;
+                int online_mode;
 
                 if (osname == null) {
                     osname = "Unknown";
@@ -313,13 +315,22 @@ public class ReportHandler extends AbstractHandler {
                     osversion = "Unknown";
                 }
 
+                if (java_version == null) {
+                    java_version = "Unknown";
+                } else {
+                    if (java_version.startsWith("1.") && java_version.length() > 3) {
+                        java_name = java_version.substring(0, java_version.indexOf('.', java_version.indexOf('.') + 1));
+                        java_version = java_version.substring(java_name.length() + 1);
+                    }
+                }
+
                 if (osname != null) {
                     try {
                         cores = Integer.parseInt(post.get("cores"));
-                        online_mode = Boolean.parseBoolean(post.get("online_mode"));
+                        online_mode = Boolean.parseBoolean(post.get("online_mode")) ? 1 : 0;
                     } catch (Exception e) {
                         cores = 0;
-                        online_mode = true;
+                        online_mode = -1;
                     }
 
                     // Windows' version is just 6.1, 5.1, etc, so make the version just the name
@@ -350,8 +361,16 @@ public class ReportHandler extends AbstractHandler {
                         server.setCores(cores);
                     }
 
-                    if (server.isOnlineMode() != online_mode) {
+                    if (server.getOnlineMode() != online_mode) {
                         server.setOnlineMode(online_mode);
+                    }
+
+                    if (!java_name.equals(server.getJavaName())) {
+                        server.setJavaName(java_name);
+                    }
+
+                    if (!java_version.equals(server.getJavaVersion())) {
+                        server.setJavaVersion(java_version);
                     }
                 }
             }

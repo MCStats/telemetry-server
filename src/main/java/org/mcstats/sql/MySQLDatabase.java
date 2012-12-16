@@ -412,7 +412,7 @@ public class MySQLDatabase implements Database {
     public Server loadServer(String guid) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, GUID, Players, Country, ServerVersion, Created, ServerSoftware, MinecraftVersion, Revision, osname, osarch, osversion, cores, online_mode FROM Server WHERE GUID = ?");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, GUID, Players, Country, ServerVersion, Created, ServerSoftware, MinecraftVersion, Revision, osname, osarch, osversion, cores, online_mode, java_name, java_version FROM Server WHERE GUID = ?");
             statement.setString(1, guid);
             ResultSet set = statement.executeQuery();
             QUERIES ++;
@@ -436,7 +436,7 @@ public class MySQLDatabase implements Database {
         Connection connection = null;
         try {
             connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("UPDATE Server SET GUID = ?, ServerVersion = ?, Players = ?, Country = ?, Created = ?, ServerSoftware = ?, MinecraftVersion = ?, Revision = ?, osname = ?, osarch = ?, osversion = ?, cores = ?, online_mode = ? WHERE ID = ?");
+            PreparedStatement statement = connection.prepareStatement("UPDATE Server SET GUID = ?, ServerVersion = ?, Players = ?, Country = ?, Created = ?, ServerSoftware = ?, MinecraftVersion = ?, Revision = ?, osname = ?, osarch = ?, osversion = ?, cores = ?, online_mode = ?, java_name = ?, java_version = ? WHERE ID = ?");
             statement.setString(1, server.getGUID());
             statement.setString(2, server.getServerVersion());
             statement.setInt(3, server.getPlayers());
@@ -449,8 +449,10 @@ public class MySQLDatabase implements Database {
             statement.setString(10, server.getOSArch());
             statement.setString(11, server.getOSVersion());
             statement.setInt(12, server.getCores());
-            statement.setBoolean(13, server.isOnlineMode());
-            statement.setInt(14, server.getId());
+            statement.setInt(13, server.getOnlineMode());
+            statement.setString(14, server.getJavaName());
+            statement.setString(15, server.getJavaVersion());
+            statement.setInt(16, server.getId());
 
             statement.executeUpdate();
             QUERIES ++;
@@ -708,7 +710,9 @@ public class MySQLDatabase implements Database {
         server.setOSArch(set.getString("osarch"));
         server.setOSVersion(set.getString("osversion"));
         server.setCores(set.getInt("cores"));
-        server.setOnlineMode(set.getBoolean("online_mode"));
+        server.setOnlineMode(set.getInt("online_mode"));
+        server.setJavaName(set.getString("java_name"));
+        server.setJavaVersion(set.getString("java_version"));
         server.setModified(false);
         return server;
     }
