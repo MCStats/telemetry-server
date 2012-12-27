@@ -23,6 +23,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class ReportHandler extends AbstractHandler {
     private Logger logger = Logger.getLogger("ReportHandler");
@@ -37,8 +40,21 @@ public class ReportHandler extends AbstractHandler {
      */
     private MCStats mcstats;
 
+    /**
+     * A queue of work to run in a separate thread
+     */
+    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+
     public ReportHandler(MCStats mcstats) {
         this.mcstats = mcstats;
+    }
+
+    /**
+     * Get the size of the work queue in the background
+     * @return
+     */
+    public int queueSize() {
+        return executor.getQueue().size();
     }
 
     /**
@@ -151,7 +167,7 @@ public class ReportHandler extends AbstractHandler {
             }
 
             // Load the plugin
-            Plugin plugin = mcstats.loadPlugin(pluginName);
+            final Plugin plugin = mcstats.loadPlugin(pluginName);
             // logger.info("plugin [ id => " + plugin.getId() + " , name => " + plugin.getName() + " ]");
 
             if (plugin.getId() == -1) {
@@ -160,15 +176,10 @@ public class ReportHandler extends AbstractHandler {
             }
 
             // Load the server
-            Server server = mcstats.loadServer(guid);
+            final Server server = mcstats.loadServer(guid);
             // logger.info("server [ id => " + server.getId() + " , guid => " + server.getGUID() + " ]");
 
             // Check violations
-            if (server.getViolationCount() < MAX_VIOLATIONS_ALLOWED && !server.isBlacklisted()) {
-                server.setViolationCount(MAX_VIOLATIONS_ALLOWED);
-                server.setBlacklisted(true);
-            }
-
             if (server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED && !server.isBlacklisted()) {
                 server.setBlacklisted(true);
                 mcstats.getDatabase().blacklistServer(server);
@@ -196,7 +207,7 @@ public class ReportHandler extends AbstractHandler {
                 // only add version history if their current version isn't blank
                 // if their current version is blank, that means they just
                 // installed the plugin
-                if (!server.getServerVersion().isEmpty()) {
+                if (!serverPlugin.getVersion().isEmpty()) {
                     PluginVersion version = mcstats.loadPluginVersion(plugin, pluginVersion);
 
                     if (version != null) {
@@ -262,7 +273,7 @@ public class ReportHandler extends AbstractHandler {
 
             // Custom Data
             if (revision >= 4 && !server.getCountry().equals("SG") && (geoipCountryCode == null || !geoipCountryCode.equals("SG"))) {
-                Map<Column, Integer> customData;
+                final Map<Column, Integer> customData;
 
                 // Extract custom data
                 if (revision >= 5) {
@@ -272,27 +283,31 @@ public class ReportHandler extends AbstractHandler {
                 }
 
                 if (customData != null && customData.size() > 0) {
-                    // Begin building the query
-                    String query = "INSERT INTO CustomData (Server, Plugin, ColumnID, DataPoint, Updated) VALUES";
-                    int currentSeconds = (int) (System.currentTimeMillis() / 1000);
+                    executor.execute(new Runnable() {
+                        public void run() {
+                            // Begin building the query
+                            String query = "INSERT INTO CustomData (Server, Plugin, ColumnID, DataPoint, Updated) VALUES";
+                            int currentSeconds = (int) (System.currentTimeMillis() / 1000);
 
-                    // Iterate through each column
-                    for (Map.Entry<Column, Integer> entry : customData.entrySet()) {
-                        Column column = entry.getKey();
-                        int value = entry.getValue();
+                            // Iterate through each column
+                            for (Map.Entry<Column, Integer> entry : customData.entrySet()) {
+                                Column column = entry.getKey();
+                                int value = entry.getValue();
 
-                        // append the query
-                        query += " (" + server.getId() + ", " + plugin.getId() + ", " + column.getId() + ", " + value + ", " + currentSeconds + "),";
-                    }
+                                // append the query
+                                query += " (" + server.getId() + ", " + plugin.getId() + ", " + column.getId() + ", " + value + ", " + currentSeconds + "),";
+                            }
 
-                    // Remove the last comma
-                    query = query.substring(0, query.length() - 1);
+                            // Remove the last comma
+                            query = query.substring(0, query.length() - 1);
 
-                    // add the duplicate key entry
-                    query += " ON DUPLICATE KEY UPDATE DataPoint = VALUES(DataPoint) , Updated = VALUES(Updated)";
+                            // add the duplicate key entry
+                            query += " ON DUPLICATE KEY UPDATE DataPoint = VALUES(DataPoint) , Updated = VALUES(Updated)";
 
-                    // queue the query
-                    new RawQuery(mcstats, query).save();
+                            // queue the query
+                            new RawQuery(mcstats, query).save();
+                        }
+                    });
                 }
             }
 
@@ -327,10 +342,14 @@ public class ReportHandler extends AbstractHandler {
                 if (osname != null) {
                     try {
                         cores = Integer.parseInt(post.get("cores"));
-                        online_mode = Boolean.parseBoolean(post.get("online_mode")) ? 1 : 0;
+                        online_mode = Boolean.parseBoolean(post.get("online-mode")) ? 1 : 0;
                     } catch (Exception e) {
                         cores = 0;
                         online_mode = -1;
+                    }
+
+                    if (osarch.equals("i386")) {
+                        osarch = "x86";
                     }
 
                     // Windows' version is just 6.1, 5.1, etc, so make the version just the name

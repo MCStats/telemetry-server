@@ -53,7 +53,7 @@ public class MySQLDatabase implements Database {
         ds.setUsername(username);
         ds.setPassword(password);
         ds.setUrl("jdbc:mysql://" + hostname + "/" + databaseName);
-        ds.setInitialSize(2);
+        ds.setInitialSize(50);
         ds.setMaxActive(50);
     }
 

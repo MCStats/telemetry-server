@@ -114,10 +114,19 @@
 
                         <tr>
                             <td style="width: 20px; text-align: center;">
-                                Background queue size
+                                SQL queue size
                             </td>
                             <td style="width: 100px; text-align: center;">
                                 <%= numberFormatter.format(mcstats.getDatabaseQueue().size()) %>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td style="width: 20px; text-align: center;">
+                                Thread pool queue size
+                            </td>
+                            <td style="width: 100px; text-align: center;">
+                                <%= numberFormatter.format(mcstats.getReportHandler().queueSize()) %>
                             </td>
                         </tr>
 

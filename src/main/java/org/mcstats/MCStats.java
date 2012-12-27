@@ -69,6 +69,11 @@ public class MCStats {
     private DatabaseQueue databaseQueue = new DatabaseQueue(this);
 
     /**
+     * The report handler for requests
+     */
+    private ReportHandler handler = new ReportHandler(this);
+
+    /**
      * The server build identifier
      */
     private final ServerBuildIdentifier serverBuildIdentifier = new ServerBuildIdentifier();
@@ -424,7 +429,7 @@ public class MCStats {
 
         // Create the handler list
         HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] { new ReportHandler(this) , webAppContext });
+        handlers.setHandlers(new Handler[] { handler , webAppContext });
 
         webServer.setHandler(handlers);
 
@@ -507,6 +512,14 @@ public class MCStats {
      */
     public RequestCalculator getRequestCalculatorFiveSeconds() {
         return requestsFiveSeconds;
+    }
+
+    /**
+     * Get the {@link ReportHandler}
+     * @return
+     */
+    public ReportHandler getReportHandler() {
+        return handler;
     }
 
     /**
