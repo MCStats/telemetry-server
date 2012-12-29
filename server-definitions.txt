@@ -26,3 +26,7 @@ Tk-ModServerPack                    CraftBukkit
 
 git-Bukkit-jenkins-CraftBukkit      CraftBukkit
 git-Bukkit                          CraftBukkit
+
+MinecraftForge                      Forge
+MinecraftForgeSSP                   ForgeSSP
+Canary                              Canary
