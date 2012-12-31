@@ -127,6 +127,10 @@ public class DatabaseQueue {
                     // save it now
                     if (savable instanceof ServerPlugin) {
                         serverPlugins.add((ServerPlugin) savable);
+
+                        if (serverPlugins.size() > 100) {
+                            pushServerPlugins(serverPlugins);
+                        }
                     } else {
                         try {
                             savable.saveNow();
@@ -143,17 +147,7 @@ public class DatabaseQueue {
                 }
 
                 if (serverPlugins.size() > 0) {
-                    String query = "UPDATE ServerPlugin SET Updated = UNIX_TIMESTAMP() WHERE ";
-
-                    for (ServerPlugin serverPlugin : serverPlugins) {
-                        query += "(Server = " + serverPlugin.getServer().getId() + " AND Plugin = " + serverPlugin.getPlugin().getId() + ") OR ";
-                    }
-
-                    // cut off the last OR
-                    query = query.substring(0, query.length() - 4);
-                    serverPlugins = null;
-                    // execute it
-                    new RawQuery(mcstats, query).saveNow();
+                    pushServerPlugins(serverPlugins);
                 }
 
                 // just so we don't spam the console if there's only 0 entities which we don't need to know about
@@ -162,7 +156,21 @@ public class DatabaseQueue {
                 }
 
             }
+        }
 
+        private void pushServerPlugins(List<ServerPlugin> serverPlugins) {
+            String query = "UPDATE ServerPlugin SET Updated = UNIX_TIMESTAMP() WHERE ";
+
+            for (ServerPlugin serverPlugin : serverPlugins) {
+                query += "(Server = " + serverPlugin.getServer().getId() + " AND Plugin = " + serverPlugin.getPlugin().getId() + ") OR ";
+            }
+
+            // cut off the last OR
+            query = query.substring(0, query.length() - 4);
+
+            // execute it
+            new RawQuery(mcstats, query).saveNow();
+            serverPlugins.clear();
         }
 
         public int getId() {
