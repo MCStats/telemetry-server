@@ -17,6 +17,10 @@ git-Cubixlaunch                     Cubixlaunch
 git-Spout                           Spout
 git-Glowstone                       Glowstone
 
+git-MCPC-Plus                       MCPC+
+git-MCPC                            MCPC
+git-Spigot                          Spigot
+
 IceCraftBukkit                      CraftBukkit
 FrozenBukkit                        CraftBukkit
 Tk-ModServerPack                    CraftBukkit

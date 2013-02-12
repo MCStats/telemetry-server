@@ -471,7 +471,7 @@ public class MySQLDatabase implements Database {
             PreparedStatement statement = connection.prepareStatement("INSERT INTO Graph (Plugin, Type, Active, Name, DisplayName, Scale) VALUES (?, ?, ?, ?, ?, ?)");
             statement.setInt(1, plugin.getId());
             statement.setInt(2, 0); // line
-            statement.setInt(3, 1); // active
+            statement.setInt(3, 0); // active
             statement.setString(4, name);
             statement.setString(5, name);
             statement.setString(6, "linear");

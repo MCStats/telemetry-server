@@ -77,13 +77,14 @@ public class ServerBuildIdentifier {
      * @return
      */
     public String getMinecraftVersion(String server) {
+        server = server.replaceAll(" ", "");
         int index = server.indexOf("(MC:");
 
         if (index == -1) {
             return "Unknown";
         }
 
-        return server.substring(index + 5, server.length() - 1);
+        return server.substring(index + 4, server.length() - 1);
     }
 
     /**
