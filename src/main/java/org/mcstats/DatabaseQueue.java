@@ -128,7 +128,7 @@ public class DatabaseQueue {
                     if (savable instanceof ServerPlugin) {
                         serverPlugins.add((ServerPlugin) savable);
 
-                        if (serverPlugins.size() > 100) {
+                        if (serverPlugins.size() > 10) {
                             pushServerPlugins(serverPlugins);
                         }
                     } else {
