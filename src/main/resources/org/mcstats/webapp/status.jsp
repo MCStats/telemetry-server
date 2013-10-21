@@ -3,7 +3,7 @@
 <%@ page import="org.mcstats.MCStats" %>
 <%@ page import="org.mcstats.util.TimeUtils" %>
 <%@ page import="java.text.DecimalFormat" %>
-<%@ page import="org.mcstats.sql.MySQLDatabase" %>
+<%@ page import="org.mcstats.db.MySQLDatabase" %>
 <%
     MCStats mcstats = MCStats.getInstance();
     long requests = mcstats.incrementAndGetRequests();

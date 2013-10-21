@@ -1,4 +1,4 @@
-package org.mcstats.sql;
+package org.mcstats.db;
 
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;

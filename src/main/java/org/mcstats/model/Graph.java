@@ -25,6 +25,11 @@ public class Graph {
     private Plugin plugin;
 
     /**
+     * The position of the graph
+     */
+    private int position;
+
+    /**
      * The graph type, TODO enum
      */
     private int type;
@@ -114,6 +119,14 @@ public class Graph {
 
     public Plugin getPlugin() {
         return plugin;
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
     }
 
     public int getType() {

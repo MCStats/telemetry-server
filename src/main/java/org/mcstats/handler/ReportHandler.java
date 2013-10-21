@@ -119,7 +119,7 @@ public class ReportHandler extends AbstractHandler {
         writer.writeTo(outputStream);
         outputStream.close();
         writer.close();
-        baseRequest.getConnection().getEndPoint().close();
+        baseRequest.getHttpChannel().getEndPoint().close();
     }
 
     /**
@@ -364,9 +364,9 @@ public class ReportHandler extends AbstractHandler {
                         serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
                         plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
 
-                        server.save();
-                        serverPlugin.save();
-                        plugin.save();
+                        // server.save();
+                        // serverPlugin.save();
+                        // plugin.save();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -384,7 +384,7 @@ public class ReportHandler extends AbstractHandler {
      *
      * @return
      */
-    private int normalizeTime() {
+    public static int normalizeTime() {
         int currentTimeSeconds = (int) (System.currentTimeMillis() / 1000);
 
         // The graphing interval in minutes

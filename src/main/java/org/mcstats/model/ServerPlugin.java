@@ -1,7 +1,7 @@
 package org.mcstats.model;
 
 import org.mcstats.MCStats;
-import org.mcstats.sql.Savable;
+import org.mcstats.db.Savable;
 
 public class ServerPlugin implements Savable {
 

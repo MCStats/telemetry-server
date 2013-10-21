@@ -1,4 +1,4 @@
-package org.mcstats.sql;
+package org.mcstats.db;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.log4j.Logger;
@@ -488,7 +488,7 @@ public class MySQLDatabase implements Database {
     public Graph loadGraph(Plugin plugin, String name) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, Type, Active, Name, DisplayName, Scale FROM Graph WHERE Plugin = ? AND Name = ?");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Type, Position, Active, Name, DisplayName, Scale FROM Graph WHERE Plugin = ? AND Name = ?");
             statement.setInt(1, plugin.getId());
             statement.setString(2, name);
             ResultSet set = statement.executeQuery();
@@ -512,7 +512,7 @@ public class MySQLDatabase implements Database {
         List<Graph> graphs = new ArrayList<Graph>();
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, Type, Active, Name, DisplayName, Scale FROM Graph WHERE Plugin = ?");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Type, Position, Active, Name, DisplayName, Scale FROM Graph WHERE Plugin = ?");
             statement.setInt(1, plugin.getId());
             ResultSet set = statement.executeQuery();
 
@@ -665,6 +665,7 @@ public class MySQLDatabase implements Database {
         Graph graph = new Graph(mcstats, plugin);
         graph.setId(set.getInt("ID"));
         graph.setType(set.getInt("Type"));
+        graph.setPosition(set.getInt("Position"));
         graph.setActive(set.getInt("Active"));
         graph.setName(set.getString("Name"));
         graph.setDisplayName(set.getString("DisplayName"));

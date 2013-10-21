@@ -1,4 +1,4 @@
-package org.mcstats.sql;
+package org.mcstats.db;
 
 public interface Savable {
 

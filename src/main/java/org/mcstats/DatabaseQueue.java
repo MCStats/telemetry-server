@@ -2,15 +2,12 @@ package org.mcstats;
 
 import org.apache.log4j.Logger;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.RawQuery;
 import org.mcstats.model.Server;
-import org.mcstats.model.ServerPlugin;
-import org.mcstats.sql.Savable;
+import org.mcstats.db.Savable;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;

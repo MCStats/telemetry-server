@@ -29,7 +29,7 @@ public class BlackholeHandler extends AbstractHandler {
 
         outputStream.close();
         writer.close();
-        baseRequest.getConnection().getEndPoint().close();
+        baseRequest.getHttpChannel().getEndPoint().close();
     }
 
 }

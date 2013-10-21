@@ -3,13 +3,17 @@ package org.mcstats;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import it.sauronsoftware.cron4j.Scheduler;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.mcstats.cron.MainlineGraphs;
+import org.mcstats.db.GraphStore;
+import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.handler.BlackholeHandler;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Graph;
@@ -17,8 +21,8 @@ import org.mcstats.model.Plugin;
 import org.mcstats.model.PluginVersion;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
-import org.mcstats.sql.Database;
-import org.mcstats.sql.MySQLDatabase;
+import org.mcstats.db.Database;
+import org.mcstats.db.MySQLDatabase;
 import org.mcstats.util.RequestCalculator;
 import org.mcstats.util.ServerBuildIdentifier;
 
@@ -63,6 +67,11 @@ public class MCStats {
      * The database we are connected to
      */
     private Database database;
+
+    /**
+     * The storage for graph data
+     */
+    private GraphStore graphStore;
 
     /**
      * The database save queue
@@ -172,9 +181,13 @@ public class MCStats {
         // Connect to the database
         connectToDatabase();
 
+        graphStore = new MongoDBGraphStore(this);
+
         // Load all of the pluginsByName
         for (Plugin plugin : database.loadPlugins()) {
-            addPlugin(plugin);
+            if (plugin.getId() >= 0) {
+                addPlugin(plugin);
+            }
         }
 
         logger.info("Loaded " + pluginsByName.size() + " plugins");
@@ -440,7 +453,7 @@ public class MCStats {
         int conn = 0;
 
         for (Connector connector : webServer.getConnectors()) {
-            conn += connector.getConnectionsOpen();
+            conn += connector.getConnectedEndPoints().size();
         }
 
         return conn;
@@ -470,27 +483,24 @@ public class MCStats {
 
         webServer.setHandler(handlers);
 
-        SelectChannelConnector connector = new SelectChannelConnector();
+        ServerConnector connector = new ServerConnector(webServer, 2, 2);
         connector.setPort(listenPort);
-        connector.setThreadPool(new QueuedThreadPool(50));
-        connector.setAcceptors(2);
-
-        connector.setStatsOn(true);
-        connector.setMaxIdleTime(10000);
+        connector.setAcceptQueueSize(1024);
         connector.setSoLingerTime(0);
-
-        // add the connector to the server
         webServer.addConnector(connector);
 
-        final org.eclipse.jetty.server.Server blackholeServer = new org.eclipse.jetty.server.Server();
+        org.eclipse.jetty.server.Server blackholeServer = new org.eclipse.jetty.server.Server();
         blackholeServer.setHandler(new BlackholeHandler());
-        SelectChannelConnector connector2 = new SelectChannelConnector();
+        ServerConnector connector2 = new ServerConnector(blackholeServer, 2, 2);
         connector2.setPort(blackholePort);
-        connector2.setThreadPool(new QueuedThreadPool(50));
-        connector2.setAcceptors(2);
-        connector2.setMaxIdleTime(10000);
         connector2.setSoLingerTime(0);
         blackholeServer.addConnector(connector2);
+
+        if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
+            Scheduler scheduler = new Scheduler();
+            scheduler.schedule("*/5 * * * *", new MainlineGraphs(this));
+            scheduler.start();
+        }
 
         try {
             // Start the server
@@ -534,6 +544,15 @@ public class MCStats {
      */
     public Database getDatabase() {
         return database;
+    }
+
+    /**
+     * Get the storage for graphs
+     *
+     * @return
+     */
+    public GraphStore getGraphStore() {
+        return graphStore;
     }
 
     /**
