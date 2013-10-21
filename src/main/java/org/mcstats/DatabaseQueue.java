@@ -1,12 +1,15 @@
 package org.mcstats;
 
 import org.apache.log4j.Logger;
+import org.mcstats.model.Plugin;
 import org.mcstats.model.RawQuery;
+import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
 import org.mcstats.sql.Savable;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -15,16 +18,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class DatabaseQueue {
 
     private Logger logger = Logger.getLogger("DatabaseQueue");
-
-    /**
-     * The number of database queue workers
-     */
-    private static final int WORKER_COUNT = 4;
-
-    /**
-     * Max amount of flushes per round
-     */
-    private static final int FLUSHES_PER_ROUND = 5000;
 
     /**
      * The mcstats object
@@ -41,11 +34,29 @@ public class DatabaseQueue {
      */
     private final List<QueueWorker> workers = new ArrayList<QueueWorker>();
 
+    /**
+     * The number of database queue workers
+     */
+    private int workerCount = 4;
+
+    /**
+     * Max amount of flushes per round
+     */
+    private int flushesPerRound = 5000;
+
+    /**
+     * The max size of the queue
+     */
+    private int maxSize = 500000;
+
     public DatabaseQueue(MCStats mcstats) {
         this.mcstats = mcstats;
+        workerCount = Integer.parseInt(mcstats.getConfig().getProperty("queue.workers"));
+        flushesPerRound = Integer.parseInt(mcstats.getConfig().getProperty("queue.flushes"));
+        maxSize = Integer.parseInt(mcstats.getConfig().getProperty("queue.maxSize"));
 
         // Create workers
-        for (int i = 0; i < WORKER_COUNT; i++) {
+        for (int i = 0; i < workerCount; i++) {
             QueueWorker worker = new QueueWorker(i + 1);
             workers.add(worker);
             new Thread(worker, "DatabaseQueue Worker #" + worker.getId()).start();
@@ -64,6 +75,7 @@ public class DatabaseQueue {
 
     /**
      * Get the current queue size
+     *
      * @return
      */
     public int size() {
@@ -112,65 +124,56 @@ public class DatabaseQueue {
                     continue;
                 }
 
+                if (queue.size() >= maxSize) { // 500k
+                    synchronized (queue) {
+                        Iterator iter = queue.iterator();
+
+                        while (iter.hasNext()) {
+                            Savable savable = (Savable) iter.next();
+
+                            if (!(savable instanceof Plugin)) {
+                                if ((savable instanceof Server)) {
+                                    ((Server) savable).resetQueuedStatus();
+                                }
+
+                                iter.remove();
+                            }
+                        }
+                    }
+                    continue;
+                }
+
                 // amount of entities we flushed
                 int flushed = 0;
 
                 // when we started flushing entities
                 jobStart = System.currentTimeMillis();
 
-                // group together server plugins
-                List<ServerPlugin> serverPlugins = new LinkedList<ServerPlugin>();
-
                 // Flush each entity
+                long start = System.currentTimeMillis();
                 Savable savable;
                 while ((savable = queue.poll()) != null) {
-                    // save it now
-                    if (savable instanceof ServerPlugin) {
-                        serverPlugins.add((ServerPlugin) savable);
-
-                        if (serverPlugins.size() > 10) {
-                            pushServerPlugins(serverPlugins);
-                        }
-                    } else {
-                        try {
-                            savable.saveNow();
-                            flushed++;
-                        } catch (Exception e) {
-                            // Fallback gracefully so we don't exit the thread
-                            e.printStackTrace();
-                        }
+                    try {
+                        savable.saveNow();
+                        flushed++;
+                    } catch (Exception e) {
+                        // Fallback gracefully so we don't exit the thread
+                        e.printStackTrace();
                     }
 
-                    if (flushed >= FLUSHES_PER_ROUND) {
+                    if (flushed >= flushesPerRound) {
                         break;
                     }
                 }
 
-                if (serverPlugins.size() > 0) {
-                    pushServerPlugins(serverPlugins);
-                }
-
                 // just so we don't spam the console if there's only 0 entities which we don't need to know about
                 if (flushed > 0) {
-                    // logger.debug("Flushed " + flushed + "/" + queue.size() + " entities to the database in " + (System.currentTimeMillis() - start) + "ms");
+                    if (mcstats.isDebug()) {
+                        logger.debug("Flushed " + flushed + "/" + queue.size() + " entities to the database in " + (System.currentTimeMillis() - start) + "ms");
+                    }
                 }
 
             }
-        }
-
-        private void pushServerPlugins(List<ServerPlugin> serverPlugins) {
-            String query = "UPDATE ServerPlugin SET Updated = UNIX_TIMESTAMP() WHERE ";
-
-            for (ServerPlugin serverPlugin : serverPlugins) {
-                query += "(Server = " + serverPlugin.getServer().getId() + " AND Plugin = " + serverPlugin.getPlugin().getId() + ") OR ";
-            }
-
-            // cut off the last OR
-            query = query.substring(0, query.length() - 4);
-
-            // execute it
-            new RawQuery(mcstats, query).saveNow();
-            serverPlugins.clear();
         }
 
         public int getId() {

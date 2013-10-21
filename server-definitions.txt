@@ -20,6 +20,8 @@ git-Glowstone                       Glowstone
 git-MCPC-Plus                       MCPC+
 git-MCPC                            MCPC
 git-Spigot                          Spigot
+git-libigot                         Libigot
+git-SportBukkit                     SportBukkit
 
 IceCraftBukkit                      CraftBukkit
 FrozenBukkit                        CraftBukkit
@@ -32,6 +34,8 @@ git-Bukkit-jenkins-CraftBukkit      CraftBukkit
 git-Bukkit                          CraftBukkit
 
 Spout                               Spout
-MinecraftForge                      Forge
 MinecraftForgeSSP                   ForgeSSP
+MinecraftForge                      Forge
+fml,forge                           Forge
 Canary                              Canary
+Bukkit                              CraftBukkit

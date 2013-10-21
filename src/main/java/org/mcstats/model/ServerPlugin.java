@@ -26,6 +26,11 @@ public class ServerPlugin implements Savable {
     private String version;
 
     /**
+     * The server's revision
+     */
+    private int revision;
+
+    /**
      * Unix timestamp of when it was last updated
      */
     private int updated;
@@ -80,6 +85,14 @@ public class ServerPlugin implements Savable {
         this.version = version;
         modified = true;
         versionModified = true;
+    }
+
+    public int getRevision() {
+        return revision;
+    }
+
+    public void setRevision(int revision) {
+        this.revision = revision;
     }
 
     public int getUpdated() {

@@ -10,6 +10,7 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.mcstats.handler.BlackholeHandler;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
@@ -66,7 +67,7 @@ public class MCStats {
     /**
      * The database save queue
      */
-    private DatabaseQueue databaseQueue = new DatabaseQueue(this);
+    private DatabaseQueue databaseQueue;
 
     /**
      * The report handler for requests
@@ -87,6 +88,11 @@ public class MCStats {
      * The request calculator for requests per second for the last 5 seconds
      */
     private final RequestCalculator requestsFiveSeconds;
+
+    /**
+     * Debug mode
+     */
+    private boolean debug = false;
 
     /**
      * A map of all of the currently loaded servers
@@ -156,6 +162,13 @@ public class MCStats {
             return;
         }
 
+        debug = config.getProperty("debug").equalsIgnoreCase("true");
+
+        logger.info("Starting MCStats");
+        logger.info("Debug mode is " + (debug ? "ON" : "OFF"));
+
+        databaseQueue = new DatabaseQueue(this);
+
         // Connect to the database
         connectToDatabase();
 
@@ -163,10 +176,29 @@ public class MCStats {
         for (Plugin plugin : database.loadPlugins()) {
             addPlugin(plugin);
         }
+
         logger.info("Loaded " + pluginsByName.size() + " plugins");
 
         // Create & open the webserver
         createWebServer();
+    }
+
+    /**
+     * Get the config
+     *
+     * @return
+     */
+    public Properties getConfig() {
+        return config;
+    }
+
+    /**
+     * Check if the service is in debug mode
+     *
+     * @return
+     */
+    public boolean isDebug() {
+        return debug;
     }
 
     /**
@@ -419,13 +451,18 @@ public class MCStats {
      */
     private void createWebServer() {
         int listenPort = Integer.parseInt(config.getProperty("listen.port"));
+        int blackholePort = Integer.parseInt(config.getProperty("blackhole.port"));
         webServer = new org.eclipse.jetty.server.Server();
 
-        // TODO put these somewhere else :p
-        String WEB_APP = "org/mcstats/webapp";
-        String CONTEXT_PATH = "/webapp";
-        URL warURL = getClass().getClassLoader().getResource(WEB_APP);
-        WebAppContext webAppContext = new WebAppContext(warURL.toExternalForm(), CONTEXT_PATH);
+        String webApp = config.getProperty("webapp.path");
+        String contextPath = config.getProperty("webapp.context");
+
+        if (debug) {
+            logger.debug("Loading webapp from " + webApp + " at url " + contextPath);
+        }
+
+        URL warURL = getClass().getClassLoader().getResource(webApp);
+        WebAppContext webAppContext = new WebAppContext(warURL.toExternalForm(), contextPath);
 
         // Create the handler list
         HandlerList handlers = new HandlerList();
@@ -445,10 +482,22 @@ public class MCStats {
         // add the connector to the server
         webServer.addConnector(connector);
 
+        final org.eclipse.jetty.server.Server blackholeServer = new org.eclipse.jetty.server.Server();
+        blackholeServer.setHandler(new BlackholeHandler());
+        SelectChannelConnector connector2 = new SelectChannelConnector();
+        connector2.setPort(blackholePort);
+        connector2.setThreadPool(new QueuedThreadPool(50));
+        connector2.setAcceptors(2);
+        connector2.setMaxIdleTime(10000);
+        connector2.setSoLingerTime(0);
+        blackholeServer.addConnector(connector2);
+
         try {
             // Start the server
             webServer.start();
+            blackholeServer.start();
             logger.info("Created web server on port " + listenPort);
+            logger.info("Created blackhole server on port " + blackholePort);
 
             // and now join it
             webServer.join();

@@ -40,11 +40,6 @@ public class Server implements Savable {
     private String serverVersion;
 
     /**
-     * Metrics revision
-     */
-    private int revision;
-
-    /**
      * The name of the OS the server is running
      */
     private String osname;
@@ -139,8 +134,6 @@ public class Server implements Savable {
     }
 
     /**
-     *
-     *
      * @param version
      */
     public void addVersionHistory(PluginVersion version) {
@@ -323,13 +316,8 @@ public class Server implements Savable {
         modified = true;
     }
 
-    public int getRevision() {
-        return revision;
-    }
-
-    public void setRevision(int revision) {
-        this.revision = revision;
-        modified = true;
+    public void resetQueuedStatus() {
+        queuedForSave = false;
     }
 
     public void save() {
