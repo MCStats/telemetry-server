@@ -37,8 +37,10 @@ public class RevisionAggregator extends SimpleAggregator {
             Graph graph = mcstats.loadGraph(plugin, graphName);
 
             if (serverPlugin != null) {
-                Column column = graph.loadColumn(Integer.toString(serverPlugin.getRevision()));
-                res.add(new Tuple<Column, Long>(column, 1L));
+                if (serverPlugin.getRevision() > 0) {
+                    Column column = graph.loadColumn(Integer.toString(serverPlugin.getRevision()));
+                    res.add(new Tuple<Column, Long>(column, 1L));
+                }
             } else {
                 Map<Integer, Integer> sums = new HashMap<Integer, Integer>();
 
