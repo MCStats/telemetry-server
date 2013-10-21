@@ -14,7 +14,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>MCStats :: Global Statistics</title>
+    <title>MCStats :: Backend Status</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="" />
     <meta name="author" content="Tyler Blair <hidendra@griefcraft.com>" />
@@ -25,7 +25,7 @@
     <link href="https://d2jz01fyat1phn.cloudfront.net/css/combined.css" rel="stylesheet" />
 
     <!-- jquery, main, bootstrap -->
-    <script src="https://d2jz01fyat1phn.cloudfront.net/javascript/bootstrap-combined-jquery.js" type="text/javascript"></script>
+    <script src="https://d2jz01fyat1phn.cloudfront.net/javascript/full-2013-06-08.js" type="text/javascript"></script>
 
     <script type="text/javascript">
         // Google analytics
@@ -83,159 +83,173 @@
 
     <div id="breadcrumb">
         <a href="/" title="Home" class="tip-bottom"><i class="icon-home"></i> Home</a>
-        <a href="/status/" class="current">Backend Status</a>            </div>
+        <a href="/status/" class="current">Backend Status</a>
+    </div>
 
     <div class="container-fluid">
-
-        <div class="row-fluid">
-
-                <div class="span4 offset2" style="text-align: center">
-
-                    <table class="table table-striped table-bordered">
-
-                        <thead>
-                        <tr> <th style="width: 10px; text-align: center;"> Worker </th> <th style="text-align: center;"> Status </th> <th style="text-align: center;"> Runtime </th></tr>
-                        </thead>
-
-                        <tbody>
-
-                        <%
-                            for (DatabaseQueue.QueueWorker worker : mcstats.getDatabaseQueue().getWorkers()) { %>
-                        <tr>
-                            <td style="width: 10px; text-align: center;">
-                                <%= worker.getId() %>
-                            </td>
-                            <td style="width: 10px; text-align: center;">
-                                <%= worker.isBusy() ? "BUSY" : "SLEEPING" %>
-                            </td>
-                            <td style="width: 10px; text-align: center;">
-                                <%= worker.isBusy() ? ((System.currentTimeMillis() - worker.getJobStart()) + "ms") : "0ms" %>
-                            </td>
-                        </tr><%
-                            }
-                        %>
-
-                        </tbody>
-
-                    </table>
-
+        <div class="row-fluid" id="graph-generator" style="display: none">
+            <div>
+                <div class="alert alert-info span6" style="width: 50%; padding-bottom: 0; margin-left: 25%; text-align: center; float: left;">
+                    <p>
+                        <strong>INFO:</strong> Graphs are currently generating.
+                    </p>
                 </div>
 
-                <div class="span4" style="text-align: center">
-
-                    <table class="table table-striped table-bordered">
-
-                        <tbody>
-
-                        <tr>
-                            <td style="width: 20px; text-align: center;">
-                                Time running
-                            </td>
-                            <td style="width: 100px; text-align: center;">
-                                <%= TimeUtils.timeToString((System.currentTimeMillis() - mcstats.getRequestCalculatorAllTime().getStart()) / 1000) %>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td style="width: 20px; text-align: center;">
-                                Open connections
-                            </td>
-                            <td style="width: 100px; text-align: center;">
-                                <%= numberFormatter.format(mcstats.countOpenConnections()) %>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td style="width: 20px; text-align: center;">
-                                SQL queue size
-                            </td>
-                            <td style="width: 100px; text-align: center;">
-                                <%= numberFormatter.format(mcstats.getDatabaseQueue().size()) %>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td style="width: 20px; text-align: center;">
-                                Thread pool queue size
-                            </td>
-                            <td style="width: 100px; text-align: center;">
-                                <%= numberFormatter.format(mcstats.getReportHandler().queueSize()) %>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td style="width: 20px; text-align: center;">
-                                Total requests
-                            </td>
-                            <td style="width: 100px; text-align: center;">
-                                <%= numberFormatter.format(requests) %>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td style="width: 20px; text-align: center;">
-                                Requests per second
-                            </td>
-                            <td style="width: 100px; text-align: center;">
-                                <%= numberFormatter.format(mcstats.getRequestCalculatorAllTime().calculateRequestsPerSecond()) %>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td style="width: 20px; text-align: center;">
-                                Total queries
-                            </td>
-                            <td style="width: 100px; text-align: center;">
-                                <%= numberFormatter.format(MySQLDatabase.QUERIES) %>
-                            </td>
-                        </tr>
-
-                        </tbody>
-
-                    </table>
-
-                    <table class="table table-striped table-bordered">
-
-                        <tbody>
-
-                        <tr>
-                            <td style="width: 20px; text-align: center;">
-                                Servers (cached)
-                            </td>
-                            <td style="width: 100px; text-align: center;">
-                                <%= numberFormatter.format(mcstats.getCachedServers().size()) %>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td style="width: 20px; text-align: center;">
-                                Plugins (cached)
-                            </td>
-                            <td style="width: 100px; text-align: center;">
-                                <%= numberFormatter.format(mcstats.getCachedPlugins().size()) %>
-                            </td>
-                        </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-
-            <div class="row-fluid">
-                <div id="footer" class="span12">
-                    <p> MCStats backend created by Hidendra. Plugins are owned by their respective authors. </p>
-                    <p>  <a href="/donate/"><i class="icon-heart"></i> Donate</a> | <a href="/plugin-list/">plugin list</a> | <a href="/status/">backend status</a> | <a href="/admin/">admin</a> | <a href="http://github.com/Hidendra/mcstats.org">github</a> | <a href="irc://irc.esper.net/metrics">irc.esper.net #metrics</a> </p>
+                <div class="progress progress-striped progress-success active" style="clear: left">
+                    <div class="bar" id="graph-generator-progress-bar" style="width: 0"></div>
                 </div>
             </div>
         </div>
+
+        <div class="row-fluid">
+
+            <div class="span4 offset2" style="text-align: center">
+
+                <table class="table table-striped table-bordered">
+
+                    <thead>
+                    <tr> <th style="width: 10px; text-align: center;"> Worker </th> <th style="text-align: center;"> Status </th> <th style="text-align: center;"> Runtime </th></tr>
+                    </thead>
+
+                    <tbody>
+
+                    <%
+                        for (DatabaseQueue.QueueWorker worker : mcstats.getDatabaseQueue().getWorkers()) { %>
+                    <tr>
+                        <td style="width: 10px; text-align: center;">
+                            <%= worker.getId() %>
+                        </td>
+                        <td style="width: 10px; text-align: center;">
+                            <%= worker.isBusy() ? "BUSY" : "SLEEPING" %>
+                        </td>
+                        <td style="width: 10px; text-align: center;">
+                            <%= worker.isBusy() ? ((System.currentTimeMillis() - worker.getJobStart()) + "ms") : "0ms" %>
+                        </td>
+                    </tr><%
+                        }
+                    %>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <div class="span4" style="text-align: center">
+
+                <table class="table table-striped table-bordered">
+
+                    <tbody>
+
+                    <tr>
+                        <td style="width: 20px; text-align: center;">
+                            Time running
+                        </td>
+                        <td style="width: 100px; text-align: center;">
+                            <%= TimeUtils.timeToString((System.currentTimeMillis() - mcstats.getRequestCalculatorAllTime().getStart()) / 1000) %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 20px; text-align: center;">
+                            Open connections
+                        </td>
+                        <td style="width: 100px; text-align: center;">
+                            <%= numberFormatter.format(mcstats.countOpenConnections()) %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 20px; text-align: center;">
+                            SQL queue size
+                        </td>
+                        <td style="width: 100px; text-align: center;">
+                            <%= numberFormatter.format(mcstats.getDatabaseQueue().size()) %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 20px; text-align: center;">
+                            Thread pool queue size
+                        </td>
+                        <td style="width: 100px; text-align: center;">
+                            <%= numberFormatter.format(mcstats.getReportHandler().queueSize()) %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 20px; text-align: center;">
+                            Total requests
+                        </td>
+                        <td style="width: 100px; text-align: center;">
+                            <%= numberFormatter.format(requests) %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 20px; text-align: center;">
+                            Requests per second
+                        </td>
+                        <td style="width: 100px; text-align: center;">
+                            <%= numberFormatter.format(mcstats.getRequestCalculatorAllTime().calculateRequestsPerSecond()) %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 20px; text-align: center;">
+                            Total queries
+                        </td>
+                        <td style="width: 100px; text-align: center;">
+                            <%= numberFormatter.format(MySQLDatabase.QUERIES) %>
+                        </td>
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+                <table class="table table-striped table-bordered">
+
+                    <tbody>
+
+                    <tr>
+                        <td style="width: 20px; text-align: center;">
+                            Servers (cached)
+                        </td>
+                        <td style="width: 100px; text-align: center;">
+                            <%= numberFormatter.format(mcstats.getCachedServers().size()) %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 20px; text-align: center;">
+                            Plugins (cached)
+                        </td>
+                        <td style="width: 100px; text-align: center;">
+                            <%= numberFormatter.format(mcstats.getCachedPlugins().size()) %>
+                        </td>
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+        <div class="row-fluid">
+            <div id="footer" class="span12">
+                <p> MCStats backend created by Hidendra. Plugins are owned by their respective authors. </p>
+                <p>  <a href="/donate/"><i class="icon-heart"></i> Donate</a> | <a href="/plugin-list/">plugin list</a> | <a href="/status/">backend status</a> | <a href="/admin/">admin</a> | <a href="http://github.com/Hidendra/mcstats.org">github</a> | <a href="irc://irc.esper.net/metrics">irc.esper.net #metrics</a> </p>
+            </div>
+        </div>
     </div>
+</div>
 
-        <!-- charting scripts -->
-        <script src="https://d2jz01fyat1phn.cloudfront.net/javascript/highcharts/highcharts-combined.js" type="text/javascript"></script>
+<!-- charting scripts -->
+<script src="https://d2jz01fyat1phn.cloudfront.net/javascript/highcharts/highcharts-combined.js" type="text/javascript"></script>
 
-    </body>
+</body>
 
 </html>
