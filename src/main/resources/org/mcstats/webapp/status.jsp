@@ -21,11 +21,33 @@
 
     <meta name="viewport" content="width=device-width">
 
-    <!-- contains all .css files minified -->
-    <link href="https://d2jz01fyat1phn.cloudfront.net/css/combined.css" rel="stylesheet" />
+    <!-- css -->
+    <link href="http://static.mcstats.org/css/libraries/bootstrap/bootstrap.min.css" rel="stylesheet"/>
+    <link href="http://static.mcstats.org/css/libraries/font-awesome/font-awesome.min.css" rel="stylesheet"/>
+    <link href="http://static.mcstats.org/css/libraries/template/template.min.css" rel="stylesheet"/>
+    <link href="http://static.mcstats.org/css/libraries/template/template.blue.min.css" rel="stylesheet"/>
+    <link href="http://static.mcstats.org/css/libraries/jquery/jquery.jscrollpane.css" rel="stylesheet"/>
+    <link href="http://static.mcstats.org/css/libraries/jquery/typeahead.js-bootstrap.css" rel="stylesheet"/>
+    <link href="http://static.mcstats.org/css/libraries/famfamfam/fam-icons.css" rel="stylesheet"/>
 
-    <!-- jquery, main, bootstrap -->
-    <script src="https://d2jz01fyat1phn.cloudfront.net/javascript/full-2013-06-08.js" type="text/javascript"></script>
+    <!-- core libs -->
+    <script src="http://static.mcstats.org/javascript/libraries/jquery/jquery.min.js" type="text/javascript"></script>
+    <script src="http://static.mcstats.org/javascript/libraries/jquery/jquery.pjax.js" type="text/javascript"></script>
+    <script src="http://static.mcstats.org/javascript/libraries/jquery/jquery.jpanelmenu.min.js" type="text/javascript"></script>
+    <script src="http://static.mcstats.org/javascript/libraries/jquery/jquery.nicescroll.min.js" type="text/javascript"></script>
+    <script src="http://static.mcstats.org/javascript/libraries/bootstrap/bootstrap.min.js" type="text/javascript"></script>
+    <script src="http://static.mcstats.org/javascript/libraries/bootstrap/tooltip.js" type="text/javascript"></script>
+    <script src="http://static.mcstats.org/javascript/libraries/bootstrap/typeahead.min.js" type="text/javascript"></script>
+    <script src="http://static.mcstats.org/javascript/libraries/peity/jquery.peity.js" type="text/javascript"></script>
+    <script src="http://static.mcstats.org/javascript/libraries/template/template.min.js" type="text/javascript"></script>
+
+    <!-- charting -->
+    <script src="http://static.mcstats.org/javascript/libraries/highcharts/highstock.js" type="text/javascript"></script>
+    <script src="http://static.mcstats.org/javascript/libraries/highcharts/themes/simplex.js" type="text/javascript"></script>
+    <script src="http://static.mcstats.org/javascript/libraries/highcharts/exporting.js" type="text/javascript"></script>
+
+    <!-- mcstats -->
+    <script src="http://static.mcstats.org/javascript/mcstats.js" type="text/javascript"></script>
 
     <script type="text/javascript">
         // Google analytics
@@ -49,28 +71,33 @@
 
 <div id="search">
     <form action="" method="post" onsubmit="window.location='/plugin/' + $('#goto').val(); return false;">
-        <input type="text" id="goto" placeholder="Plugin search" autocomplete="off"/><button type="submit" class="tip-right" title="Go to plugin"><i class="icon-share-alt icon-white"></i></button>
+        <input type="text" id="goto" placeholder="Go to Plugin" autocomplete="off"/><button type="submit" class="tip-right" title="Go"><i class="icon-search"></i></button>
     </form>
 </div>
 
 <div id="sidebar">
     <ul>
-        <li><a href="/"><i class="icon icon-home"></i> <span>Homepage</span></a></li>
+        <li><a href="/"><i class="icon icon-home"></i> <span>Homepage</span></a>
+        </li>
         <li><a href="/plugin-list/"><i class="icon icon-list-alt"></i> <span>Plugin List</span></a></li>
-        <li><a href="/global-stats.php"><i class="icon icon-signal"></i> <span>Global Statistics</span></a></li>
+        <li><a href="/global/"><i class="icon icon-signal"></i> <span>Global Statistics</span></a></li>
         <li class="active"><a href="/status/"><i class="icon icon-retweet"></i> <span>Backend Status</span></a></li>
         <li class="submenu">
-            <a href="#"><i class="icon icon-wrench"></i> <span>Administration</span> <span class="label">2</span></a>
+            <a href="#"><i class="icon icon-wrench"></i> <span>Plugin Admin</span> <span class="label">2</span></a>
             <ul>
                 <li><a href="/admin/">Admin home</a></li>
                 <li><a href="/admin/add-plugin/">Add a plugin</a></li>
             </ul>
         </li>
-        <li class="submenu">
-            <a href="#"><i class="icon icon-book"></i> <span>Reports</span> <span class="label">1</span></a>
-            <ul>
-                <li><a href="/reports/december-2012/">December 2012</a></li>
-            </ul>
+
+        <li>
+            <a><span>A very special thanks to the MCStats sponsors:</span></a>
+
+            <ol style="padding: 0; margin: 0;" class="sponsors">
+                <li><a href="http://buycraft.net" target="_blank"><img src="http://static.mcstats.org/img/sponsors/buycraft.png" width="210px" style="padding-left: 10px" /></a></li>
+                <li><a href="http://avnk.net" target="_blank"><img src="http://static.mcstats.org/img/sponsors/Avalanche-Network-v5.png" width="210px" /></a></li>
+                <li><a href="https://twitter.com/VladToBeHere" target="_blank"><span style="margin-left: 15px; font-size: 24px; color: #428BCA">@VladToBeHere</span></a></li>
+            </ol>
         </li>
     </ul>
 
@@ -103,7 +130,7 @@
 
         <div class="row-fluid">
 
-            <div class="span4 offset2" style="text-align: center">
+            <div class="col-xs-4 col-md-offset-2" style="text-align: center">
 
                 <table class="table table-striped table-bordered">
 
@@ -135,7 +162,7 @@
 
             </div>
 
-            <div class="span4" style="text-align: center">
+            <div class="col-xs-4" style="text-align: center">
 
                 <table class="table table-striped table-bordered">
 
@@ -238,17 +265,18 @@
 
         </div>
 
-        <div class="row-fluid">
-            <div id="footer" class="span12">
-                <p> MCStats backend created by Hidendra. Plugins are owned by their respective authors. </p>
-                <p>  <a href="/donate/"><i class="icon-heart"></i> Donate</a> | <a href="/plugin-list/">plugin list</a> | <a href="/status/">backend status</a> | <a href="/admin/">admin</a> | <a href="http://github.com/Hidendra/mcstats.org">github</a> | <a href="irc://irc.esper.net/metrics">irc.esper.net #metrics</a> </p>
-            </div>
-        </div>
+        <div class="clearfix"></div>
     </div>
 </div>
 
-<!-- charting scripts -->
-<script src="https://d2jz01fyat1phn.cloudfront.net/javascript/highcharts/highcharts-combined.js" type="text/javascript"></script>
+<div class="row">
+    <div id="footer" class="col-xs-12">
+        <p> MCStats service created & maintained by <a href="mailto:hidendra@mcstats.org">Hidendra</a>. Plugins are
+            owned by their respective authors. </p>
+
+        <p><a href="http://github.com/Hidendra/mcstats.org"><i class="icon-github"></i> github</a> | <a href="irc://irc.esper.net/metrics"><i class="icon-comments"></i> irc.esper.net #metrics</a></p>
+    </div>
+</div>
 
 </body>
 
