@@ -76,6 +76,25 @@ public class MySQLDatabase implements Database {
         }
     }
 
+    public Map<String, String> loadCountries() {
+        Map<String, String> countries = new HashMap<String, String>();
+
+        try {
+            Connection connection = ds.getConnection();
+            PreparedStatement statement = connection.prepareStatement("SELECT ShortCode, FullName FROM Country");
+            ResultSet set = statement.executeQuery();
+
+            while (set.next()) {
+                countries.put(set.getString("ShortCode"), set.getString("FullName"));
+            }
+
+            safeClose(connection);
+        } catch (SQLException e) {
+        }
+
+        return countries;
+    }
+
     public Plugin createPlugin(String name) {
         Connection connection = null;
 

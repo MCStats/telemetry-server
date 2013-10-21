@@ -1,6 +1,7 @@
-package org.mcstats.generator;
+package org.mcstats.generator.aggregator;
 
 import org.mcstats.MCStats;
+import org.mcstats.generator.SimpleAggregator;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
@@ -17,17 +18,17 @@ public class ReflectionAggregator extends SimpleAggregator {
     /**
      * The name of the graph to use
      */
-    private String graphName;
+    protected String graphName;
 
     /**
      * The name of the column to use. If null, then the field is the column's name
      */
-    private String columnName;
+    protected String columnName;
 
     /**
      * The method we are reflecting into
      */
-    private Field field;
+    protected Field field;
 
     /**
      * Create a new reflection aggregator that will use the value returned by
@@ -69,6 +70,15 @@ public class ReflectionAggregator extends SimpleAggregator {
     }
 
     /**
+     * Get the column name
+     *
+     * @return
+     */
+    public String getColumnName(Server server) {
+        return columnName;
+    }
+
+    /**
      * {@inheritDoc
      */
     @Override
@@ -80,7 +90,7 @@ public class ReflectionAggregator extends SimpleAggregator {
         try {
             Object value = field.get(server);
 
-            String usingColumn = columnName;
+            String usingColumn = getColumnName(server);
             long columnValue = 1;
 
             // attempt to parse it as a string

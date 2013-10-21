@@ -9,6 +9,7 @@ import org.mcstats.model.ServerPlugin;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 public interface Database {
 
@@ -16,6 +17,13 @@ public interface Database {
      * Execute a raw query
      */
     public void executeUpdate(String query) throws SQLException;
+
+    /**
+     * Load all countries from the database
+     *
+     * @return
+     */
+    public Map<String, String> loadCountries();
 
     /**
      * Create a bare plugin with the given name

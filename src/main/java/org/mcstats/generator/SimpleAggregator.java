@@ -48,8 +48,8 @@ public abstract class SimpleAggregator implements GraphGenerator {
      */
     public abstract Tuple<Column, Long> getValue(MCStats mcstats, Plugin plugin, Server server);
 
-    private Map<Column, Long> aggregate(MCStats mcstats, Plugin plugin) {
-        Map<Column, Long> data = new HashMap<Column, Long>();
+    private Map<Column, GeneratedData> aggregate(MCStats mcstats, Plugin plugin) {
+        Map<Column, GeneratedData> data = new HashMap<Column, GeneratedData>();
 
         for (Server server : mcstats.getCachedServers()) {
             boolean match = true;
@@ -78,7 +78,23 @@ public abstract class SimpleAggregator implements GraphGenerator {
             Tuple<Column, Long> value = getValue(mcstats, pluginValue, server);
 
             if (value != null) {
-                data.put(value.first(), value.second());
+                Column column = value.first();
+                long columnValue = value.second();
+
+                GeneratedData current = data.get(column);
+
+                if (current == null) {
+                    current = new GeneratedData();
+                    current.setCount(1);
+                    current.setMax((int) columnValue);
+                    current.setMin((int) columnValue);
+                    current.setSum((int) columnValue);
+                    data.put(column, current);
+                    continue;
+                }
+
+                current.incrementCount();
+                current.incrementSum((int) columnValue);
             }
         }
 
@@ -88,8 +104,8 @@ public abstract class SimpleAggregator implements GraphGenerator {
     /**
      * {@inheritDoc}
      */
-    public Map<Column, Long> generate(MCStats mcstats) {
-        Map<Column, Long> data = new HashMap<Column, Long>();
+    public Map<Column, GeneratedData> generate(MCStats mcstats) {
+        Map<Column, GeneratedData> data = new HashMap<Column, GeneratedData>();
 
         // aggregate all servers first
         data.putAll(aggregate(mcstats, null));

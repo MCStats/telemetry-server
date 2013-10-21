@@ -146,6 +146,11 @@ public class MCStats {
      */
     private final Map<Integer, Plugin> pluginsById = new ConcurrentHashMap<Integer, Plugin>();
 
+    /**
+     * A map of all countries, keyed by the 2 letter country code
+     */
+    private final Map<String, String> countries = new ConcurrentHashMap<String, String>();
+
     private MCStats() {
         // create the request callable
         Callable<Long> requestsCallable = new Callable<Long>() {
@@ -181,6 +186,8 @@ public class MCStats {
         // Connect to the database
         connectToDatabase();
 
+        countries.putAll(database.loadCountries());
+
         graphStore = new MongoDBGraphStore(this);
 
         // Load all of the pluginsByName
@@ -212,6 +219,16 @@ public class MCStats {
      */
     public boolean isDebug() {
         return debug;
+    }
+
+    /**
+     * Get the shortcode for a country
+     *
+     * @param shortCode
+     * @return
+     */
+    public String getCountryName(String shortCode) {
+        return countries.get(shortCode);
     }
 
     /**

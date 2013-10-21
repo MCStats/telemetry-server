@@ -13,6 +13,6 @@ public interface GraphGenerator {
      * @param mcstats
      * @return the generated data
      */
-    public Map<Column, Long> generate(MCStats mcstats);
+    public Map<Column, GeneratedData> generate(MCStats mcstats);
 
 }
