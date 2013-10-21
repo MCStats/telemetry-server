@@ -6,6 +6,7 @@ import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.generator.GeneratedData;
 import org.mcstats.generator.aggregator.CountryAggregator;
 import org.mcstats.generator.GraphGenerator;
+import org.mcstats.generator.aggregator.CustomDataAggregator;
 import org.mcstats.generator.aggregator.DecoderAggregator;
 import org.mcstats.generator.aggregator.IncrementAggregator;
 import org.mcstats.generator.aggregator.ReflectionAggregator;
@@ -34,7 +35,7 @@ public class MainlineGraphs implements Runnable {
     public MainlineGraphs(MCStats mcstats) {
         this.mcstats = mcstats;
 
-        // custom data
+        // -- custom data
 
         // -- auth mode
         // -- game version
@@ -68,6 +69,8 @@ public class MainlineGraphs implements Runnable {
         generators.add(new VersionDemographicsAggregator("Version Demographics"));
 
         generators.add(new CountryAggregator("Server Locations"));
+
+        generators.add(new CustomDataAggregator());
 
         generators.add(new DecoderAggregator<Integer>("online_mode", "Auth Mode", new DecoderAggregator.Decoder<Integer>() {
             public String decode(Integer value) {

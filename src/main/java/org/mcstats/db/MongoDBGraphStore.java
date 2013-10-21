@@ -96,17 +96,8 @@ public class MongoDBGraphStore implements GraphStore {
             toset.append("data." + column.getId() + ".min", min);
         }
 
-        // official graph
-        if ((graph.getPosition() >= 1 && graph.getPosition() < 1000) && (graph.getType() == 3 || graph.getType() == 6)) {
-            DBObject search = new BasicDBObject().append("plugin", plugin.getId()).append("graph", graph.getId());
-            DBObject op = new BasicDBObject().append("$set", toset);
-
-            coll.update(search, op, true /* upsert */, false /* multi */);
-        } else {
-            DBObject search = new BasicDBObject().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
-            DBObject op = new BasicDBObject().append("$set", toset);
-
-            coll.update(search, op, true /* upsert */, false /* multi */);
-        }
+        DBObject search = new BasicDBObject().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
+        DBObject op = new BasicDBObject().append("$set", toset);
+        coll.update(search, op, true /* upsert */, false /* multi */);
     }
 }

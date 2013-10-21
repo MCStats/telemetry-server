@@ -3,6 +3,9 @@ package org.mcstats.model;
 import org.mcstats.MCStats;
 import org.mcstats.db.Savable;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class ServerPlugin implements Savable {
 
     /**
@@ -34,6 +37,11 @@ public class ServerPlugin implements Savable {
      * Unix timestamp of when it was last updated
      */
     private int updated;
+
+    /**
+     * The last custom data sent to the server
+     */
+    private Map<Column, Long> customData = new HashMap<Column, Long>();
 
     /**
      * If this was modified
@@ -102,6 +110,14 @@ public class ServerPlugin implements Savable {
 
     public void setRevision(int revision) {
         this.revision = revision;
+    }
+
+    public Map<Column, Long> getCustomData() {
+        return customData;
+    }
+
+    public void setCustomData(Map<Column, Long> customData) {
+        this.customData = customData;
     }
 
     public int getUpdated() {

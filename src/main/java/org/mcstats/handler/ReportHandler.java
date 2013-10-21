@@ -294,26 +294,7 @@ public class ReportHandler extends AbstractHandler {
                         }
 
                         if ((decoded.revision >= 4) && (!server.getCountry().equals("SG")) && ((geoipCountryCode == null) || (!geoipCountryCode.equals("SG")))) {
-                            Map<Column, Long> customData = decoded.customData;
-
-                            if ((customData != null) && (customData.size() > 0)) {
-                                String query = "INSERT INTO CustomData (Server, Plugin, ColumnID, DataPoint, Updated) VALUES";
-                                int currentSeconds = (int) (System.currentTimeMillis() / 1000L);
-
-                                for (Map.Entry<Column, Long> entry : customData.entrySet()) {
-                                    Column column = (Column) entry.getKey();
-                                    long value = entry.getValue();
-
-                                    query = query + " (" + server.getId() + ", " + plugin.getId() + ", " + column.getId() + ", " + value + ", " + currentSeconds + "),";
-                                }
-
-                                query = query.substring(0, query.length() - 1);
-
-                                query = query + " ON DUPLICATE KEY UPDATE DataPoint = VALUES(DataPoint) , Updated = VALUES(Updated)";
-
-                                new RawQuery(mcstats, query).save();
-                            }
-
+                            serverPlugin.setCustomData(decoded.customData);
                         }
 
                         if (decoded.revision >= 6) {
