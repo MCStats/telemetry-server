@@ -8,6 +8,9 @@ import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
 import org.mcstats.util.Tuple;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CountryAggregator extends SimpleAggregator {
 
     /**
@@ -23,17 +26,25 @@ public class CountryAggregator extends SimpleAggregator {
      * {@inheritDoc}
      */
     @Override
-    public Tuple<Column, Long> getValue(MCStats mcstats, Plugin plugin, Server server) {
-        try {
-            Graph graph = mcstats.loadGraph(plugin, graphName);
-            Column column = graph.loadColumn(mcstats.getCountryName(server.getCountry()));
+    public List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server) {
+        List<Tuple<Column, Long>> res = new ArrayList<Tuple<Column, Long>>();
 
-            return new Tuple<Column, Long>(column, 1L);
+        try {
+            String countryName = mcstats.getCountryName(server.getCountry());
+
+            if (countryName == null) {
+                countryName = "Unknown";
+            }
+
+            Graph graph = mcstats.loadGraph(plugin, graphName);
+            Column column = graph.loadColumn(countryName);
+
+            res.add(new Tuple<Column, Long>(column, 1L));
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return null;
+        return res;
     }
 
 }

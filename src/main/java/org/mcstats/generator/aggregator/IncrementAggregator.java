@@ -9,6 +9,8 @@ import org.mcstats.model.Server;
 import org.mcstats.util.Tuple;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 public class IncrementAggregator extends SimpleAggregator {
 
@@ -46,18 +48,20 @@ public class IncrementAggregator extends SimpleAggregator {
      * {@inheritDoc}
      */
     @Override
-    public Tuple<Column, Long> getValue(MCStats mcstats, Plugin plugin, Server server) {
+    public List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server) {
+        List<Tuple<Column, Long>> res = new ArrayList<Tuple<Column, Long>>();
+
         try {
             // load the graph for the plugin
             Graph graph = mcstats.loadGraph(plugin, graphName);
             Column column = graph.loadColumn(columnName);
 
-            return new Tuple<Column, Long>(column, 1L);
+            res.add(new Tuple<Column, Long>(column, 1L));
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return null;
+        return res;
     }
 
     @Override

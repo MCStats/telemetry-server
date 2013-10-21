@@ -8,6 +8,7 @@ import org.mcstats.model.ServerPlugin;
 import org.mcstats.util.Tuple;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -46,7 +47,7 @@ public abstract class SimpleAggregator implements GraphGenerator {
      * @param server
      * @return
      */
-    public abstract Tuple<Column, Long> getValue(MCStats mcstats, Plugin plugin, Server server);
+    public abstract List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server);
 
     private Map<Column, GeneratedData> aggregate(MCStats mcstats, Plugin plugin) {
         Map<Column, GeneratedData> data = new HashMap<Column, GeneratedData>();
@@ -57,7 +58,7 @@ public abstract class SimpleAggregator implements GraphGenerator {
             if (plugin != null) {
                 ServerPlugin serverPlugin = server.getPlugin(plugin);
 
-                if (serverPlugin == null || serverPlugin.getUpdated() < (((int) System.currentTimeMillis() / 1000) - 1800 /* TODO not a magic number, funtionize into ServerPlugin */)) {
+                if (serverPlugin == null || !serverPlugin.recentlyUpdated()) {
                     match = false;
                 }
             }
@@ -75,27 +76,34 @@ public abstract class SimpleAggregator implements GraphGenerator {
                 pluginValue = plugin;
             }
 
-            Tuple<Column, Long> value = getValue(mcstats, pluginValue, server);
+            List<Tuple<Column, Long>> values = getValues(mcstats, pluginValue, server);
 
-            if (value != null) {
-                Column column = value.first();
-                long columnValue = value.second();
-
-                GeneratedData current = data.get(column);
-
-                if (current == null) {
-                    current = new GeneratedData();
-                    current.setCount(1);
-                    current.setMax((int) columnValue);
-                    current.setMin((int) columnValue);
-                    current.setSum((int) columnValue);
-                    data.put(column, current);
-                    continue;
-                }
-
-                current.incrementCount();
-                current.incrementSum((int) columnValue);
+            if (values == null || values.size() == 0) {
+                continue;
             }
+
+            for (Tuple<Column, Long> value : values) {
+                if (value != null) {
+                    Column column = value.first();
+                    long columnValue = value.second();
+
+                    GeneratedData current = data.get(column);
+
+                    if (current == null) {
+                        current = new GeneratedData();
+                        current.setCount(1);
+                        current.setMax((int) columnValue);
+                        current.setMin((int) columnValue);
+                        current.setSum((int) columnValue);
+                        data.put(column, current);
+                        continue;
+                    }
+
+                    current.incrementCount();
+                    current.incrementSum((int) columnValue);
+                }
+            }
+
         }
 
         return data;

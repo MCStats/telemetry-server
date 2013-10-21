@@ -10,6 +10,7 @@ import org.mcstats.generator.aggregator.DecoderAggregator;
 import org.mcstats.generator.aggregator.IncrementAggregator;
 import org.mcstats.generator.aggregator.ReflectionAggregator;
 import org.mcstats.generator.aggregator.ReflectionDonutAggregator;
+import org.mcstats.generator.aggregator.RevisionAggregator;
 import org.mcstats.generator.aggregator.VersionDemographicsAggregator;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Column;
@@ -52,20 +53,23 @@ public class MainlineGraphs implements Runnable {
         // version trends
 
         generators.add(new IncrementAggregator("Global Statistics", "Servers"));
-        generators.add(new ReflectionAggregator("players", "Global Statistics", "Players"));
 
-        /* generators.add(new ReflectionAggregator("serverSoftware", "Server Software"));
+        generators.add(new ReflectionAggregator("players", "Global Statistics", "Players"));
+        generators.add(new ReflectionAggregator("serverSoftware", "Server Software"));
+        generators.add(new ReflectionAggregator("minecraftVersion", "Game Version"));
         generators.add(new ReflectionAggregator("osarch", "System Arch"));
         generators.add(new ReflectionAggregator("cores", "System Cores"));
+
+        generators.add(new RevisionAggregator("MCStats Revision"));
+
+        generators.add(new ReflectionDonutAggregator("osname", "osversion", "Operating System"));
+        generators.add(new ReflectionDonutAggregator("java_name", "java_version", "Java Version"));
 
         generators.add(new VersionDemographicsAggregator("Version Demographics"));
 
         generators.add(new CountryAggregator("Server Locations"));
 
-        generators.add(new ReflectionDonutAggregator("osname", "osversion", "Operating System"));
-        generators.add(new ReflectionDonutAggregator("java_name", "java_version", "Java Version"));
-
-        generators.add(new DecoderAggregator<Integer>("auth_mode", "Auth Mode", new DecoderAggregator.Decoder<Integer>() {
+        generators.add(new DecoderAggregator<Integer>("online_mode", "Auth Mode", new DecoderAggregator.Decoder<Integer>() {
             public String decode(Integer value) {
                 switch (value) {
                     case 0:
@@ -76,15 +80,7 @@ public class MainlineGraphs implements Runnable {
                         return "Unknown";
                 }
             }
-        })); */
-        /*
-
-        generators.add(new ReflectionAggregator("minecraftVersion", "Game Version"));
-        // generators.add(new ReflectionAggregator("revision", "MCStats Revision"));
-        generators.add(new ReflectionAggregator("", ""));
-        generators.add(new ReflectionAggregator("", ""));
-
-        */
+        }));
     }
 
     /**
@@ -102,6 +98,8 @@ public class MainlineGraphs implements Runnable {
             Map<Column, GeneratedData> data = generator.generate(mcstats);
 
             int epoch = ReportHandler.normalizeTime();
+
+            logger.info("Storing " + data.size() + " columns of data");
 
             for (Map.Entry<Column, GeneratedData> entry : data.entrySet()) {
                 Column column = entry.getKey();

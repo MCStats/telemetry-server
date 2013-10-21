@@ -187,6 +187,7 @@ public class MCStats {
         connectToDatabase();
 
         countries.putAll(database.loadCountries());
+        logger.info("Loaded " + countries.size() + " countries");
 
         graphStore = new MongoDBGraphStore(this);
 
@@ -517,6 +518,9 @@ public class MCStats {
             Scheduler scheduler = new Scheduler();
             scheduler.schedule("*/5 * * * *", new MainlineGraphs(this));
             scheduler.start();
+            logger.info("Graph generator is active");
+        } else {
+            logger.info("Graph generator is NOT active");
         }
 
         try {

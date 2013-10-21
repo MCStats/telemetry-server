@@ -10,7 +10,9 @@ import org.mcstats.util.Tuple;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ReflectionAggregator extends SimpleAggregator {
@@ -82,9 +84,11 @@ public class ReflectionAggregator extends SimpleAggregator {
      * {@inheritDoc
      */
     @Override
-    public Tuple<Column, Long> getValue(MCStats mcstats, Plugin plugin, Server server) {
+    public List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server) {
+        List<Tuple<Column, Long>> res = new ArrayList<Tuple<Column, Long>>();
+
         if (field == null) {
-            return null;
+            return res;
         }
 
         try {
@@ -95,21 +99,25 @@ public class ReflectionAggregator extends SimpleAggregator {
 
             // attempt to parse it as a string
             if (usingColumn == null) {
-                usingColumn = (String) value;
+                usingColumn = value.toString();
             } else {
-                columnValue = Long.parseLong(value.toString());
+                try {
+                    columnValue = Long.parseLong(value.toString());
+                } catch (Exception e) {
+                    columnValue = 1;
+                }
             }
 
             // load the graph for the plugin
             Graph graph = mcstats.loadGraph(plugin, graphName);
             Column column = graph.loadColumn(usingColumn);
 
-            return new Tuple<Column, Long>(column, columnValue);
+            res.add(new Tuple<Column, Long>(column, columnValue));
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return null;
+        return res;
     }
 
     @Override

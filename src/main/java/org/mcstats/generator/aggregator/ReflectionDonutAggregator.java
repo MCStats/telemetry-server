@@ -9,6 +9,8 @@ import org.mcstats.model.Server;
 import org.mcstats.util.Tuple;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ReflectionDonutAggregator extends SimpleAggregator {
 
@@ -86,9 +88,11 @@ public class ReflectionDonutAggregator extends SimpleAggregator {
      * {@inheritDoc
      */
     @Override
-    public Tuple<Column, Long> getValue(MCStats mcstats, Plugin plugin, Server server) {
+    public List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server) {
+        List<Tuple<Column, Long>> res = new ArrayList<Tuple<Column, Long>>();
+
         if (innerField == null || outerField == null) {
-            return null;
+            return res;
         }
 
         try {
@@ -113,12 +117,12 @@ public class ReflectionDonutAggregator extends SimpleAggregator {
             Graph graph = mcstats.loadGraph(plugin, graphName);
             Column column = graph.loadColumn(usingInner + "~=~" + usingOuter);
 
-            return new Tuple<Column, Long>(column, columnValue);
+            res.add(new Tuple<Column, Long>(column, columnValue));
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return null;
+        return res;
     }
 
     @Override

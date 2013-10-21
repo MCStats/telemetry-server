@@ -69,6 +69,15 @@ public class ServerPlugin implements Savable {
         return hash;
     }
 
+    /**
+     * Check if the server plugin has been updated in the last 30 minutes
+     *
+     * @return
+     */
+    public boolean recentlyUpdated() {
+        return updated > (((int) System.currentTimeMillis() / 1000) - 1800);
+    }
+
     public Server getServer() {
         return server;
     }
@@ -131,4 +140,5 @@ public class ServerPlugin implements Savable {
         mcstats.getDatabase().saveServerPlugin(this);
         modified = false;
     }
+
 }

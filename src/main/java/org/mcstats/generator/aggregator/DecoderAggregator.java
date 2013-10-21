@@ -47,7 +47,7 @@ public class DecoderAggregator<T> extends ReflectionAggregator {
             T value = (T) field.get(server);
             return decoder.decode(value);
         } catch (Exception e) {
-            return columnName;
+            return "Unknown";
         }
     }
 
