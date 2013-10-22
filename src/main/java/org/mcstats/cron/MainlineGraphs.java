@@ -9,6 +9,7 @@ import org.mcstats.generator.GraphGenerator;
 import org.mcstats.generator.aggregator.CustomDataAggregator;
 import org.mcstats.generator.aggregator.DecoderAggregator;
 import org.mcstats.generator.aggregator.IncrementAggregator;
+import org.mcstats.generator.aggregator.RankAggregator;
 import org.mcstats.generator.aggregator.ReflectionAggregator;
 import org.mcstats.generator.aggregator.ReflectionDonutAggregator;
 import org.mcstats.generator.aggregator.RevisionAggregator;
@@ -71,6 +72,8 @@ public class MainlineGraphs implements Runnable {
         generators.add(new CountryAggregator("Server Locations"));
 
         generators.add(new CustomDataAggregator());
+
+        generators.add(new RankAggregator());
 
         generators.add(new DecoderAggregator<Integer>("online_mode", "Auth Mode", new DecoderAggregator.Decoder<Integer>() {
             public String decode(Integer value) {

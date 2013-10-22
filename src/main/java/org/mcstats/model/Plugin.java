@@ -44,6 +44,21 @@ public class Plugin implements Savable {
     private int globalHits;
 
     /**
+     * The plugin's rank
+     */
+    private int rank;
+
+    /**
+     * The plugins last rank
+     */
+    private int lastRank;
+
+    /**
+     * The epoch the rank last changed at
+     */
+    private int lastRankChange;
+
+    /**
      * The unix epoch the plugin was created at
      */
     private int created;
@@ -188,6 +203,33 @@ public class Plugin implements Savable {
 
     public void setGlobalHits(int globalHits) {
         this.globalHits = globalHits;
+        modified = true;
+    }
+
+    public int getRank() {
+        return rank;
+    }
+
+    public void setRank(int rank) {
+        this.rank = rank;
+        modified = true;
+    }
+
+    public int getLastRank() {
+        return lastRank;
+    }
+
+    public void setLastRank(int lastRank) {
+        this.lastRank = lastRank;
+        modified = true;
+    }
+
+    public int getLastRankChange() {
+        return lastRankChange;
+    }
+
+    public void setLastRankChange(int lastRankChange) {
+        this.lastRankChange = lastRankChange;
         modified = true;
     }
 

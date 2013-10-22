@@ -125,4 +125,5 @@ public abstract class SimpleAggregator implements GraphGenerator {
 
         return data;
     }
+
 }
