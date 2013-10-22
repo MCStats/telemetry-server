@@ -2,8 +2,12 @@ package org.mcstats.model;
 
 import org.mcstats.MCStats;
 import org.mcstats.db.Savable;
+import org.mcstats.util.Tuple;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ServerPlugin implements Savable {
@@ -53,6 +57,11 @@ public class ServerPlugin implements Savable {
      */
     public boolean versionModified = false;
 
+    /**
+     * The version changes for this plugin
+     */
+    public final List<Tuple<String, String>> versionChanges = new ArrayList<Tuple<String, String>>();
+
     public ServerPlugin(MCStats mcstats, Server server, Plugin plugin) {
         this.mcstats = mcstats;
         this.server = server;
@@ -84,6 +93,31 @@ public class ServerPlugin implements Savable {
      */
     public boolean recentlyUpdated() {
         return updated > (((int) System.currentTimeMillis() / 1000) - 1800);
+    }
+
+    /**
+     * Add a version change
+     *
+     * @param oldVersion the version being chnaged from
+     * @param newVersion the version changing to
+     */
+    public void addVersionChange(String oldVersion, String newVersion) {
+        versionChanges.add(new Tuple<String, String>(oldVersion, newVersion));
+    }
+
+    /**
+     * Get an unmodifiable list of the version changes
+     * @return
+     */
+    public List<Tuple<String, String>> getVersionChanges() {
+        return Collections.unmodifiableList(versionChanges);
+    }
+
+    /**
+     * Clear the list of version changes
+     */
+    public void clearVersionChanges() {
+        versionChanges.clear();
     }
 
     public Server getServer() {

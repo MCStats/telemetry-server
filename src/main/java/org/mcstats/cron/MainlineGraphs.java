@@ -13,6 +13,7 @@ import org.mcstats.generator.aggregator.RankAggregator;
 import org.mcstats.generator.aggregator.ReflectionAggregator;
 import org.mcstats.generator.aggregator.ReflectionDonutAggregator;
 import org.mcstats.generator.aggregator.RevisionAggregator;
+import org.mcstats.generator.aggregator.VersionChangesAggregator;
 import org.mcstats.generator.aggregator.VersionDemographicsAggregator;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Column;
@@ -45,14 +46,14 @@ public class MainlineGraphs implements Runnable {
         // -- > Servers
         // -- java version, donut (Reflection2Aggregator)
         // -- operating system, donut
-        // rank
+        // -- rank
         // -- revision
         // -- server locations
         // -- server software
         // -- system arch
         // -- system cores
         // -- version demographics
-        // version trends
+        // -- version trends
 
         generators.add(new IncrementAggregator("Global Statistics", "Servers"));
 
@@ -68,6 +69,8 @@ public class MainlineGraphs implements Runnable {
         generators.add(new ReflectionDonutAggregator("java_name", "java_version", "Java Version"));
 
         generators.add(new VersionDemographicsAggregator("Version Demographics"));
+
+        generators.add(new VersionChangesAggregator("Version Trends"));
 
         generators.add(new CountryAggregator("Server Locations"));
 

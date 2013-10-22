@@ -234,15 +234,7 @@ public class ReportHandler extends AbstractHandler {
                         }
 
                         if ((!serverPlugin.getVersion().equals(decoded.pluginVersion)) && (!server.isBlacklisted())) {
-                            if (!serverPlugin.getVersion().isEmpty()) {
-                                PluginVersion version = mcstats.loadPluginVersion(plugin, decoded.pluginVersion);
-
-                                if (version != null) {
-                                    String query = "INSERT INTO VersionHistory (Plugin, Server, Version, Created) VALUES (" + plugin.getId() + ", " + server.getId() + ", " + version.getId() + ", UNIX_TIMESTAMP())";
-                                    new RawQuery(mcstats, query).save();
-                                }
-                            }
-
+                            serverPlugin.addVersionChange(serverPlugin.getVersion(), decoded.pluginVersion);
                             serverPlugin.setVersion(decoded.pluginVersion);
                         }
 

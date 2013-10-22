@@ -107,7 +107,7 @@ public class MCStats {
      * A map of all of the currently loaded servers
      */
     private final LoadingCache<String, Server> servers = CacheBuilder.newBuilder()
-            .maximumSize(100000) // 100k
+            .maximumSize(400000) // 100k
             .build(new CacheLoader<String, Server>() {
 
                 public Server load(String key) {
