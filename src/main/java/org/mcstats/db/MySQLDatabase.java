@@ -553,6 +553,10 @@ public class MySQLDatabase implements Database {
     }
 
     public Column createColumn(Graph graph, String name) {
+        if (name.length() > 255) {
+            return null;
+        }
+
         Connection connection = null;
 
         try {
@@ -573,6 +577,10 @@ public class MySQLDatabase implements Database {
     }
 
     public Column loadColumn(Graph graph, String name) {
+        if (name.length() > 255) {
+            return null;
+        }
+
         try {
             Connection connection = ds.getConnection();
             PreparedStatement statement = connection.prepareStatement("SELECT ID, Name FROM CustomColumn WHERE Graph = ? AND Name = ?");

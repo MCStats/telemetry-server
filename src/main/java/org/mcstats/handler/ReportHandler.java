@@ -5,6 +5,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.util.ByteArrayISO8859Writer;
 import org.mcstats.MCStats;
+import org.mcstats.cache.LRUCache;
 import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.decoder.LegacyRequestDecoder;
 import org.mcstats.decoder.ModernRequestDecoder;
@@ -60,6 +61,11 @@ public class ReportHandler extends AbstractHandler {
      * Legacy request decoder
      */
     private final RequestDecoder legacyDecoder;
+
+    /**
+     * Cache of the last sent times
+     */
+    private Map<String, Integer> serverLastSendCache = new LRUCache(500000);
 
     public ReportHandler(MCStats mcstats) {
         this.mcstats = mcstats;
@@ -202,12 +208,18 @@ public class ReportHandler extends AbstractHandler {
 
             String serverCacheKey = decoded.guid + "/" + plugin.getId();
 
+            if (this.serverLastSendCache.containsKey(serverCacheKey)) {
+                lastSent = serverLastSendCache.get(serverCacheKey);
+            }
+
             if (((plugin.getId() != 1) || (decoded.revision != 7)) ||
                     (lastSent > normalizedTime)) {
                 finishRequest(decoded, ResponseType.OK, baseRequest, response);
             } else {
                 finishRequest(decoded, ResponseType.OK_FIRST_REQUEST, baseRequest, response);
             }
+
+            serverLastSendCache.put(serverCacheKey, (int) System.currentTimeMillis());
 
             if (plugin.getId() == 4930) {
                 return;
