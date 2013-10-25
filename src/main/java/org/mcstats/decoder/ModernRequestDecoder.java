@@ -48,7 +48,7 @@ public class ModernRequestDecoder implements RequestDecoder {
             return null;
         }
         DecodedRequest decoded = new DecodedRequest();
-        decoded.guid = (String) post.get("guid");
+        decoded.guid = String.valueOf(post.get("guid"));
         decoded.serverVersion = (new StringBuilder()).append("").append(post.get("server_version")).toString();
         decoded.pluginVersion = (new StringBuilder()).append("").append(post.get("plugin_version")).toString();
         decoded.isPing = post.containsKey("ping");
