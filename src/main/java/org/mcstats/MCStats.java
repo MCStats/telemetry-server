@@ -516,7 +516,7 @@ public class MCStats {
 
         if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
             Scheduler scheduler = new Scheduler();
-            scheduler.schedule("*/5 * * * *", new MainlineGraphs(this));
+            scheduler.schedule("*/30 * * * *", new MainlineGraphs(this));
             scheduler.start();
             logger.info("Graph generator is active");
         } else {

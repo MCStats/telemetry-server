@@ -132,6 +132,10 @@ public class ModernRequestDecoder implements RequestDecoder {
      * @return
      */
     private long tryParseLong(Object input) {
+        if (input == null) {
+            return 0;
+        }
+
         String value = input.toString();
         long longValue = -1L;
 
