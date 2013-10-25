@@ -16,6 +16,7 @@ import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.handler.BlackholeHandler;
 import org.mcstats.handler.ReportHandler;
+import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.PluginVersion;
@@ -199,6 +200,16 @@ public class MCStats {
         }
 
         logger.info("Loaded " + pluginsByName.size() + " plugins");
+
+        int numGraphs = 0;
+        for (Plugin plugin : pluginsByName.values()) {
+            for (Graph graph : database.loadGraphs(plugin)) {
+                plugin.addGraph(graph);
+                numGraphs ++;
+            }
+        }
+
+        logger.info("Loaded " + numGraphs + " graphs");
 
         // Create & open the webserver
         createWebServer();

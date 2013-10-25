@@ -553,7 +553,7 @@ public class MySQLDatabase implements Database {
     }
 
     public Column createColumn(Graph graph, String name) {
-        if (name.length() > 255) {
+        if (name.length() > 100) {
             return null;
         }
 
@@ -577,7 +577,7 @@ public class MySQLDatabase implements Database {
     }
 
     public Column loadColumn(Graph graph, String name) {
-        if (name.length() > 255) {
+        if (name.length() > 100) {
             return null;
         }
 

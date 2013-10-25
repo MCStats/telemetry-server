@@ -59,6 +59,11 @@ public class Graph {
      */
     private Map<String, Column> columns = new HashMap<String, Column>();
 
+    /**
+     * If the columns were loaded from the database
+     */
+    private boolean didTryLoadColumns = false;
+
     public Graph(MCStats mcstats, Plugin plugin) {
         this.mcstats = mcstats;
         this.plugin = plugin;
@@ -86,26 +91,28 @@ public class Graph {
      * @return
      */
     public Column loadColumn(String name) {
-        Column column = columns.get(name);
+        if (!didTryLoadColumns && columns.size() == 0) {
+            for (Column column : mcstats.getDatabase().loadColumns(this)) {
+                columns.put(column.getName().toLowerCase(), column);
+            }
+
+            didTryLoadColumns = true;
+        }
+
+        Column column = columns.get(name.toLowerCase());
 
         if (column != null) {
             return column;
         }
 
-        // Load it from the database
-        column = mcstats.getDatabase().loadColumn(this, name);
-
-        // create it if not found
-        if (column == null) {
-            column = mcstats.getDatabase().createColumn(this, name);
-        }
+        column = mcstats.getDatabase().createColumn(this, name);
 
         if (column == null) {
             logger.error("Failed to create Column for " + name + " , \"" + name + "\"");
             return null;
         }
 
-        columns.put(name, column);
+        columns.put(name.toLowerCase(), column);
         return column;
     }
 

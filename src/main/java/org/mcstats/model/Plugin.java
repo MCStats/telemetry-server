@@ -119,7 +119,7 @@ public class Plugin implements Savable {
      * @return
      */
     public Graph getGraph(String name) {
-        return graphs.get(name);
+        return graphs.get(name.toLowerCase());
     }
 
     /**
@@ -128,7 +128,7 @@ public class Plugin implements Savable {
      * @param graph
      */
     public void addGraph(Graph graph) {
-        graphs.put(graph.getName(), graph);
+        graphs.put(graph.getName().toLowerCase(), graph);
     }
 
     /**
