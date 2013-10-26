@@ -8,6 +8,7 @@ import org.mcstats.generator.aggregator.CountryAggregator;
 import org.mcstats.generator.GraphGenerator;
 import org.mcstats.generator.aggregator.CustomDataAggregator;
 import org.mcstats.generator.aggregator.DecoderAggregator;
+import org.mcstats.generator.aggregator.GlobalStatisticsAggregator;
 import org.mcstats.generator.aggregator.IncrementAggregator;
 import org.mcstats.generator.aggregator.RankAggregator;
 import org.mcstats.generator.aggregator.ReflectionAggregator;
@@ -61,9 +62,8 @@ public class MainlineGraphs implements Runnable {
         // -- version demographics
         // -- version trends
 
-        generators.add(new IncrementAggregator("Global Statistics", "Servers"));
+        generators.add(new GlobalStatisticsAggregator());
 
-        generators.add(new ReflectionAggregator("players", "Global Statistics", "Players"));
         generators.add(new ReflectionAggregator("serverSoftware", "Server Software"));
         generators.add(new ReflectionAggregator("minecraftVersion", "Game Version"));
         generators.add(new ReflectionAggregator("osarch", "System Arch"));
