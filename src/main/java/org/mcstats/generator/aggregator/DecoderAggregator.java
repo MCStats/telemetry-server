@@ -51,4 +51,9 @@ public class DecoderAggregator<T> extends ReflectionAggregator {
         }
     }
 
+    @Override
+    public long getColumnValue(Object fieldValue, String usingColumn) {
+        return 1;
+    }
+
 }

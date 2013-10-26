@@ -81,6 +81,30 @@ public class ReflectionAggregator extends SimpleAggregator {
     }
 
     /**
+     * Get the column's value
+     *
+     * @param fieldValue
+     * @param usingColumn generally equal to getColumnName
+     * @return
+     */
+    public long getColumnValue(Object fieldValue, String usingColumn) {
+        long columnValue = 1;
+
+        // attempt to parse it as a string
+        if (usingColumn == null) {
+            usingColumn = fieldValue.toString();
+        } else {
+            try {
+                columnValue = Long.parseLong(fieldValue.toString());
+            } catch (Exception e) {
+                columnValue = 1;
+            }
+        }
+
+        return columnValue;
+    }
+
+    /**
      * {@inheritDoc
      */
     @Override
@@ -95,18 +119,7 @@ public class ReflectionAggregator extends SimpleAggregator {
             Object value = field.get(server);
 
             String usingColumn = getColumnName(server);
-            long columnValue = 1;
-
-            // attempt to parse it as a string
-            if (usingColumn == null) {
-                usingColumn = value.toString();
-            } else {
-                try {
-                    columnValue = Long.parseLong(value.toString());
-                } catch (Exception e) {
-                    columnValue = 1;
-                }
-            }
+            long columnValue = getColumnValue(field, usingColumn);
 
             // load the graph for the plugin
             Graph graph = mcstats.loadGraph(plugin, graphName);
