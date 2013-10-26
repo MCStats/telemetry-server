@@ -347,6 +347,7 @@ public class ReportHandler extends AbstractHandler {
 
                         serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
                         plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
+                        server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
 
                         // server.save();
                         // serverPlugin.save();

@@ -114,8 +114,22 @@ public class Server implements Savable {
      */
     private final Map<Plugin, ServerPlugin> plugins = new HashMap<Plugin, ServerPlugin>();
 
+    /**
+     * Unix timestamp of when it last sent data
+     */
+    private int lastSentData;
+
     public Server(MCStats mcstats) {
         this.mcstats = mcstats;
+    }
+
+    /**
+     * Check if the server has sent data in the last 30 minutes
+     *
+     * @return
+     */
+    public boolean recentlySentData() {
+        return lastSentData > (((int) System.currentTimeMillis() / 1000) - 1800);
     }
 
     @Override
@@ -256,6 +270,14 @@ public class Server implements Savable {
 
     public String getOSName() {
         return osname;
+    }
+
+    public int getLastSentData() {
+        return lastSentData;
+    }
+
+    public void setLastSentData(int lastSentData) {
+        this.lastSentData = lastSentData;
     }
 
     public void setOSName(String osname) {

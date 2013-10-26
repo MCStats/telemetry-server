@@ -91,9 +91,7 @@ public class ReflectionAggregator extends SimpleAggregator {
         long columnValue = 1;
 
         // attempt to parse it as a string
-        if (usingColumn == null) {
-            usingColumn = fieldValue.toString();
-        } else {
+        if (usingColumn != null) {
             try {
                 columnValue = Long.parseLong(fieldValue.toString());
             } catch (Exception e) {
@@ -119,6 +117,11 @@ public class ReflectionAggregator extends SimpleAggregator {
             Object value = field.get(server);
 
             String usingColumn = getColumnName(server);
+
+            if (usingColumn == null) {
+                usingColumn = value.toString();
+            }
+
             long columnValue = getColumnValue(value, usingColumn);
 
             // load the graph for the plugin

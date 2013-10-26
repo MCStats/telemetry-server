@@ -63,17 +63,7 @@ public abstract class SimpleAggregator implements GraphGenerator {
 
         if (pluginValue.getId() == -1) {
             for (Server server : mcstats.getCachedServers()) {
-                boolean match = true;
-
-                if (plugin != null) {
-                    ServerPlugin serverPlugin = server.getPlugin(plugin);
-
-                    if (serverPlugin == null || !serverPlugin.recentlyUpdated()) {
-                        match = false;
-                    }
-                }
-
-                if (!match) {
+                if (!server.recentlySentData()) {
                     continue;
                 }
 
