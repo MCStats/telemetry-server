@@ -3,6 +3,7 @@ package org.mcstats;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Sets;
 import it.sauronsoftware.cron4j.Scheduler;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
@@ -32,9 +33,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -152,6 +155,11 @@ public class MCStats {
      */
     private final Map<String, String> countries = new ConcurrentHashMap<String, String>();
 
+    /**
+     * Cache of server plugins mapped by their plugins
+     */
+    private final Map<Plugin, Set<ServerPlugin>> serverPluginsByPlugin = new ConcurrentHashMap<Plugin, Set<ServerPlugin>>();
+
     private MCStats() {
         // create the request callable
         Callable<Long> requestsCallable = new Callable<Long>() {
@@ -196,6 +204,7 @@ public class MCStats {
         for (Plugin plugin : database.loadPlugins()) {
             if (plugin.getId() >= 0) {
                 addPlugin(plugin);
+                serverPluginsByPlugin.put(plugin, Sets.newSetFromMap(new ConcurrentHashMap<ServerPlugin, Boolean>()));
             }
         }
 
@@ -259,6 +268,36 @@ public class MCStats {
      */
     public List<Plugin> getCachedPlugins() {
         return Collections.unmodifiableList(new ArrayList<Plugin>(pluginsById.values()));
+    }
+
+    /**
+     * Get the server plugins for a given plugin
+     *
+     * @param plugin
+     * @return
+     */
+    public Set<ServerPlugin> getServerPlugins(Plugin plugin) {
+        return serverPluginsByPlugin.containsKey(plugin) ? serverPluginsByPlugin.get(plugin) : new HashSet<ServerPlugin>();
+    }
+
+    /**
+     * Notify an addition of server plugin
+     *
+     * @param serverPlugin
+     */
+    public void notifyServerPlugin(ServerPlugin serverPlugin) {
+        if (serverPlugin == null) {
+            return;
+        }
+
+        Set<ServerPlugin> serverPlugins = serverPluginsByPlugin.get(serverPlugin.getPlugin());
+
+        if (serverPlugins == null) {
+            serverPlugins = Sets.newSetFromMap(new ConcurrentHashMap<ServerPlugin, Boolean>());
+            serverPluginsByPlugin.put(serverPlugin.getPlugin(), serverPlugins);
+        }
+
+        serverPlugins.add(serverPlugin);
     }
 
     /**

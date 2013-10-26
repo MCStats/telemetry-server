@@ -72,7 +72,7 @@ public class MongoDBGraphStore implements GraphStore {
         Graph graph = column.getGraph();
         Plugin plugin = column.getPlugin();
 
-        logger.info(String.format("insert(%s, %d, %d, %d, %d, %d, %d)\n", column.toString(), epoch, sum, count, avg, max, min));
+        // logger.info(String.format("insert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
 
         BasicDBObject toset = new BasicDBObject();
 

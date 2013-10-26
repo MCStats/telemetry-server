@@ -161,6 +161,15 @@ public class Plugin implements Savable {
         versionsByName.put(version.getVersion(), version);
     }
 
+    /**
+     * Check if the plugin has been updated in the last 30 minutes
+     *
+     * @return
+     */
+    public boolean recentlyUpdated() {
+        return lastUpdated > (((int) System.currentTimeMillis() / 1000) - 1800);
+    }
+
     public int getId() {
         return id;
     }

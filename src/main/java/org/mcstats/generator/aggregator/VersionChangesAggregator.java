@@ -39,6 +39,10 @@ public class VersionChangesAggregator extends SimpleAggregator {
             Graph graph = mcstats.loadGraph(plugin, graphName);
 
             for (Tuple<String, String> tuple : serverPlugin.getVersionChanges()) {
+                if (tuple == null) {
+                    continue;
+                }
+
                 String oldVersion = tuple.first();
                 String newVersion = tuple.second();
 

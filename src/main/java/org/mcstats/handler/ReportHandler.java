@@ -208,7 +208,7 @@ public class ReportHandler extends AbstractHandler {
 
             String serverCacheKey = decoded.guid + "/" + plugin.getId();
 
-            if (this.serverLastSendCache.containsKey(serverCacheKey)) {
+            if (serverLastSendCache.containsKey(serverCacheKey)) {
                 lastSent = serverLastSendCache.get(serverCacheKey);
             }
 
@@ -270,19 +270,13 @@ public class ReportHandler extends AbstractHandler {
                         String minecraftVersion = mcstats.getServerBuildIdentifier().getMinecraftVersion(decoded.serverVersion);
 
                         if (canonicalServerVersion.equals("CraftBukkit")) {
-                            for (Map.Entry entry : server.getPlugins().entrySet()) {
-                                ServerPlugin serverPlugin1 = (ServerPlugin) entry.getValue();
+                            ServerPlugin cbplusplus = server.getPlugin(mcstats.loadPlugin(137));
 
-                                if (((Plugin) entry.getKey()).getId() == 137) {
-                                    if (System.currentTimeMillis() / 1000L - serverPlugin1.getUpdated() >= 86400L) {
-                                        break;
-                                    }
+                            if (cbplusplus != null) {
+                                if (cbplusplus.recentlyUpdated()) {
                                     canonicalServerVersion = "CraftBukkit++";
-                                    break;
                                 }
-
                             }
-
                         }
 
                         if (!server.getServerSoftware().equals(canonicalServerVersion)) {

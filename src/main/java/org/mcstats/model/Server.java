@@ -173,6 +173,7 @@ public class Server implements Savable {
         }
 
         plugins.put(serverPlugin.getPlugin(), serverPlugin);
+        mcstats.notifyServerPlugin(serverPlugin);
     }
 
     public int getId() {

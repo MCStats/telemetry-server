@@ -17,6 +17,8 @@ import org.mcstats.generator.aggregator.VersionChangesAggregator;
 import org.mcstats.generator.aggregator.VersionDemographicsAggregator;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Column;
+import org.mcstats.model.Plugin;
+import org.mcstats.model.ServerPlugin;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -96,32 +98,45 @@ public class MainlineGraphs implements Runnable {
      * {@inheritDoc}
      */
     public void run() {
-        logger.info("Beginning graph generation");
-        GraphStore store = mcstats.getGraphStore();
+        try {
+            logger.info("Beginning graph generation");
+            GraphStore store = mcstats.getGraphStore();
 
-        long start = System.currentTimeMillis();
+            long start = System.currentTimeMillis();
 
-        for (GraphGenerator generator : generators) {
-            logger.info("Generating graph for: " + generator);
+            for (GraphGenerator generator : generators) {
+                logger.info("Generating graph for: " + generator);
 
-            Map<Column, GeneratedData> data = generator.generate(mcstats);
+                Map<Column, GeneratedData> data = generator.generate(mcstats);
 
-            int epoch = ReportHandler.normalizeTime();
+                int epoch = ReportHandler.normalizeTime();
 
-            logger.info("Storing " + data.size() + " columns of data");
+                logger.info("Storing " + data.size() + " columns of data");
 
-            for (Map.Entry<Column, GeneratedData> entry : data.entrySet()) {
-                Column column = entry.getKey();
-                GeneratedData columnData = entry.getValue();
+                for (Map.Entry<Column, GeneratedData> entry : data.entrySet()) {
+                    Column column = entry.getKey();
+                    GeneratedData columnData = entry.getValue();
 
-                store.insert(column, epoch, columnData.getSum(), columnData.getCount(), columnData.getAverage(), columnData.getMax(), columnData.getMin());
+                    store.insert(column, epoch, columnData.getSum(), columnData.getCount(), columnData.getAverage(), columnData.getMax(), columnData.getMin());
+                }
+
+                // logger.info("Aggregated: " + data);
             }
 
-            logger.info("Aggregated: " + data);
+            for (Plugin plugin : mcstats.getCachedPlugins()) {
+                plugin.save();
+
+                for (ServerPlugin serverPlugin : mcstats.getServerPlugins(plugin)) {
+                    if (serverPlugin.recentlyUpdated()) {
+                        serverPlugin.save();
+                    }
+                }
+            }
+
+            ((MongoDBGraphStore) store).finishGeneration();
+            logger.info("Finished graph generation in " + (System.currentTimeMillis() - start) + "ms");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        ((MongoDBGraphStore) store).finishGeneration();
-        logger.info("Finished graph generation in " + (System.currentTimeMillis() - start) + "ms");
-
     }
 }

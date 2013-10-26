@@ -108,7 +108,9 @@ public class Graph {
         column = mcstats.getDatabase().createColumn(this, name);
 
         if (column == null) {
-            logger.error("Failed to create Column for " + name + " , \"" + name + "\"");
+            if (mcstats.isDebug()) {
+                logger.error("Failed to create Column for " + name + " , \"" + name + "\"");
+            }
             return null;
         }
 

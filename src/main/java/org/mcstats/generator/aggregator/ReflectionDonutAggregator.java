@@ -127,7 +127,7 @@ public class ReflectionDonutAggregator extends SimpleAggregator {
 
     @Override
     public String toString() {
-        return String.format("ReflectionAggregator(innerFieldName = %s, outerFieldName = %s, graphName = %s, innerColumnName = %s, outerColumnName = %s)", innerField.getName(), outerField.getName(), graphName, innerColumnName, outerColumnName);
+        return String.format("ReflectionDonutAggregator(innerFieldName = %s, outerFieldName = %s, graphName = %s, innerColumnName = %s, outerColumnName = %s)", innerField.getName(), outerField.getName(), graphName, innerColumnName, outerColumnName);
     }
 
 }

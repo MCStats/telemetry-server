@@ -568,7 +568,8 @@ public class MySQLDatabase implements Database {
             statement.executeUpdate();
             QUERIES++;
         } catch (SQLException e) {
-            e.printStackTrace();
+
+
         } finally {
             safeClose(connection);
         }

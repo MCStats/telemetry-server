@@ -7,8 +7,10 @@ import org.mcstats.util.Tuple;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ServerPlugin implements Savable {
 
@@ -60,7 +62,7 @@ public class ServerPlugin implements Savable {
     /**
      * The version changes for this plugin
      */
-    public final List<Tuple<String, String>> versionChanges = new ArrayList<Tuple<String, String>>();
+    public final Set<Tuple<String, String>> versionChanges = new HashSet<Tuple<String, String>>();
 
     public ServerPlugin(MCStats mcstats, Server server, Plugin plugin) {
         this.mcstats = mcstats;
@@ -109,8 +111,8 @@ public class ServerPlugin implements Savable {
      * Get an unmodifiable list of the version changes
      * @return
      */
-    public List<Tuple<String, String>> getVersionChanges() {
-        return Collections.unmodifiableList(versionChanges);
+    public Set<Tuple<String, String>> getVersionChanges() {
+        return Collections.unmodifiableSet(versionChanges);
     }
 
     /**

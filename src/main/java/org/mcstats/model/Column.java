@@ -63,4 +63,20 @@ public class Column {
     public void setName(String name) {
         this.name = name;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Column)) {
+            return false;
+        }
+
+        Column oc = (Column) o;
+        return id == oc.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+
 }

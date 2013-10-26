@@ -52,7 +52,6 @@ public class IncrementAggregator extends SimpleAggregator {
         List<Tuple<Column, Long>> res = new ArrayList<Tuple<Column, Long>>();
 
         try {
-            // load the graph for the plugin
             Graph graph = mcstats.loadGraph(plugin, graphName);
             Column column = graph.loadColumn(columnName);
 

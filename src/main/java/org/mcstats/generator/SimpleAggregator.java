@@ -52,58 +52,93 @@ public abstract class SimpleAggregator implements GraphGenerator {
     private Map<Column, GeneratedData> aggregate(MCStats mcstats, Plugin plugin) {
         Map<Column, GeneratedData> data = new HashMap<Column, GeneratedData>();
 
-        for (Server server : mcstats.getCachedServers()) {
-            boolean match = true;
+        Plugin pluginValue;
 
-            if (plugin != null) {
-                ServerPlugin serverPlugin = server.getPlugin(plugin);
+        if (plugin == null) {
+            // All Servers
+            pluginValue = mcstats.loadPlugin(-1);
+        } else {
+            pluginValue = plugin;
+        }
 
-                if (serverPlugin == null || !serverPlugin.recentlyUpdated()) {
-                    match = false;
-                }
-            }
+        if (pluginValue.getId() == -1) {
+            for (Server server : mcstats.getCachedServers()) {
+                boolean match = true;
 
-            if (!match) {
-                continue;
-            }
+                if (plugin != null) {
+                    ServerPlugin serverPlugin = server.getPlugin(plugin);
 
-            Plugin pluginValue;
-
-            if (plugin == null) {
-                // All Servers
-                pluginValue = mcstats.loadPlugin(-1);
-            } else {
-                pluginValue = plugin;
-            }
-
-            List<Tuple<Column, Long>> values = getValues(mcstats, pluginValue, server);
-
-            if (values == null || values.size() == 0) {
-                continue;
-            }
-
-            for (Tuple<Column, Long> value : values) {
-                if (value != null) {
-                    Column column = value.first();
-                    long columnValue = value.second();
-
-                    GeneratedData current = data.get(column);
-
-                    if (current == null) {
-                        current = new GeneratedData();
-                        current.setCount(1);
-                        current.setMax((int) columnValue);
-                        current.setMin((int) columnValue);
-                        current.setSum((int) columnValue);
-                        data.put(column, current);
-                        continue;
+                    if (serverPlugin == null || !serverPlugin.recentlyUpdated()) {
+                        match = false;
                     }
+                }
 
-                    current.incrementCount();
-                    current.incrementSum((int) columnValue);
+                if (!match) {
+                    continue;
+                }
+
+                List<Tuple<Column, Long>> values = getValues(mcstats, pluginValue, server);
+
+                if (values == null || values.size() == 0) {
+                    continue;
+                }
+
+                for (Tuple<Column, Long> value : values) {
+                    if (value != null) {
+                        Column column = value.first();
+                        long columnValue = value.second();
+
+                        GeneratedData current = data.get(column);
+
+                        if (current == null) {
+                            current = new GeneratedData();
+                            current.setCount(1);
+                            current.setMax((int) columnValue);
+                            current.setMin((int) columnValue);
+                            current.setSum((int) columnValue);
+                            data.put(column, current);
+                            continue;
+                        }
+
+                        current.incrementCount();
+                        current.incrementSum((int) columnValue);
+                    }
                 }
             }
+        } else {
+            for (ServerPlugin serverPlugin : mcstats.getServerPlugins(pluginValue)) {
+                if (!serverPlugin.recentlyUpdated()) {
+                    continue;
+                }
 
+                List<Tuple<Column, Long>> values = getValues(mcstats, pluginValue, serverPlugin.getServer());
+
+                if (values == null || values.size() == 0) {
+                    continue;
+                }
+
+                for (Tuple<Column, Long> value : values) {
+                    if (value != null) {
+                        Column column = value.first();
+                        long columnValue = value.second();
+
+                        GeneratedData current = data.get(column);
+
+                        if (current == null) {
+                            current = new GeneratedData();
+                            current.setCount(1);
+                            current.setMax((int) columnValue);
+                            current.setMin((int) columnValue);
+                            current.setSum((int) columnValue);
+                            data.put(column, current);
+                            continue;
+                        }
+
+                        current.incrementCount();
+                        current.incrementSum((int) columnValue);
+                    }
+                }
+            }
         }
 
         return data;
@@ -120,7 +155,9 @@ public abstract class SimpleAggregator implements GraphGenerator {
 
         // aggregate all plugins
         for (Plugin plugin : mcstats.getCachedPlugins()) {
-            data.putAll(aggregate(mcstats, plugin));
+            if (plugin.recentlyUpdated()) {
+                data.putAll(aggregate(mcstats, plugin));
+            }
         }
 
         return data;
