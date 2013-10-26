@@ -44,9 +44,11 @@ public class ModernRequestDecoder implements RequestDecoder {
 
         reader.close();
         JSONObject post = (JSONObject) JSONValue.parse(content);
+
         if (post == null || !post.containsKey("guid")) {
             return null;
         }
+
         DecodedRequest decoded = new DecodedRequest();
         decoded.guid = String.valueOf(post.get("guid"));
         decoded.serverVersion = (new StringBuilder()).append("").append(post.get("server_version")).toString();
@@ -54,12 +56,15 @@ public class ModernRequestDecoder implements RequestDecoder {
         decoded.isPing = post.containsKey("ping");
         decoded.revision = Integer.parseInt(request.getHeader("User-Agent").substring("MCStats/".length()));
         decoded.playersOnline = Long.valueOf(tryParseLong(post.get("players_online"))).intValue();
+
         if (decoded.guid == null || decoded.serverVersion == null || decoded.pluginVersion == null) {
             return null;
         }
+
         if (decoded.playersOnline < 0 || decoded.playersOnline > 2000) {
             decoded.playersOnline = 0;
         }
+
         if (decoded.revision >= 6) {
             decoded.osname = (String) post.get("osname");
             decoded.osarch = (String) post.get("osarch");
@@ -82,6 +87,7 @@ public class ModernRequestDecoder implements RequestDecoder {
                 decoded.javaVersion = decoded.javaVersion.substring(decoded.javaName.length() + 1);
             }
         }
+
         decoded.customData = extractCustomData(plugin, post);
         return decoded;
     }

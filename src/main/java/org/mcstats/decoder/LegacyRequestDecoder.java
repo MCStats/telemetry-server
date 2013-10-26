@@ -190,7 +190,7 @@ public class LegacyRequestDecoder implements RequestDecoder {
             if (postKey.startsWith("Custom")) {
                 String columnName = postKey.substring(6).replaceAll("_", " ");
                 if (graph != null) {
-                    org.mcstats.model.Column column = graph.loadColumn(columnName);
+                    Column column = graph.loadColumn(columnName);
                     if (column != null) {
                         customData.put(column, Long.valueOf(value));
                     }
