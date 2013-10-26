@@ -1,4 +1,4 @@
-package org.mcstats.generator.aggregator;
+package org.mcstats.generator;
 
 import org.mcstats.MCStats;
 import org.mcstats.generator.SimpleAggregator;

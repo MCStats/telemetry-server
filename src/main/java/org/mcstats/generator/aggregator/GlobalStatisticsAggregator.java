@@ -3,6 +3,8 @@ package org.mcstats.generator.aggregator;
 import org.mcstats.MCStats;
 import org.mcstats.generator.GeneratedData;
 import org.mcstats.generator.GraphGenerator;
+import org.mcstats.generator.IncrementAggregator;
+import org.mcstats.generator.ReflectionAggregator;
 import org.mcstats.model.Column;
 
 import java.util.HashMap;
