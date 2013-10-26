@@ -4,11 +4,12 @@ import org.mcstats.MCStats;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.generator.GeneratedData;
+import org.mcstats.generator.IncrementAggregator;
+import org.mcstats.generator.MergeAggregator;
 import org.mcstats.generator.aggregator.CountryAggregator;
 import org.mcstats.generator.GraphGenerator;
 import org.mcstats.generator.aggregator.CustomDataAggregator;
 import org.mcstats.generator.DecoderAggregator;
-import org.mcstats.generator.aggregator.GlobalStatisticsAggregator;
 import org.mcstats.generator.aggregator.RankAggregator;
 import org.mcstats.generator.ReflectionAggregator;
 import org.mcstats.generator.ReflectionDonutAggregator;
@@ -61,7 +62,7 @@ public class MainlineGraphs implements Runnable {
         // -- version demographics
         // -- version trends
 
-        generators.add(new GlobalStatisticsAggregator());
+        generators.add(new MergeAggregator(new IncrementAggregator("Global Statistics", "Servers"), new ReflectionAggregator("players", "Global Statistics", "Players")));
 
         generators.add(new ReflectionAggregator("serverSoftware", "Server Software"));
         generators.add(new ReflectionAggregator("minecraftVersion", "Game Version"));
