@@ -17,9 +17,13 @@ import org.mcstats.generator.aggregator.VersionChangesAggregator;
 import org.mcstats.generator.aggregator.VersionDemographicsAggregator;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Column;
+import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.ServerPlugin;
+import org.mcstats.util.Tuple;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -113,25 +117,46 @@ public class MainlineGraphs implements Runnable {
 
                 logger.info("Storing " + data.size() + " columns of data");
 
+                Map<Graph, List<Tuple<Column, GeneratedData>>> grouped = new HashMap<Graph, List<Tuple<Column, GeneratedData>>>();
+
+                // group together the data for each graph
                 for (Map.Entry<Column, GeneratedData> entry : data.entrySet()) {
                     Column column = entry.getKey();
                     GeneratedData columnData = entry.getValue();
 
-                    store.insert(column, epoch, columnData.getSum(), columnData.getCount(), columnData.getAverage(), columnData.getMax(), columnData.getMin());
+                    List<Tuple<Column, GeneratedData>> listdata = grouped.get(column.getGraph());
+
+                    if (listdata == null) {
+                        listdata = new ArrayList<Tuple<Column, GeneratedData>>();
+                        grouped.put(column.getGraph(), listdata);
+                    }
+
+                    listdata.add(new Tuple<Column, GeneratedData>(column, columnData));
+                }
+
+                for (Map.Entry<Graph, List<Tuple<Column, GeneratedData>>> entry : grouped.entrySet()) {
+                    List<Tuple<Column, GeneratedData>> listdata = entry.getValue();
+                    store.insert(entry.getKey(), listdata, epoch);
                 }
 
                 // logger.info("Aggregated: " + data);
             }
 
+            logger.info("Beginning final stage of graph generation");
+
             for (Plugin plugin : mcstats.getCachedPlugins()) {
-                plugin.save();
+                int numServers30 = 0;
 
                 for (ServerPlugin serverPlugin : mcstats.getServerPlugins(plugin)) {
                     if (serverPlugin.recentlyUpdated()) {
                         serverPlugin.getServer().save();
                         serverPlugin.save();
+                        numServers30 ++;
                     }
                 }
+
+                plugin.setServerCount30(numServers30);
+                plugin.save();
             }
 
             ((MongoDBGraphStore) store).finishGeneration();

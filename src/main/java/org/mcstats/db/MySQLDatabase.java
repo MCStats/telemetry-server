@@ -119,7 +119,7 @@ public class MySQLDatabase implements Database {
 
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated FROM Plugin WHERE Parent = -1");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated, ServerCount30 FROM Plugin WHERE Parent = -1");
             ResultSet set = statement.executeQuery();
 
             while (set.next()) {
@@ -139,7 +139,7 @@ public class MySQLDatabase implements Database {
     public Plugin loadPlugin(int id) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated FROM Plugin WHERE ID = ?");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated, ServerCount30 FROM Plugin WHERE ID = ?");
             statement.setInt(1, id);
             ResultSet set = statement.executeQuery();
 
@@ -160,7 +160,7 @@ public class MySQLDatabase implements Database {
     public Plugin loadPlugin(String name) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated FROM Plugin WHERE Name = ?");
+            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated, ServerCount30 FROM Plugin WHERE Name = ?");
             statement.setString(1, name);
             ResultSet set = statement.executeQuery();
 
@@ -181,7 +181,7 @@ public class MySQLDatabase implements Database {
     public void savePlugin(Plugin plugin) {
         try {
             Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("UPDATE Plugin SET Name = ?, Hidden = ?, GlobalHits = ?, Rank = ?, LastRank = ?, LastRankChange = ?, Created = ?, LastUpdated = ? WHERE ID = ?");
+            PreparedStatement statement = connection.prepareStatement("UPDATE Plugin SET Name = ?, Hidden = ?, GlobalHits = ?, Rank = ?, LastRank = ?, LastRankChange = ?, Created = ?, LastUpdated = ?, ServerCount30 = ? WHERE ID = ?");
             statement.setString(1, plugin.getName());
             statement.setInt(2, plugin.getHidden());
             statement.setInt(3, plugin.getGlobalHits());
@@ -190,7 +190,8 @@ public class MySQLDatabase implements Database {
             statement.setInt(6, plugin.getLastRankChange());
             statement.setInt(7, plugin.getCreated());
             statement.setInt(8, plugin.getLastUpdated());
-            statement.setInt(9, plugin.getId());
+            statement.setInt(9, plugin.getServerCount30());
+            statement.setInt(10, plugin.getId());
 
             statement.executeUpdate();
             safeClose(connection);
@@ -782,6 +783,7 @@ public class MySQLDatabase implements Database {
         plugin.setLastRankChange(set.getInt("LastRankChange"));
         plugin.setCreated(set.getInt("Created"));
         plugin.setLastUpdated(set.getInt("LastUpdated"));
+        plugin.setServerCount30(set.getInt("ServerCount30"));
         plugin.setModified(false);
         return plugin;
     }

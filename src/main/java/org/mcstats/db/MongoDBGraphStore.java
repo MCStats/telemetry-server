@@ -7,12 +7,15 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.WriteConcern;
 import org.mcstats.MCStats;
+import org.mcstats.generator.GeneratedData;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
+import org.mcstats.util.Tuple;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class MongoDBGraphStore implements GraphStore {
@@ -74,30 +77,83 @@ public class MongoDBGraphStore implements GraphStore {
 
         // logger.info(String.format("insert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
 
-        BasicDBObject toset = new BasicDBObject();
+        BasicDBObject toset = new BasicDBObject().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
+        BasicDBObject data = new BasicDBObject();
+        BasicDBObject col = new BasicDBObject();
 
         if (sum != 0) {
-            toset.append("data." + column.getId() + ".sum", sum);
+            col.append("sum", sum);
         }
 
         if (count != 0) {
-            toset.append("data." + column.getId() + ".count", count);
+            col.append("count", count);
         }
 
         if (avg != 0) {
-            toset.append("data." + column.getId() + ".avg", avg);
+            col.append("avg", avg);
         }
 
         if (max != 0) {
-            toset.append("data." + column.getId() + ".max", max);
+            col.append("max", max);
         }
 
         if (min != 0) {
-            toset.append("data." + column.getId() + ".min", min);
+            col.append("min", min);
         }
 
-        DBObject search = new BasicDBObject().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
-        DBObject op = new BasicDBObject().append("$set", toset);
-        coll.update(search, op, true /* upsert */, false /* multi */);
+        data.append(Integer.toString(column.getId()), col);
+        toset.append("data", data);
+
+        coll.insert(toset);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void insert(Graph graph, List<Tuple<Column, GeneratedData>> listdata, int epoch) {
+        Plugin plugin = graph.getPlugin();
+
+        // logger.info(String.format("insert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
+
+        BasicDBObject toset = new BasicDBObject().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
+        BasicDBObject data = new BasicDBObject();
+
+        for (Tuple<Column, GeneratedData> tuple : listdata) {
+            BasicDBObject col = new BasicDBObject();
+            Column column = tuple.first();
+            GeneratedData gdata = tuple.second();
+
+            int sum = gdata.getSum();
+            int count = gdata.getCount();
+            int avg = gdata.getAverage();
+            int max = gdata.getMax();
+            int min = gdata.getMin();
+
+            if (sum != 0) {
+                col.append("sum", sum);
+            }
+
+            if (count != 0) {
+                col.append("count", count);
+            }
+
+            if (avg != 0) {
+                col.append("avg", avg);
+            }
+
+            if (max != 0) {
+                col.append("max", max);
+            }
+
+            if (min != 0) {
+                col.append("min", min);
+            }
+
+            data.append(Integer.toString(column.getId()), col);
+        }
+
+        toset.append("data", data);
+
+        coll.insert(toset);
     }
 }

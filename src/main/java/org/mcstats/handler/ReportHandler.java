@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +66,7 @@ public class ReportHandler extends AbstractHandler {
     /**
      * Cache of the last sent times
      */
-    private Map<String, Integer> serverLastSendCache = new LRUCache(500000);
+    private Map<String, Integer> serverLastSendCache = new ConcurrentHashMap<String, Integer>();
 
     public ReportHandler(MCStats mcstats) {
         this.mcstats = mcstats;
@@ -145,6 +146,10 @@ public class ReportHandler extends AbstractHandler {
         try {
             if (!request.getMethod().equals("POST")) {
                 return;
+            }
+
+            if (serverLastSendCache.size() > 1000000) {
+                serverLastSendCache.clear();
             }
 
             request.setCharacterEncoding("UTF-8");

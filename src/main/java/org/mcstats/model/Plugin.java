@@ -69,6 +69,11 @@ public class Plugin implements Savable {
     private int lastUpdated;
 
     /**
+     * The number of servers in the last 30 minutes (ish)
+     */
+    private int serverCount30;
+
+    /**
      * If this plugin was modified
      */
     private boolean modified = false;
@@ -240,6 +245,14 @@ public class Plugin implements Savable {
     public void setLastRankChange(int lastRankChange) {
         this.lastRankChange = lastRankChange;
         modified = true;
+    }
+
+    public int getServerCount30() {
+        return serverCount30;
+    }
+
+    public void setServerCount30(int serverCount30) {
+        this.serverCount30 = serverCount30;
     }
 
     public boolean isModified() {
