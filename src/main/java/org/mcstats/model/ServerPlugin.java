@@ -94,7 +94,7 @@ public class ServerPlugin implements Savable {
      * @return
      */
     public boolean recentlyUpdated() {
-        return updated > (((int) System.currentTimeMillis() / 1000) - 1800);
+        return updated > ((System.currentTimeMillis() / 1000) - 1800);
     }
 
     /**

@@ -122,6 +122,10 @@ public class ReflectionAggregator extends SimpleAggregator {
                 usingColumn = value.toString();
             }
 
+            if (usingColumn.isEmpty()) {
+                return res;
+            }
+
             long columnValue = getColumnValue(value, usingColumn);
 
             // load the graph for the plugin

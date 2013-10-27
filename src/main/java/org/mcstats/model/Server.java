@@ -129,7 +129,7 @@ public class Server implements Savable {
      * @return
      */
     public boolean recentlySentData() {
-        return lastSentData > (((int) System.currentTimeMillis() / 1000) - 1800);
+        return lastSentData > ((System.currentTimeMillis() / 1000) - 1800);
     }
 
     @Override

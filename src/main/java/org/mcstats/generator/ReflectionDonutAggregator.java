@@ -113,6 +113,10 @@ public class ReflectionDonutAggregator extends SimpleAggregator {
                 usingOuter = (String) outerValue;
             }
 
+            if (usingInner.isEmpty()) {
+                return res;
+            }
+
             // load the graph for the plugin
             Graph graph = mcstats.loadGraph(plugin, graphName);
             Column column = graph.loadColumn(usingInner + "~=~" + usingOuter);
