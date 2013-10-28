@@ -235,7 +235,7 @@ public class ReportHandler extends AbstractHandler {
                     try {
                         Server server = mcstats.loadServer(decoded.guid);
 
-                        if ((server.getViolationCount() >= 7) && (!server.isBlacklisted())) {
+                        if ((server.getViolationCount() >= 5) && (!server.isBlacklisted())) {
                             server.setBlacklisted(true);
                             mcstats.getDatabase().blacklistServer(server);
                         }
@@ -253,6 +253,7 @@ public class ReportHandler extends AbstractHandler {
                         if ((!serverPlugin.getVersion().equals(decoded.pluginVersion)) && (!server.isBlacklisted())) {
                             serverPlugin.addVersionChange(serverPlugin.getVersion(), decoded.pluginVersion);
                             serverPlugin.setVersion(decoded.pluginVersion);
+                            server.incrementViolations();
                         }
 
                         if (serverPlugin.getRevision() != decoded.revision) {

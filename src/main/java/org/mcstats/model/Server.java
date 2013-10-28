@@ -260,6 +260,10 @@ public class Server implements Savable {
         this.violations = violations;
     }
 
+    public void incrementViolations() {
+        violations ++;
+    }
+
     public boolean isBlacklisted() {
         return blacklisted;
     }
