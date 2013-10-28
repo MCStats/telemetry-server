@@ -149,6 +149,7 @@ public class MainlineGraphs implements Runnable {
 
                 for (ServerPlugin serverPlugin : mcstats.getServerPlugins(plugin)) {
                     if (serverPlugin.recentlyUpdated()) {
+                        serverPlugin.getServer().setViolationCount(0);
                         serverPlugin.getServer().save();
                         serverPlugin.save();
                         numServers30 ++;
