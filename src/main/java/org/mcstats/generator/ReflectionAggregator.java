@@ -117,16 +117,18 @@ public class ReflectionAggregator extends SimpleAggregator {
             Object value = field.get(server);
 
             String usingColumn = getColumnName(server);
+            long columnValue;
 
             if (usingColumn == null) {
                 usingColumn = value.toString();
+                columnValue = 1;
+            } else {
+                columnValue = getColumnValue(value, usingColumn);
             }
 
             if (usingColumn.isEmpty()) {
                 return res;
             }
-
-            long columnValue = getColumnValue(value, usingColumn);
 
             // load the graph for the plugin
             Graph graph = mcstats.loadGraph(plugin, graphName);
