@@ -1,7 +1,6 @@
 package org.mcstats.generator;
 
 import org.mcstats.MCStats;
-import org.mcstats.generator.SimpleAggregator;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
@@ -9,11 +8,8 @@ import org.mcstats.model.Server;
 import org.mcstats.util.Tuple;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ReflectionAggregator extends SimpleAggregator {
 
