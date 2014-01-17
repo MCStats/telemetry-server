@@ -13,11 +13,11 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8"/>
     <title>MCStats :: Backend Status</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="" />
-    <meta name="author" content="Tyler Blair <hidendra@griefcraft.com>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content=""/>
+    <meta name="author" content="Tyler Blair <hidendra@griefcraft.com>"/>
 
     <meta name="viewport" content="width=device-width">
 
@@ -25,8 +25,6 @@
     <link href="http://static.mcstats.org/css/libraries/bootstrap/bootstrap.min.css" rel="stylesheet"/>
     <link href="http://static.mcstats.org/css/libraries/font-awesome/font-awesome.min.css" rel="stylesheet"/>
     <link href="http://static.mcstats.org/css/libraries/template/template.min.css" rel="stylesheet"/>
-    <link href="http://static.mcstats.org/css/libraries/template/template.blue.min.css" rel="stylesheet"/>
-    <link href="http://static.mcstats.org/css/libraries/jquery/jquery.jscrollpane.css" rel="stylesheet"/>
     <link href="http://static.mcstats.org/css/libraries/jquery/typeahead.js-bootstrap.css" rel="stylesheet"/>
     <link href="http://static.mcstats.org/css/libraries/famfamfam/fam-icons.css" rel="stylesheet"/>
 
@@ -34,11 +32,10 @@
     <script src="http://static.mcstats.org/javascript/libraries/jquery/jquery.min.js" type="text/javascript"></script>
     <script src="http://static.mcstats.org/javascript/libraries/jquery/jquery.pjax.js" type="text/javascript"></script>
     <script src="http://static.mcstats.org/javascript/libraries/jquery/jquery.jpanelmenu.min.js" type="text/javascript"></script>
-    <script src="http://static.mcstats.org/javascript/libraries/jquery/jquery.nicescroll.min.js" type="text/javascript"></script>
+    <script src="http://static.mcstats.org/javascript/libraries/jquery/jquery.sparkline.min.js" type="text/javascript"></script>
     <script src="http://static.mcstats.org/javascript/libraries/bootstrap/bootstrap.min.js" type="text/javascript"></script>
     <script src="http://static.mcstats.org/javascript/libraries/bootstrap/tooltip.js" type="text/javascript"></script>
     <script src="http://static.mcstats.org/javascript/libraries/bootstrap/typeahead.min.js" type="text/javascript"></script>
-    <script src="http://static.mcstats.org/javascript/libraries/peity/jquery.peity.js" type="text/javascript"></script>
     <script src="http://static.mcstats.org/javascript/libraries/template/template.min.js" type="text/javascript"></script>
 
     <!-- charting -->
@@ -49,6 +46,8 @@
     <!-- mcstats -->
     <script src="http://static.mcstats.org/javascript/mcstats.js" type="text/javascript"></script>
 
+    <script type='text/javascript' src='https://www.google.com/jsapi'></script>
+
     <script type="text/javascript">
         // Google analytics
         var _gaq = _gaq || [];
@@ -57,25 +56,32 @@
         _gaq.push(['_setAllowLinker', true]);
         _gaq.push(['_trackPageview']);
 
-        (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        (function () {
+            var ga = document.createElement('script');
+            ga.type = 'text/javascript';
+            ga.async = true;
             ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(ga, s);
         })();
+
+        google.load('visualization', '1', {'packages': ['geochart']});
     </script>
 </head>
-<body>
+<body data-color="grey" class="flat">
+
+<div id="wrapper">
 <div id="header">
     <h1><a href="/">MCStats / Plugin Metrics</a></h1>
 </div>
 
-<div id="search">
-    <form action="" method="post" onsubmit="window.location='/plugin/' + $('#goto').val(); return false;">
-        <input type="text" id="goto" placeholder="Go to Plugin" autocomplete="off"/><button type="submit" class="tip-right" title="Go"><i class="icon-search"></i></button>
-    </form>
-</div>
-
 <div id="sidebar">
+    <div id="search">
+        <form action="" method="post" onsubmit="window.location='/plugin/' + $('#goto').val(); return false;">
+            <input type="text" id="goto" placeholder="Search plugins" autocomplete="off"/><button type="submit" class="tip-right" title="Go"><i class="icon-search"></i></button>
+        </form>
+    </div>
+
     <ul>
         <li><a href="/"><i class="icon icon-home"></i> <span>Homepage</span></a>
         </li>
@@ -93,10 +99,10 @@
         <li>
             <a><span>A very special thanks to the MCStats sponsors:</span></a>
 
-            <ol style="padding: 0; margin: 0;" class="sponsors">
-                <li><a href="http://buycraft.net" target="_blank"><img src="http://static.mcstats.org/img/sponsors/buycraft.png" width="210px" style="padding-left: 10px" /></a></li>
-                <li><a href="http://avnk.net" target="_blank"><img src="http://static.mcstats.org/img/sponsors/Avalanche-Network-v5.png" width="210px" /></a></li>
-                <li><a href="https://twitter.com/VladToBeHere" target="_blank"><span style="margin-left: 15px; font-size: 24px; color: #428BCA">@VladToBeHere</span></a></li>
+            <ol style="padding: 0; margin: 0;" class="sponsors hidden-xs hidden-sm">
+                <li><a href="http://buycraft.net" target="_blank"><img src="http://static.mcstats.org/img/sponsors/buycraft.png" width="190px" style="padding-left: 10px" /></a></li>
+                <li><a href="https://twitter.com/vcservers" target="_blank"><img src="http://static.mcstats.org/img/sponsors/voidcraft.png" width="190px" /></a></li>
+                <li><a href="https://twitter.com/VladToBeHere" target="_blank"><img src="http://static.mcstats.org/img/sponsors/codename_B.png" width="190px" style="margin-left: 5px" /></a></a></li>
             </ol>
         </li>
     </ul>
@@ -104,33 +110,38 @@
 </div>
 
 <div id="content">
-    <div id="content-header">
-        <h1>MCStats / Plugin Metrics</h1>
-    </div>
-
     <div id="breadcrumb">
-        <a href="/" title="Home" class="tip-bottom"><i class="icon-home"></i> Home</a>
-        <a href="/status/" class="current">Backend Status</a>
+        <a href="/" title="Home"
+           class="tip-bottom current"><i
+                class="icon-home"></i> Home</a>
+        <a href="/plugin-list/" class="current"><i class="icon-retweet"></i> Backend Status</a>
     </div>
 
-    <div class="container-fluid">
-        <div class="row-fluid" id="graph-generator" style="display: none">
-            <div>
-                <div class="alert alert-info span6" style="width: 50%; padding-bottom: 0; margin-left: 25%; text-align: center; float: left;">
+    <div class="container-fluid" style="min-height: 550px">
+
+        <div class="row" id="graph-generator" style="display: none">
+            <div class="col-xs-12 col-lg-8 col-lg-offset-2">
+                <div class="alert alert-info">
                     <p>
                         <strong>INFO:</strong> Graphs are currently generating.
                     </p>
                 </div>
 
-                <div class="progress progress-striped progress-success active" style="clear: left">
-                    <div class="bar" id="graph-generator-progress-bar" style="width: 0"></div>
+                <div class="progress progress-striped progress-sm active">
+                    <div class="progress-bar progress-bar-dark-red" id="graph-generator-progress-bar" style="width: 0"></div>
                 </div>
             </div>
         </div>
 
-        <div class="row-fluid">
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $("#players-popover").popover();
+            });
+        </script>
 
-            <div class="col-xs-4 col-md-offset-2" style="text-align: center">
+        <div class="row">
+
+            <div class="col-md-6 col-lg-4 col-lg-offset-2" style="text-align: center">
 
                 <table class="table table-striped table-bordered">
 
@@ -162,7 +173,7 @@
 
             </div>
 
-            <div class="col-xs-4" style="text-align: center">
+            <div class="col-md-6 col-lg-4" style="text-align: center">
 
                 <table class="table table-striped table-bordered">
 

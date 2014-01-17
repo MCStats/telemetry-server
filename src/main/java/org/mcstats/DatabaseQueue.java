@@ -62,6 +62,13 @@ public class DatabaseQueue {
     }
 
     /**
+     * Clear the queue.
+     */
+    public void clear() {
+        queue.clear();
+    }
+
+    /**
      * Queue an entity to be saved to the database
      *
      * @param savable

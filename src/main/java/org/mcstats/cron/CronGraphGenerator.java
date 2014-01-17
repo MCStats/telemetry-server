@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public class MainlineGraphs implements Runnable {
+public class CronGraphGenerator implements Runnable {
 
     private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
@@ -41,7 +41,7 @@ public class MainlineGraphs implements Runnable {
      */
     private List<GraphGenerator> generators = new LinkedList<GraphGenerator>();
 
-    public MainlineGraphs(MCStats mcstats) {
+    public CronGraphGenerator(MCStats mcstats) {
         this.mcstats = mcstats;
 
         // -- custom data
@@ -105,6 +105,12 @@ public class MainlineGraphs implements Runnable {
         try {
             logger.info("Beginning graph generation");
             GraphStore store = mcstats.getGraphStore();
+
+            if (mcstats.countRecentServers() < 50000) {
+                logger.info("Not enough data. Auto correcting internal caches.");
+                mcstats.resetInternalCaches();
+                return;
+            }
 
             long start = System.currentTimeMillis();
 

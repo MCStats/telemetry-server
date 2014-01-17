@@ -10,14 +10,13 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.mcstats.cron.MainlineGraphs;
+import org.mcstats.cron.CronGraphGenerator;
+import org.mcstats.cron.CronRanking;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.handler.BlackholeHandler;
 import org.mcstats.handler.ReportHandler;
-import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.PluginVersion;
@@ -170,6 +169,31 @@ public class MCStats {
 
         requestsAllTime = new RequestCalculator(RequestCalculator.CalculationMethod.ALL_TIME, requestsCallable);
         requestsFiveSeconds = new RequestCalculator(RequestCalculator.CalculationMethod.FIVE_SECONDS, requestsCallable);
+    }
+
+    /**
+     * Count the number of servers that recently sent data
+     *
+     * @return
+     */
+    public int countRecentServers() {
+        int count = 0;
+
+        for (Server server : getCachedServers()) {
+            if (server.recentlySentData()) {
+                count ++;
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * Reset any internal caches
+     */
+    public void resetInternalCaches() {
+        databaseQueue.clear();
+        handler.clearQueue();
     }
 
     /**
@@ -566,11 +590,12 @@ public class MCStats {
 
         if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
             Scheduler scheduler = new Scheduler();
-            scheduler.schedule("*/30 * * * *", new MainlineGraphs(this));
+            scheduler.schedule("*/30 * * * *", new CronGraphGenerator(this));
+            scheduler.schedule("45 * * * *", new CronRanking(this));
             scheduler.start();
-            logger.info("Graph generator is active");
+            logger.info("Graph & rank generator is active");
         } else {
-            logger.info("Graph generator is NOT active");
+            logger.info("Graph & rank generator is NOT active");
         }
 
         try {

@@ -9,11 +9,11 @@ mvn --quiet clean package
 chmod -R 777 .
 
 echo -e " [\e[1;33m++\e[00m] Uploading build"
-rsync -av --progress --exclude=*.tar.gz --exclude=archive-tmp --exclude=classes --exclude=maven-archiver --exclude=surefire target/ root@backend1.mcstats.org:/home/mcstats/
-rsync -av --progress server-definitions.txt root@backend1.mcstats.org:/home/mcstats/
+rsync -av --progress --exclude=*.tar.gz --exclude=archive-tmp --exclude=classes --exclude=maven-archiver --exclude=surefire target/ root@host.ny.mcstats.org:/data/jails/backend01.ny.mcstats.org/home/mcstats/
+rsync -av --progress server-definitions.txt root@host.ny.mcstats.org:/data/jails/backend01.ny.mcstats.org/home/mcstats/
 
 echo -e " [\e[1;33m++\e[00m] Fixing permissions"
-ssh root@backend1.mcstats.org "chown -R mcstats:mcstats /home/mcstats/"
+ssh root@host.ny.mcstats.org "chown -R 1001:1001 /data/jails/backend01.ny.mcstats.org/home/mcstats/"
 
 # finish timestamp, calculate runtime
 FINISH=`date +%s`
