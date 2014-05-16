@@ -167,7 +167,8 @@ public class ReportHandler extends AbstractHandler {
                 headers.put(headerName, request.getHeader(headerName));
             }
 
-            String pluginName = URLUtils.decode(getPluginName(request));
+            String rawName = getPluginName(request);
+            String pluginName = rawName == null ? null : URLUtils.decode(rawName);
 
             if (pluginName == null) {
                 finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
@@ -498,6 +499,8 @@ public class ReportHandler extends AbstractHandler {
         String url = request.getRequestURI();
         if (url.startsWith("//report/")) {
             return url.substring("//report/".length());
+        } else if (url.startsWith("//plugin/")) {
+            return url.substring("//plugin/".length());
         } else if (url.startsWith("/report/")) {
             return url.substring("/report/".length());
         } else if (url.startsWith("/plugin/")) {
