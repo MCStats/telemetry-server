@@ -41,3 +41,4 @@ MinecraftForge                      Forge
 fml,forge                           Forge
 Canary                              Canary
 Bukkit                              CraftBukkit
+Bungee                              BungeeCord
