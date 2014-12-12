@@ -43,3 +43,4 @@ Canary                              Canary
 Bukkit                              CraftBukkit
 Bungee                              BungeeCord
 canarybukkit                        CanaryBukkit
+pore                                Pore
