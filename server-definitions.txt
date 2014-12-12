@@ -44,3 +44,4 @@ Bukkit                              CraftBukkit
 Bungee                              BungeeCord
 canarybukkit                        CanaryBukkit
 pore                                Pore
+git-Cauldron                        Cauldron
