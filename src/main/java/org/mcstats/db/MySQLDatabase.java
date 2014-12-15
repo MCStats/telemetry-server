@@ -137,13 +137,11 @@ public class MySQLDatabase implements Database {
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated, ServerCount30 FROM Plugin WHERE Name = ?")) {
             statement.setString(1, name);
-            ResultSet set = statement.executeQuery();
 
-            if (set.next()) {
-                Plugin plugin = resolvePlugin(set);
-                set.close();
-                safeClose(connection);
-                return plugin;
+            try (ResultSet set = statement.executeQuery()) {
+                if (set.next()) {
+                    return resolvePlugin(set);
+                }
             }
 
             return null;
@@ -545,9 +543,6 @@ public class MySQLDatabase implements Database {
             statement.setInt(2, server.getViolationCount());
             statement.executeUpdate();
             QUERIES++;
-
-            // all good !
-            safeClose(connection);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -570,21 +565,6 @@ public class MySQLDatabase implements Database {
         }
 
         return false;
-    }
-
-    /**
-     * Close a connection
-     *
-     * @param connection
-     */
-    private void safeClose(Connection connection) {
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     /**
