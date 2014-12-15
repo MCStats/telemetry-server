@@ -158,9 +158,8 @@ public class MySQLDatabase implements Database {
     }
 
     public Plugin loadPlugin(String name) {
-        try {
-            Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated, ServerCount30 FROM Plugin WHERE Name = ?");
+        try (Connection connection = ds.getConnection();
+             PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated, ServerCount30 FROM Plugin WHERE Name = ?")) {
             statement.setString(1, name);
             ResultSet set = statement.executeQuery();
 
@@ -171,7 +170,6 @@ public class MySQLDatabase implements Database {
                 return plugin;
             }
 
-            safeClose(connection);
             return null;
         } catch (SQLException e) {
             return null;
@@ -179,9 +177,8 @@ public class MySQLDatabase implements Database {
     }
 
     public void savePlugin(Plugin plugin) {
-        try {
-            Connection connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("UPDATE Plugin SET Name = ?, Hidden = ?, GlobalHits = ?, Rank = ?, LastRank = ?, LastRankChange = ?, Created = ?, LastUpdated = ?, ServerCount30 = ? WHERE ID = ?");
+        try (Connection connection = ds.getConnection();
+             PreparedStatement statement = connection.prepareStatement("UPDATE Plugin SET Name = ?, Hidden = ?, GlobalHits = ?, Rank = ?, LastRank = ?, LastRankChange = ?, Created = ?, LastUpdated = ?, ServerCount30 = ? WHERE ID = ?")) {
             statement.setString(1, plugin.getName());
             statement.setInt(2, plugin.getHidden());
             statement.setInt(3, plugin.getGlobalHits());
@@ -194,7 +191,6 @@ public class MySQLDatabase implements Database {
             statement.setInt(10, plugin.getId());
 
             statement.executeUpdate();
-            safeClose(connection);
             QUERIES++;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -202,19 +198,14 @@ public class MySQLDatabase implements Database {
     }
 
     public PluginVersion createPluginVersion(Plugin plugin, String version) {
-        Connection connection = null;
-
-        try {
-            connection = ds.getConnection();
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO Versions (Plugin, Version, Created) VALUES (?, ?, UNIX_TIMESTAMP())");
+        try (Connection connection = ds.getConnection();
+             PreparedStatement statement = connection.prepareStatement("INSERT INTO Versions (Plugin, Version, Created) VALUES (?, ?, UNIX_TIMESTAMP())")) {
             statement.setInt(1, plugin.getId());
             statement.setString(2, version);
             statement.executeUpdate();
             QUERIES++;
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            safeClose(connection);
         }
 
         return loadPluginVersion(plugin, version);
@@ -227,14 +218,13 @@ public class MySQLDatabase implements Database {
             Connection connection = ds.getConnection();
             PreparedStatement statement = connection.prepareStatement("SELECT ID, Version, Created FROM Versions WHERE Plugin = ?");
             statement.setInt(1, plugin.getId());
-            ResultSet set = statement.executeQuery();
 
-            while (set.next()) {
-                versions.add(resolvePluginVersion(plugin, set));
+            try (ResultSet set = statement.executeQuery()) {
+                while (set.next()) {
+                    versions.add(resolvePluginVersion(plugin, set));
+                }
             }
 
-            set.close();
-            safeClose(connection);
             QUERIES++;
         } catch (SQLException e) {
             e.printStackTrace();
