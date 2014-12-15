@@ -17,6 +17,8 @@ git-Cubixlaunch                     Cubixlaunch
 git-Spout                           Spout
 git-Glowstone                       Glowstone
 
+git:BungeeCord                      BungeeCord
+
 git-MCPC-Plus                       MCPC+
 git-MCPC                            MCPC
 git-Spigot                          Spigot
@@ -39,3 +41,7 @@ MinecraftForge                      Forge
 fml,forge                           Forge
 Canary                              Canary
 Bukkit                              CraftBukkit
+Bungee                              BungeeCord
+canarybukkit                        CanaryBukkit
+pore                                Pore
+git-Cauldron                        Cauldron
