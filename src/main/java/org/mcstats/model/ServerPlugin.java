@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ServerPlugin implements Savable {
 
@@ -30,27 +31,27 @@ public class ServerPlugin implements Savable {
     /**
      * The version of the plugin this server is running
      */
-    private String version;
+    private String version = "";
 
     /**
      * The server's revision
      */
-    private int revision;
+    private int revision = 0;
 
     /**
      * Unix timestamp of when it was last updated
      */
-    private int updated;
+    private int updated = 0;
 
     /**
      * The last custom data sent to the server
      */
-    private Map<Column, Long> customData = new HashMap<Column, Long>();
+    private Map<Column, Long> customData = new ConcurrentHashMap<>();
 
     /**
      * If this was modified
      */
-    private boolean modified;
+    private boolean modified = false;
 
     /**
      * If the version was modified

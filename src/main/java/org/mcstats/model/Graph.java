@@ -5,6 +5,7 @@ import org.mcstats.MCStats;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Graph {
     private Logger logger = Logger.getLogger("Graph");
@@ -57,7 +58,7 @@ public class Graph {
     /**
      * The columns for this graph. This is not all of them, only a cache
      */
-    private Map<String, Column> columns = new HashMap<String, Column>();
+    private Map<String, Column> columns = new ConcurrentHashMap<>();
 
     /**
      * If the columns were loaded from the database

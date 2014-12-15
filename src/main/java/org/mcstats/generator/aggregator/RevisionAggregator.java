@@ -1,5 +1,7 @@
 package org.mcstats.generator.aggregator;
 
+import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.procedure.TIntIntProcedure;
 import org.mcstats.MCStats;
 import org.mcstats.generator.SimpleAggregator;
 import org.mcstats.model.Column;
@@ -31,10 +33,10 @@ public class RevisionAggregator extends SimpleAggregator {
     @Override
     public List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server) {
         ServerPlugin serverPlugin = server.getPlugin(plugin);
-        List<Tuple<Column, Long>> res = new ArrayList<Tuple<Column, Long>>();
+        final List<Tuple<Column, Long>> res = new ArrayList<Tuple<Column, Long>>();
 
         try {
-            Graph graph = mcstats.loadGraph(plugin, graphName);
+            final Graph graph = mcstats.loadGraph(plugin, graphName);
 
             if (serverPlugin != null) {
                 if (serverPlugin.getRevision() > 0) {
@@ -42,7 +44,7 @@ public class RevisionAggregator extends SimpleAggregator {
                     res.add(new Tuple<Column, Long>(column, 1L));
                 }
             } else {
-                Map<Integer, Integer> sums = new HashMap<Integer, Integer>();
+                TIntIntHashMap sums = new TIntIntHashMap();
 
                 for (ServerPlugin serverPlugin2 : server.getPlugins().values()) {
                     int revision = serverPlugin2.getRevision();
@@ -58,10 +60,14 @@ public class RevisionAggregator extends SimpleAggregator {
                     }
                 }
 
-                for (Map.Entry<Integer, Integer> entry : sums.entrySet()) {
-                    Column column = graph.loadColumn(Integer.toString(entry.getKey()));
-                    res.add(new Tuple<Column, Long>(column, (long) entry.getValue()));
-                }
+                sums.forEachEntry(new TIntIntProcedure() {
+                    @Override
+                    public boolean execute(int key, int value) {
+                        Column column = graph.loadColumn(Integer.toString(key));
+                        res.add(new Tuple<>(column, (long) value));
+                        return true;
+                    }
+                });
             }
         } catch (Exception e) {
             e.printStackTrace();

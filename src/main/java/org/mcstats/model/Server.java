@@ -6,6 +6,7 @@ import org.mcstats.db.Savable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Server implements Savable {
 
@@ -27,67 +28,67 @@ public class Server implements Savable {
     /**
      * The server's country
      */
-    private String country;
+    private String country = "";
 
     /**
      * The amount of players currently on the server
      */
-    private int players;
+    private int players = 0;
 
     /**
      * The server's software version
      */
-    private String serverVersion;
+    private String serverVersion = "";
 
     /**
      * The name of the OS the server is running
      */
-    private String osname;
+    private String osname = "";
 
     /**
      * The OS arch the server is running on
      */
-    private String osarch;
+    private String osarch = "";
 
     /**
      * The version of OS the server is running
      */
-    private String osversion;
+    private String osversion = "";
 
     /**
      * The server's java name (e.g 1.5)
      */
-    private String java_name;
+    private String java_name = "";
 
     /**
      * The server's version of Java (e.g 0_10)
      */
-    private String java_version;
+    private String java_version = "";
 
     /**
      * How many cores the server has
      */
-    private int cores;
+    private int cores = 0;
 
     /**
      * If the server is in online mode or not
      */
-    private int online_mode;
+    private int online_mode = 0;
 
     /**
      * Unix timestamp of when the server was created
      */
-    private int created;
+    private int created = 0;
 
     /**
      * The software the server is running
      */
-    private String serverSoftware;
+    private String serverSoftware = "";
 
     /**
      * The minecraft version the server is
      */
-    private String minecraftVersion;
+    private String minecraftVersion = "";
 
     /**
      * If the server was modified
@@ -112,7 +113,7 @@ public class Server implements Savable {
     /**
      * A map of all of the plugins this server is known to have
      */
-    private final Map<Plugin, ServerPlugin> plugins = new HashMap<Plugin, ServerPlugin>();
+    private final Map<Plugin, ServerPlugin> plugins = new ConcurrentHashMap<>();
 
     /**
      * Unix timestamp of when it last sent data

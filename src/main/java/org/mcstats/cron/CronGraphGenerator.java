@@ -87,9 +87,9 @@ public class CronGraphGenerator implements Runnable {
         generators.add(new DecoderAggregator<Integer>("online_mode", "Auth Mode", new DecoderAggregator.Decoder<Integer>() {
             public String decode(Integer value) {
                 switch (value) {
-                    case 0:
-                        return "Online";
                     case 1:
+                        return "Online";
+                    case 0:
                         return "Offline";
                     default:
                         return "Unknown";
@@ -105,6 +105,7 @@ public class CronGraphGenerator implements Runnable {
         try {
             logger.info("Beginning graph generation");
             GraphStore store = mcstats.getGraphStore();
+            ReportHandler.SOFT_IGNORE_REQUESTS = true;
 
             if (mcstats.countRecentServers() < 50000) {
                 logger.info("Not enough data. Auto correcting internal caches.");
@@ -145,6 +146,9 @@ public class CronGraphGenerator implements Runnable {
                     store.insert(entry.getKey(), listdata, epoch);
                 }
 
+                grouped.clear();
+                data.clear();
+
                 // logger.info("Aggregated: " + data);
             }
 
@@ -156,20 +160,28 @@ public class CronGraphGenerator implements Runnable {
                 for (ServerPlugin serverPlugin : mcstats.getServerPlugins(plugin)) {
                     if (serverPlugin.recentlyUpdated()) {
                         serverPlugin.getServer().setViolationCount(0);
-                        serverPlugin.getServer().save();
-                        serverPlugin.save();
+                        // serverPlugin.getServer().save();
+                        // serverPlugin.save();
                         numServers30 ++;
                     }
                 }
 
                 plugin.setServerCount30(numServers30);
-                plugin.save();
+                plugin.saveNow();
             }
 
             ((MongoDBGraphStore) store).finishGeneration();
+            mcstats.resetIntervalData();
+
+            System.gc();
+            System.runFinalization();
+            System.gc();
+
             logger.info("Finished graph generation in " + (System.currentTimeMillis() - start) + "ms");
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            ReportHandler.SOFT_IGNORE_REQUESTS = false;
         }
     }
 }

@@ -5,6 +5,7 @@ import org.mcstats.db.Savable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Plugin implements Savable {
 
@@ -86,17 +87,17 @@ public class Plugin implements Savable {
     /**
      * Map of the graphs for the plugin
      */
-    private Map<String, Graph> graphs = new HashMap<String, Graph>();
+    private Map<String, Graph> graphs = new ConcurrentHashMap<>();
 
     /**
      * Map of the plugin versions by their database id
      */
-    private Map<Integer, PluginVersion> versionsById = new HashMap<Integer, PluginVersion>();
+    private Map<Integer, PluginVersion> versionsById = new ConcurrentHashMap<>();
 
     /**
      * Map of the plugin versions by their string name
      */
-    private Map<String, PluginVersion> versionsByName = new HashMap<String, PluginVersion>();
+    private Map<String, PluginVersion> versionsByName = new ConcurrentHashMap<>();
 
     public Plugin(MCStats mcstats) {
         this.mcstats = mcstats;

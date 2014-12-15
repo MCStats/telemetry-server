@@ -57,6 +57,13 @@ public class ModernRequestDecoder implements RequestDecoder {
         decoded.revision = Integer.parseInt(request.getHeader("User-Agent").substring("MCStats/".length()));
         decoded.playersOnline = Long.valueOf(tryParseLong(post.get("players_online"))).intValue();
 
+        if (post.containsKey("ping")) {
+            String pingVal = post.get("ping").toString();
+            decoded.isPing = pingVal.equals("1") || Boolean.parseBoolean(pingVal);
+        } else {
+            decoded.isPing = false;
+        }
+
         if (decoded.guid == null || decoded.serverVersion == null || decoded.pluginVersion == null) {
             return null;
         }
@@ -72,7 +79,19 @@ public class ModernRequestDecoder implements RequestDecoder {
             decoded.javaName = "";
             decoded.javaVersion = (String) post.get("java_version");
             decoded.cores = Long.valueOf(tryParseLong(post.get("cores"))).intValue();
-            decoded.authMode = Long.valueOf(tryParseLong(post.get("auth_mode"))).intValue();
+
+            if (post.containsKey("auth_mode")) {
+                String authMode = post.get("auth_mode").toString();
+
+                try {
+                    decoded.authMode = Integer.parseInt(authMode);
+                } catch (NumberFormatException e) {
+                    decoded.authMode = Boolean.parseBoolean(authMode) ? 1 : 0;
+                }
+            } else {
+                decoded.authMode = 1;
+            }
+
             if (decoded.osname == null) {
                 decoded.osname = "Unknown";
                 decoded.osversion = "Unknown";

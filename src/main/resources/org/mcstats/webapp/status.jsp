@@ -101,8 +101,6 @@
 
             <ol style="padding: 0; margin: 0;" class="sponsors hidden-xs hidden-sm">
                 <li><a href="http://buycraft.net" target="_blank"><img src="http://static.mcstats.org/img/sponsors/buycraft.png" width="190px" style="padding-left: 10px" /></a></li>
-                <li><a href="https://twitter.com/vcservers" target="_blank"><img src="http://static.mcstats.org/img/sponsors/voidcraft.png" width="190px" /></a></li>
-                <li><a href="https://twitter.com/VladToBeHere" target="_blank"><img src="http://static.mcstats.org/img/sponsors/codename_B.png" width="190px" style="margin-left: 5px" /></a></a></li>
             </ol>
         </li>
     </ul>
@@ -141,39 +139,7 @@
 
         <div class="row">
 
-            <div class="col-md-6 col-lg-4 col-lg-offset-2" style="text-align: center">
-
-                <table class="table table-striped table-bordered">
-
-                    <thead>
-                    <tr> <th style="width: 10px; text-align: center;"> Worker </th> <th style="text-align: center;"> Status </th> <th style="text-align: center;"> Runtime </th></tr>
-                    </thead>
-
-                    <tbody>
-
-                    <%
-                        for (DatabaseQueue.QueueWorker worker : mcstats.getDatabaseQueue().getWorkers()) { %>
-                    <tr>
-                        <td style="width: 10px; text-align: center;">
-                            <%= worker.getId() %>
-                        </td>
-                        <td style="width: 10px; text-align: center;">
-                            <%= worker.isBusy() ? "BUSY" : "SLEEPING" %>
-                        </td>
-                        <td style="width: 10px; text-align: center;">
-                            <%= worker.isBusy() ? ((System.currentTimeMillis() - worker.getJobStart()) + "ms") : "0ms" %>
-                        </td>
-                    </tr><%
-                        }
-                    %>
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-            <div class="col-md-6 col-lg-4" style="text-align: center">
+            <div class="col-md-6 col-md-offset-3 col-lg-4 col-lg-offset-4" style="text-align: center">
 
                 <table class="table table-striped table-bordered">
 

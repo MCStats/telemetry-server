@@ -22,12 +22,12 @@ public class PluginVersion {
     /**
      * The versions tring
      */
-    private String version;
+    private String version = "";
 
     /**
      * When the version was created
      */
-    private int created;
+    private int created = 0;
 
     public PluginVersion(MCStats mcstats, Plugin plugin) {
         this.mcstats = mcstats;

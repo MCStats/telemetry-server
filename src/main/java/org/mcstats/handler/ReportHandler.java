@@ -34,6 +34,11 @@ public class ReportHandler extends AbstractHandler {
     private Logger logger = Logger.getLogger("ReportHandler");
 
     /**
+     * If requests should be soft ignored temporarily
+     */
+    public static boolean SOFT_IGNORE_REQUESTS = false;
+
+    /**
      * The maximum amount of allowable version switches in a graph interval before they are blacklisted;
      */
     private static final int MAX_VIOLATIONS_ALLOWED = 7;
@@ -42,11 +47,6 @@ public class ReportHandler extends AbstractHandler {
      * The MCStats object
      */
     private MCStats mcstats;
-
-    /**
-     * A queue of work to run in a separate thread
-     */
-    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 
     /**
      * Modern request decoder
@@ -73,7 +73,7 @@ public class ReportHandler extends AbstractHandler {
      * Clear the current thread queue
      */
     public void clearQueue() {
-        executor.getQueue().clear();
+        // executor.getQueue().clear();
     }
 
     /**
@@ -82,7 +82,7 @@ public class ReportHandler extends AbstractHandler {
      * @return
      */
     public int queueSize() {
-        return executor.getQueue().size();
+        return 0;
     }
 
     /**
@@ -150,7 +150,7 @@ public class ReportHandler extends AbstractHandler {
                 return;
             }
 
-            if (serverLastSendCache.size() > 1000000) {
+            if (serverLastSendCache.size() > 200000) {
                 serverLastSendCache.clear();
             }
 
@@ -161,12 +161,9 @@ public class ReportHandler extends AbstractHandler {
             response.setContentType("text/plain");
             mcstats.incrementAndGetRequests();
 
-            final Map<String, String> headers = new HashMap<String, String>();
-
-            Enumeration headerNames = request.getHeaderNames();
-            while (headerNames.hasMoreElements()) {
-                String headerName = (String) headerNames.nextElement();
-                headers.put(headerName, request.getHeader(headerName));
+            if (SOFT_IGNORE_REQUESTS) {
+                finishRequest(null, ResponseType.OK, baseRequest, response);
+                return;
             }
 
             String pluginName = URLUtils.decode(getPluginName(request));
@@ -197,7 +194,6 @@ public class ReportHandler extends AbstractHandler {
             }
 
             String geoipCountryCodeNonFinal = request.getHeader("GEOIP_COUNTRY_CODE") == null ? request.getHeader("HTTP_X_GEOIP") : request.getHeader("GEOIP_COUNTRY_CODE");
-            final String clientIp = request.getHeader("X-Forwarded-For");
 
             if (geoipCountryCodeNonFinal == null) {
                 geoipCountryCodeNonFinal = "ZZ";
@@ -232,134 +228,131 @@ public class ReportHandler extends AbstractHandler {
                 return;
             }
 
-            this.executor.execute(new Runnable() {
-                public void run() {
-                    try {
-                        Server server = mcstats.loadServer(decoded.guid);
+            try {
+                Server server = mcstats.loadServer(decoded.guid);
 
-                        if ((server.getViolationCount() >= 5) && (!server.isBlacklisted())) {
-                            server.setBlacklisted(true);
-                            mcstats.getDatabase().blacklistServer(server);
+                if ((server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) && (!server.isBlacklisted())) {
+                    server.setBlacklisted(true);
+                    mcstats.getDatabase().blacklistServer(server);
+                    return;
+                }
+
+                if ((plugin == null) || (server == null)) {
+                    return;
+                }
+
+                ServerPlugin serverPlugin = mcstats.loadServerPlugin(server, plugin, decoded.pluginVersion);
+
+                if (serverPlugin == null) {
+                    return;
+                }
+
+                if ((!serverPlugin.getVersion().equals(decoded.pluginVersion)) && (!server.isBlacklisted())) {
+                    serverPlugin.addVersionChange(serverPlugin.getVersion(), decoded.pluginVersion);
+                    serverPlugin.setVersion(decoded.pluginVersion);
+                    server.incrementViolations();
+                }
+
+                if (serverPlugin.getRevision() != decoded.revision) {
+                    serverPlugin.setRevision(decoded.revision);
+                }
+
+                if (!server.getServerVersion().equals(decoded.serverVersion)) {
+                    server.setServerVersion(decoded.serverVersion);
+                }
+
+                if ((server.getPlayers() != decoded.playersOnline) && (decoded.playersOnline >= 0)) {
+                    server.setPlayers(decoded.playersOnline);
+                }
+
+                if (!geoipCountryCode.isEmpty() && !server.getCountry().equals(geoipCountryCode)) {
+                    server.setCountry(geoipCountryCode);
+                }
+
+                String canonicalServerVersion = mcstats.getServerBuildIdentifier().getServerVersion(decoded.serverVersion);
+                String minecraftVersion = mcstats.getServerBuildIdentifier().getMinecraftVersion(decoded.serverVersion);
+
+                if (canonicalServerVersion.equals("CraftBukkit")) {
+                    ServerPlugin cbplusplus = server.getPlugin(mcstats.loadPlugin(137));
+
+                    if (cbplusplus != null) {
+                        if (cbplusplus.recentlyUpdated()) {
+                            canonicalServerVersion = "CraftBukkit++";
                         }
-
-                        if ((plugin == null) || (server == null)) {
-                            return;
-                        }
-
-                        ServerPlugin serverPlugin = mcstats.loadServerPlugin(server, plugin, decoded.pluginVersion);
-
-                        if (serverPlugin == null) {
-                            return;
-                        }
-
-                        if ((!serverPlugin.getVersion().equals(decoded.pluginVersion)) && (!server.isBlacklisted())) {
-                            serverPlugin.addVersionChange(serverPlugin.getVersion(), decoded.pluginVersion);
-                            serverPlugin.setVersion(decoded.pluginVersion);
-                            server.incrementViolations();
-                        }
-
-                        if (serverPlugin.getRevision() != decoded.revision) {
-                            serverPlugin.setRevision(decoded.revision);
-                        }
-
-                        if (!server.getServerVersion().equals(decoded.serverVersion)) {
-                            server.setServerVersion(decoded.serverVersion);
-                        }
-
-                        if ((server.getPlayers() != decoded.playersOnline) && (decoded.playersOnline >= 0)) {
-                            server.setPlayers(decoded.playersOnline);
-                        }
-
-                        if ((geoipCountryCode != null) && (!geoipCountryCode.isEmpty()) && (!server.getCountry().equals(geoipCountryCode))) {
-                            server.setCountry(geoipCountryCode);
-                        }
-
-                        String canonicalServerVersion = mcstats.getServerBuildIdentifier().getServerVersion(decoded.serverVersion);
-                        String minecraftVersion = mcstats.getServerBuildIdentifier().getMinecraftVersion(decoded.serverVersion);
-
-                        if (canonicalServerVersion.equals("CraftBukkit")) {
-                            ServerPlugin cbplusplus = server.getPlugin(mcstats.loadPlugin(137));
-
-                            if (cbplusplus != null) {
-                                if (cbplusplus.recentlyUpdated()) {
-                                    canonicalServerVersion = "CraftBukkit++";
-                                }
-                            }
-                        }
-
-                        if (!server.getServerSoftware().equals(canonicalServerVersion)) {
-                            server.setServerSoftware(canonicalServerVersion);
-                        }
-
-                        if (!server.getMinecraftVersion().equals(minecraftVersion)) {
-                            server.setMinecraftVersion(minecraftVersion);
-                        }
-
-                        if (!decoded.isPing) {
-                            plugin.setGlobalHits(plugin.getGlobalHits() + 1);
-                        }
-
-                        if ((decoded.revision >= 4) && (!server.getCountry().equals("SG")) && ((geoipCountryCode == null) || (!geoipCountryCode.equals("SG")))) {
-                            serverPlugin.setCustomData(decoded.customData);
-                        }
-
-                        if (decoded.revision >= 6) {
-                            if ((decoded.osarch != null) && (decoded.osarch.equals("i386"))) {
-                                decoded.osarch = "x86";
-                            }
-
-                            if ((decoded.osname.startsWith("Windows")) && (decoded.osname.length() > 8)) {
-                                decoded.osversion = decoded.osname.substring(8);
-                                decoded.osname = "Windows";
-                            }
-
-                            if (decoded.osversion.equals("6.1")) {
-                                decoded.osversion = "7";
-                                decoded.osname = "Windows";
-                            }
-
-                            if (!decoded.osname.equals(server.getOSName())) {
-                                server.setOSName(decoded.osname);
-                            }
-
-                            if ((decoded.osarch != null) && (!decoded.osarch.equals(server.getOSArch()))) {
-                                server.setOSArch(decoded.osarch);
-                            }
-
-                            if (!decoded.osversion.equals(server.getOSVersion())) {
-                                server.setOSVersion(decoded.osversion);
-                            }
-
-                            if (server.getCores() != decoded.cores) {
-                                server.setCores(decoded.cores);
-                            }
-
-                            if (server.getOnlineMode() != decoded.authMode) {
-                                server.setOnlineMode(decoded.authMode);
-                            }
-
-                            if (!decoded.javaName.equals(server.getJavaName())) {
-                                server.setJavaName(decoded.javaName);
-                            }
-
-                            if (!decoded.javaVersion.equals(server.getJavaVersion())) {
-                                server.setJavaVersion(decoded.javaVersion);
-                            }
-
-                        }
-
-                        serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
-                        plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
-                        server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
-
-                        // server.save();
-                        // serverPlugin.save();
-                        // plugin.save();
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
                 }
-            });
+
+                if (!server.getServerSoftware().equals(canonicalServerVersion)) {
+                    server.setServerSoftware(canonicalServerVersion);
+                }
+
+                if (!server.getMinecraftVersion().equals(minecraftVersion)) {
+                    server.setMinecraftVersion(minecraftVersion);
+                }
+
+                if (!decoded.isPing) {
+                    plugin.setGlobalHits(plugin.getGlobalHits() + 1);
+                }
+
+                if ((decoded.revision >= 4) && (!server.getCountry().equals("SG")) && ((geoipCountryCode == null) || (!geoipCountryCode.equals("SG")))) {
+                    serverPlugin.setCustomData(decoded.customData);
+                }
+
+                if (decoded.revision >= 6) {
+                    if ((decoded.osarch != null) && (decoded.osarch.equals("i386"))) {
+                        decoded.osarch = "x86";
+                    }
+
+                    if ((decoded.osarch != null) && (decoded.osarch.equals("amd64"))) {
+                        decoded.osarch = "x86_64";
+                    }
+
+                    if ((decoded.osname.startsWith("Windows")) && (decoded.osname.length() > 8)) {
+                        decoded.osversion = decoded.osname.substring(8);
+                        decoded.osname = "Windows";
+                    }
+
+                    if (decoded.osversion.equals("6.1")) {
+                        decoded.osversion = "7";
+                        decoded.osname = "Windows";
+                    }
+
+                    if (!decoded.osname.equals(server.getOSName())) {
+                        server.setOSName(decoded.osname);
+                    }
+
+                    if ((decoded.osarch != null) && (!decoded.osarch.equals(server.getOSArch()))) {
+                        server.setOSArch(decoded.osarch);
+                    }
+
+                    if (!decoded.osversion.equals(server.getOSVersion())) {
+                        server.setOSVersion(decoded.osversion);
+                    }
+
+                    if (server.getCores() != decoded.cores) {
+                        server.setCores(decoded.cores);
+                    }
+
+                    if (server.getOnlineMode() != decoded.authMode) {
+                        server.setOnlineMode(decoded.authMode);
+                    }
+
+                    if (!decoded.javaName.equals(server.getJavaName())) {
+                        server.setJavaName(decoded.javaName);
+                    }
+
+                    if (!decoded.javaVersion.equals(server.getJavaVersion())) {
+                        server.setJavaVersion(decoded.javaVersion);
+                    }
+
+                }
+
+                serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
+                plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
+                server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         } catch (Exception e) {
             e.printStackTrace();
 

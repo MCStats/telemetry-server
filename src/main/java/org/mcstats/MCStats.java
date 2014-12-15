@@ -17,6 +17,7 @@ import org.mcstats.db.Database;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.db.MySQLDatabase;
+import org.mcstats.db.PluginOnlyMySQLDatabase;
 import org.mcstats.handler.BlackholeHandler;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Graph;
@@ -169,6 +170,18 @@ public class MCStats {
 
         requestsAllTime = new RequestCalculator(RequestCalculator.CalculationMethod.ALL_TIME, requestsCallable);
         requestsFiveSeconds = new RequestCalculator(RequestCalculator.CalculationMethod.FIVE_SECONDS, requestsCallable);
+    }
+
+    /**
+     * Reset data used for each interval
+     */
+    public void resetIntervalData() {
+        if (database instanceof PluginOnlyMySQLDatabase) {
+            ((PluginOnlyMySQLDatabase) database).resetIntervalData();
+            servers.invalidateAll();
+            resetInternalCaches();
+            serverPluginsByPlugin.clear();
+        }
     }
 
     /**
@@ -575,15 +588,15 @@ public class MCStats {
 
         webServer.setHandler(handlers);
 
-        ServerConnector connector = new ServerConnector(webServer, 2, 2);
+        ServerConnector connector = new ServerConnector(webServer, 1, 1);
         connector.setPort(listenPort);
-        connector.setAcceptQueueSize(1024);
+        connector.setAcceptQueueSize(2048);
         connector.setSoLingerTime(0);
         webServer.addConnector(connector);
 
         org.eclipse.jetty.server.Server blackholeServer = new org.eclipse.jetty.server.Server();
         blackholeServer.setHandler(new BlackholeHandler());
-        ServerConnector connector2 = new ServerConnector(blackholeServer, 2, 2);
+        ServerConnector connector2 = new ServerConnector(blackholeServer, 1, 1);
         connector2.setPort(blackholePort);
         connector2.setSoLingerTime(0);
         blackholeServer.addConnector(connector2);
@@ -597,6 +610,15 @@ public class MCStats {
         } else {
             logger.info("Graph & rank generator is NOT active");
         }
+
+        new Scheduler().schedule("*/5 * * * *", new Runnable() {
+            @Override
+            public void run() {
+                System.gc();
+                System.runFinalization();
+                System.gc();
+            }
+        });
 
         try {
             // Start the server
@@ -627,7 +649,7 @@ public class MCStats {
         }
 
         // Create the database
-        database = new MySQLDatabase(this, properties.getProperty("mysql.hostname"), properties.getProperty("mysql.database")
+        database = new PluginOnlyMySQLDatabase(this, properties.getProperty("mysql.hostname"), properties.getProperty("mysql.database")
                 , properties.getProperty("mysql.username"), properties.getProperty("mysql.password"));
 
         logger.info("Connected to MySQL");
