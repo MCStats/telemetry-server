@@ -569,8 +569,7 @@ public class MySQLDatabase implements Database {
             statement.executeUpdate();
             QUERIES++;
         } catch (SQLException e) {
-
-
+                logger.info("Failed to create column " + name + " for graph: " + graph.getId());
         } finally {
             safeClose(connection);
         }
@@ -600,6 +599,7 @@ public class MySQLDatabase implements Database {
 
             safeClose(connection);
         } catch (SQLException e) {
+            logger.info("Failed to load column " + name + " for graph: " + graph.getId());
             e.printStackTrace();
         }
 
