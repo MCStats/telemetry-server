@@ -509,7 +509,6 @@ public class MySQLDatabase implements Database {
             }
         } catch (SQLException e) {
             logger.info("Failed to load column " + name + " for graph: " + graph.getId());
-            e.printStackTrace();
         }
 
         return null;

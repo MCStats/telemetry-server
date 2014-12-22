@@ -131,6 +131,10 @@ public class CronGraphGenerator implements Runnable {
                     Column column = entry.getKey();
                     GeneratedData columnData = entry.getValue();
 
+                    if (column == null || columnData == null) {
+                        continue;
+                    }
+
                     List<Tuple<Column, GeneratedData>> listdata = grouped.get(column.getGraph());
 
                     if (listdata == null) {
