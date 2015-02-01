@@ -33,6 +33,7 @@
             <outputDirectory></outputDirectory>
             <includes>
                 <include>*.properties</include>
+                <include>server-definitions.txt</include>
             </includes>
         </fileSet>
     </fileSets>
