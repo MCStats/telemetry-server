@@ -4,7 +4,6 @@ import org.mcstats.MCStats;
 import org.mcstats.db.Savable;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

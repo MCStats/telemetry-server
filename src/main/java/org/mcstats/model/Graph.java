@@ -3,7 +3,6 @@ package org.mcstats.model;
 import org.apache.log4j.Logger;
 import org.mcstats.MCStats;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

@@ -16,7 +16,6 @@ import org.mcstats.cron.CronRanking;
 import org.mcstats.db.Database;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
-import org.mcstats.db.MySQLDatabase;
 import org.mcstats.db.PluginOnlyMySQLDatabase;
 import org.mcstats.handler.BlackholeHandler;
 import org.mcstats.handler.ReportHandler;
