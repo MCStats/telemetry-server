@@ -68,9 +68,6 @@ public class MongoDBGraphStore implements GraphStore {
         collStatistic.update(query, op, true, false);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public void insert(Column column, int epoch, int sum, int count, int avg, int max, int min) {
         Graph graph = column.getGraph();
         Plugin plugin = column.getPlugin();
@@ -109,18 +106,15 @@ public class MongoDBGraphStore implements GraphStore {
         coll.insert(toset);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void insert(Graph graph, List<Tuple<Column, GeneratedData>> listdata, int epoch) {
+    public void batchInsert(Graph graph, List<Tuple<Column, GeneratedData>> batchData, int epoch) {
         Plugin plugin = graph.getPlugin();
 
-        // logger.info(String.format("insert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
+        // logger.info(String.format("batchInsert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
 
         BasicDBObject toset = new BasicDBObject().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
         BasicDBObject data = new BasicDBObject();
 
-        for (Tuple<Column, GeneratedData> tuple : listdata) {
+        for (Tuple<Column, GeneratedData> tuple : batchData) {
             BasicDBObject col = new BasicDBObject();
             Column column = tuple.first();
             GeneratedData gdata = tuple.second();

@@ -147,7 +147,7 @@ public class CronGraphGenerator implements Runnable {
 
                 for (Map.Entry<Graph, List<Tuple<Column, GeneratedData>>> entry : grouped.entrySet()) {
                     List<Tuple<Column, GeneratedData>> listdata = entry.getValue();
-                    store.insert(entry.getKey(), listdata, epoch);
+                    store.batchInsert(entry.getKey(), listdata, epoch);
                 }
 
                 grouped.clear();

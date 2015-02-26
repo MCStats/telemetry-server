@@ -27,6 +27,6 @@ public interface GraphStore {
      *
      * @param data
      */
-    public void insert(Graph graph, List<Tuple<Column, GeneratedData>> data, int epoch);
+    public void batchInsert(Graph graph, List<Tuple<Column, GeneratedData>> data, int epoch);
 
 }
