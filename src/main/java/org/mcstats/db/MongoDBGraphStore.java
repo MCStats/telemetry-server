@@ -89,6 +89,7 @@ public class MongoDBGraphStore implements GraphStore {
             col.append("count", count);
         }
 
+        /*
         if (avg != 0) {
             col.append("avg", avg);
         }
@@ -100,6 +101,7 @@ public class MongoDBGraphStore implements GraphStore {
         if (min != 0) {
             col.append("min", min);
         }
+        */
 
         data.append(Integer.toString(column.getId()), col);
         toset.append("data", data);
@@ -137,6 +139,7 @@ public class MongoDBGraphStore implements GraphStore {
                 col.append("count", count);
             }
 
+            /*
             if (avg != 0) {
                 col.append("avg", avg);
             }
@@ -148,6 +151,7 @@ public class MongoDBGraphStore implements GraphStore {
             if (min != 0) {
                 col.append("min", min);
             }
+            */
 
             data.append(Integer.toString(column.getId()), col);
         }
