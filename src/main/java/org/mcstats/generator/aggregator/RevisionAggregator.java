@@ -58,13 +58,10 @@ public class RevisionAggregator extends SimpleAggregator {
                     }
                 }
 
-                sums.forEachEntry(new TIntIntProcedure() {
-                    @Override
-                    public boolean execute(int key, int value) {
-                        Column column = graph.loadColumn(Integer.toString(key));
-                        res.add(new Tuple<>(column, (long) value));
-                        return true;
-                    }
+                sums.forEachEntry((key, value) -> {
+                    Column column = graph.loadColumn(Integer.toString(key));
+                    res.add(new Tuple<>(column, (long) value));
+                    return true;
                 });
             }
         } catch (Exception e) {

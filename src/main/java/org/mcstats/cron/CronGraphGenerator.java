@@ -84,16 +84,14 @@ public class CronGraphGenerator implements Runnable {
 
         generators.add(new RankAggregator());
 
-        generators.add(new DecoderAggregator<>("online_mode", "Auth Mode", new DecoderAggregator.Decoder<Integer>() {
-            public String decode(Integer value) {
-                switch (value) {
-                    case 1:
-                        return "Online";
-                    case 0:
-                        return "Offline";
-                    default:
-                        return "Unknown";
-                }
+        generators.add(new DecoderAggregator<Integer>("online_mode", "Auth Mode", value -> {
+            switch (value) {
+                case 1:
+                    return "Online";
+                case 0:
+                    return "Offline";
+                default:
+                    return "Unknown";
             }
         }));
     }

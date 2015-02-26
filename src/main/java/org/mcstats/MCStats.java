@@ -160,12 +160,7 @@ public class MCStats {
     private final Map<Plugin, Set<ServerPlugin>> serverPluginsByPlugin = new ConcurrentHashMap<>();
 
     private MCStats() {
-        // create the request callable
-        Callable<Long> requestsCallable = new Callable<Long>() {
-            public Long call() throws Exception {
-                return requests.get();
-            }
-        };
+        Callable<Long> requestsCallable = requests::get;
 
         requestsAllTime = new RequestCalculator(RequestCalculator.CalculationMethod.ALL_TIME, requestsCallable);
         requestsFiveSeconds = new RequestCalculator(RequestCalculator.CalculationMethod.FIVE_SECONDS, requestsCallable);
@@ -240,7 +235,7 @@ public class MCStats {
         for (Plugin plugin : database.loadPlugins()) {
             if (plugin.getId() >= 0) {
                 addPlugin(plugin);
-                serverPluginsByPlugin.put(plugin, Sets.newSetFromMap(new ConcurrentHashMap<ServerPlugin, Boolean>()));
+                serverPluginsByPlugin.put(plugin, Sets.newSetFromMap(new ConcurrentHashMap<>()));
             }
         }
 
@@ -313,7 +308,7 @@ public class MCStats {
      * @return
      */
     public Set<ServerPlugin> getServerPlugins(Plugin plugin) {
-        return serverPluginsByPlugin.containsKey(plugin) ? serverPluginsByPlugin.get(plugin) : new HashSet<ServerPlugin>();
+        return serverPluginsByPlugin.containsKey(plugin) ? serverPluginsByPlugin.get(plugin) : new HashSet<>();
     }
 
     /**
@@ -329,7 +324,7 @@ public class MCStats {
         Set<ServerPlugin> serverPlugins = serverPluginsByPlugin.get(serverPlugin.getPlugin());
 
         if (serverPlugins == null) {
-            serverPlugins = Sets.newSetFromMap(new ConcurrentHashMap<ServerPlugin, Boolean>());
+            serverPlugins = Sets.newSetFromMap(new ConcurrentHashMap<>());
             serverPluginsByPlugin.put(serverPlugin.getPlugin(), serverPlugins);
         }
 
@@ -610,13 +605,10 @@ public class MCStats {
             logger.info("Graph & rank generator is NOT active");
         }
 
-        new Scheduler().schedule("*/5 * * * *", new Runnable() {
-            @Override
-            public void run() {
-                System.gc();
-                System.runFinalization();
-                System.gc();
-            }
+        new Scheduler().schedule("*/5 * * * *", () -> {
+            System.gc();
+            System.runFinalization();
+            System.gc();
         });
 
         try {
