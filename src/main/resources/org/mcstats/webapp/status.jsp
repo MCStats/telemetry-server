@@ -1,4 +1,3 @@
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %>
 <%@ page import="org.mcstats.DatabaseQueue" %>
 <%@ page import="org.mcstats.MCStats" %>
 <%@ page import="org.mcstats.util.TimeUtils" %>
