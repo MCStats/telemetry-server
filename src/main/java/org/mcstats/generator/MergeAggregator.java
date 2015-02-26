@@ -21,7 +21,7 @@ public class MergeAggregator implements GraphGenerator {
      * {@inheritDoc}
      */
     public Map<Column, GeneratedData> generate(MCStats mcstats) {
-        Map<Column, GeneratedData> res = new HashMap<Column, GeneratedData>();
+        Map<Column, GeneratedData> res = new HashMap<>();
 
         for (GraphGenerator generator : generators) {
             res.putAll(generator.generate(mcstats));

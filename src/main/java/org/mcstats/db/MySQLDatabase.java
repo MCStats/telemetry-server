@@ -34,7 +34,7 @@ public class MySQLDatabase implements Database {
     /**
      * A map of the already prepared statements
      */
-    private final Map<String, PreparedStatement> statementCache = new HashMap<String, PreparedStatement>();
+    private final Map<String, PreparedStatement> statementCache = new HashMap<>();
 
     /**
      * The dataSource.getConnectionion() data source
@@ -67,7 +67,7 @@ public class MySQLDatabase implements Database {
     }
 
     public Map<String, String> loadCountries() {
-        Map<String, String> countries = new HashMap<String, String>();
+        Map<String, String> countries = new HashMap<>();
 
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("SELECT ShortCode, FullName FROM Country")) {
@@ -98,7 +98,7 @@ public class MySQLDatabase implements Database {
     }
 
     public List<Plugin> loadPlugins() {
-        List<Plugin> plugins = new ArrayList<Plugin>();
+        List<Plugin> plugins = new ArrayList<>();
 
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated, ServerCount30 FROM Plugin WHERE Parent = -1")) {
@@ -186,7 +186,7 @@ public class MySQLDatabase implements Database {
     }
 
     public List<PluginVersion> loadPluginVersions(Plugin plugin) {
-        List<PluginVersion> versions = new ArrayList<PluginVersion>();
+        List<PluginVersion> versions = new ArrayList<>();
 
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("SELECT ID, Version, Created FROM Versions WHERE Plugin = ?")) {
@@ -285,7 +285,7 @@ public class MySQLDatabase implements Database {
     }
 
     public List<ServerPlugin> loadServerPlugins(Server server) {
-        List<ServerPlugin> plugins = new ArrayList<ServerPlugin>();
+        List<ServerPlugin> plugins = new ArrayList<>();
 
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("SELECT Plugin, Version, Revision, Updated FROM ServerPlugin WHERE Server = ?")) {
@@ -453,7 +453,7 @@ public class MySQLDatabase implements Database {
     }
 
     public List<Graph> loadGraphs(Plugin plugin) {
-        List<Graph> graphs = new ArrayList<Graph>();
+        List<Graph> graphs = new ArrayList<>();
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("SELECT ID, Type, Position, Active, Name, DisplayName, Scale FROM Graph WHERE Plugin = ?")) {
             statement.setInt(1, plugin.getId());
@@ -515,7 +515,7 @@ public class MySQLDatabase implements Database {
     }
 
     public List<Column> loadColumns(Graph graph) {
-        List<Column> columns = new ArrayList<Column>();
+        List<Column> columns = new ArrayList<>();
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("SELECT ID, Name FROM CustomColumn WHERE Graph = ?")) {
             statement.setInt(1, graph.getId());

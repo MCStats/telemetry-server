@@ -28,7 +28,7 @@ public class VersionDemographicsAggregator extends SimpleAggregator {
      */
     @Override
     public List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server) {
-        List<Tuple<Column, Long>> res = new ArrayList<Tuple<Column, Long>>();
+        List<Tuple<Column, Long>> res = new ArrayList<>();
         ServerPlugin serverPlugin = server.getPlugin(plugin);
 
         if (serverPlugin == null) {
@@ -39,7 +39,7 @@ public class VersionDemographicsAggregator extends SimpleAggregator {
             Graph graph = mcstats.loadGraph(plugin, graphName);
             Column column = graph.loadColumn(serverPlugin.getVersion());
 
-            res.add(new Tuple<Column, Long>(column, 1L));
+            res.add(new Tuple<>(column, 1L));
         } catch (Exception e) {
             e.printStackTrace();
         }

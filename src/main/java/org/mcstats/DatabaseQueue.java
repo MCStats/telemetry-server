@@ -24,12 +24,12 @@ public class DatabaseQueue {
     /**
      * The queue of objects waiting to be saved to the database
      */
-    private final Queue<Savable> queue = new ConcurrentLinkedQueue<Savable>();
+    private final Queue<Savable> queue = new ConcurrentLinkedQueue<>();
 
     /**
      * The database workers
      */
-    private final List<QueueWorker> workers = new ArrayList<QueueWorker>();
+    private final List<QueueWorker> workers = new ArrayList<>();
 
     /**
      * The number of database queue workers

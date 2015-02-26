@@ -61,7 +61,7 @@ public class ReportHandler extends AbstractHandler {
     /**
      * Cache of the last sent times
      */
-    private Map<String, Integer> serverLastSendCache = new ConcurrentHashMap<String, Integer>();
+    private Map<String, Integer> serverLastSendCache = new ConcurrentHashMap<>();
 
     public ReportHandler(MCStats mcstats) {
         this.mcstats = mcstats;
@@ -386,7 +386,7 @@ public class ReportHandler extends AbstractHandler {
      * @return
      */
     private Map<Column, Integer> extractCustomData(Plugin plugin, Map<String, String> post) {
-        Map<Column, Integer> customData = new HashMap<Column, Integer>();
+        Map<Column, Integer> customData = new HashMap<>();
 
         for (Map.Entry<String, String> entry : post.entrySet()) {
             String postKey = entry.getKey();
@@ -441,7 +441,7 @@ public class ReportHandler extends AbstractHandler {
      * @return
      */
     private Map<Column, Integer> extractCustomDataLegacy(Plugin plugin, Map<String, String> post) {
-        Map<Column, Integer> customData = new HashMap<Column, Integer>();
+        Map<Column, Integer> customData = new HashMap<>();
 
         // All of the custom data is thrown onto the 'Default' graph since we have no
         // idea what a "graph" is back in R4
@@ -511,7 +511,7 @@ public class ReportHandler extends AbstractHandler {
      * @return
      */
     private Map<String, String> processPostRequest(String content) {
-        Map<String, String> store = new HashMap<String, String>();
+        Map<String, String> store = new HashMap<>();
 
         // Split the post data by &
         for (String entry : content.split("&")) {

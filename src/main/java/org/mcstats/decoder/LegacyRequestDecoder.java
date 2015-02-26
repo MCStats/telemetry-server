@@ -41,14 +41,14 @@ public class LegacyRequestDecoder implements RequestDecoder {
         }
 
         DecodedRequest decoded = new DecodedRequest();
-        decoded.guid = (String) post.get("guid");
-        decoded.serverVersion = (String) post.get("server");
-        decoded.pluginVersion = (String) post.get("version");
+        decoded.guid = post.get("guid");
+        decoded.serverVersion = post.get("server");
+        decoded.pluginVersion = post.get("version");
         decoded.isPing = post.containsKey("ping");
 
         try {
-            decoded.revision = post.containsKey("revision") ? Integer.parseInt((String) post.get("revision")) : 4;
-            decoded.playersOnline = post.containsKey("players") ? Integer.parseInt((String) post.get("players")) : 0;
+            decoded.revision = post.containsKey("revision") ? Integer.parseInt(post.get("revision")) : 4;
+            decoded.playersOnline = post.containsKey("players") ? Integer.parseInt(post.get("players")) : 0;
         } catch (NumberFormatException e) {
             return null;
         }
@@ -62,11 +62,11 @@ public class LegacyRequestDecoder implements RequestDecoder {
         }
 
         if (decoded.revision >= 6) {
-            decoded.osname = (String) post.get("osname");
-            decoded.osarch = (String) post.get("osarch");
-            decoded.osversion = (String) post.get("osversion");
+            decoded.osname = post.get("osname");
+            decoded.osarch = post.get("osarch");
+            decoded.osversion = post.get("osversion");
             decoded.javaName = "";
-            decoded.javaVersion = (String) post.get("java_version");
+            decoded.javaVersion = post.get("java_version");
             if (decoded.osname == null) {
                 decoded.osname = "Unknown";
                 decoded.osversion = "Unknown";
@@ -82,8 +82,8 @@ public class LegacyRequestDecoder implements RequestDecoder {
             }
             if (decoded.osname != null) {
                 try {
-                    decoded.cores = Integer.parseInt((String) post.get("cores"));
-                    decoded.authMode = Boolean.parseBoolean((String) post.get("online-mode")) ? 1 : 0;
+                    decoded.cores = Integer.parseInt(post.get("cores"));
+                    decoded.authMode = Boolean.parseBoolean(post.get("online-mode")) ? 1 : 0;
                 } catch (Exception e) {
                     decoded.cores = 0;
                     decoded.authMode = -1;
@@ -104,8 +104,7 @@ public class LegacyRequestDecoder implements RequestDecoder {
         Map store = new HashMap();
         String arr[] = content.split("&");
 
-        for (int i = 0; i < arr.length; i++) {
-            String entry = arr[i];
+        for (String entry : arr) {
             String data[] = entry.split("=");
             if (data.length == 2) {
                 String key = URLUtils.decode(data[0]);
@@ -125,11 +124,11 @@ public class LegacyRequestDecoder implements RequestDecoder {
      * @return
      */
     private Map<Column, Long> extractCustomData(Plugin plugin, Map<String, String> post) {
-        Map<Column, Long> customData = new HashMap<Column, Long>();
+        Map<Column, Long> customData = new HashMap<>();
 
         for (Map.Entry<String, String> entry : post.entrySet()) {
-            String postKey = (String) entry.getKey();
-            String postValue = (String) entry.getValue();
+            String postKey = entry.getKey();
+            String postValue = entry.getValue();
 
             if (!postKey.startsWith("C")) {
                 continue;
@@ -151,7 +150,7 @@ public class LegacyRequestDecoder implements RequestDecoder {
                 if (graph != null && graph.getActive() != 0) {
                     org.mcstats.model.Column column = graph.loadColumn(columnName);
                     if (column != null) {
-                        customData.put(column, Long.valueOf(value));
+                        customData.put(column, value);
                     }
                 }
             }
@@ -168,12 +167,12 @@ public class LegacyRequestDecoder implements RequestDecoder {
      * @return
      */
     private Map<Column, Long> extractCustomDataLegacy(Plugin plugin, Map<String, String> post) {
-        Map<Column, Long> customData = new HashMap<Column, Long>();
+        Map<Column, Long> customData = new HashMap<>();
         Graph graph = mcstats.loadGraph(plugin, "Default");
 
         for (Map.Entry<String, String> entry : post.entrySet()) {
-            String postKey = (String) entry.getKey();
-            String postValue = (String) entry.getValue();
+            String postKey = entry.getKey();
+            String postValue = entry.getValue();
 
             if (!postKey.startsWith("C")) {
                 continue;
@@ -191,7 +190,7 @@ public class LegacyRequestDecoder implements RequestDecoder {
                 if (graph != null) {
                     Column column = graph.loadColumn(columnName);
                     if (column != null) {
-                        customData.put(column, Long.valueOf(value));
+                        customData.put(column, value);
                     }
                 }
             }

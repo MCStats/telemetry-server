@@ -143,22 +143,22 @@ public class MCStats {
     /**
      * A map of all of the currently loaded pluginsByName, by the plugin's name
      */
-    private final Map<String, Plugin> pluginsByName = new ConcurrentHashMap<String, Plugin>();
+    private final Map<String, Plugin> pluginsByName = new ConcurrentHashMap<>();
 
     /**
      * A map of all of the currently loaded pluginsByName, by the plugin's internal id
      */
-    private final Map<Integer, Plugin> pluginsById = new ConcurrentHashMap<Integer, Plugin>();
+    private final Map<Integer, Plugin> pluginsById = new ConcurrentHashMap<>();
 
     /**
      * A map of all countries, keyed by the 2 letter country code
      */
-    private final Map<String, String> countries = new ConcurrentHashMap<String, String>();
+    private final Map<String, String> countries = new ConcurrentHashMap<>();
 
     /**
      * Cache of server plugins mapped by their plugins
      */
-    private final Map<Plugin, Set<ServerPlugin>> serverPluginsByPlugin = new ConcurrentHashMap<Plugin, Set<ServerPlugin>>();
+    private final Map<Plugin, Set<ServerPlugin>> serverPluginsByPlugin = new ConcurrentHashMap<>();
 
     private MCStats() {
         // create the request callable
@@ -295,7 +295,7 @@ public class MCStats {
      * @return
      */
     public List<Server> getCachedServers() {
-        return Collections.unmodifiableList(new ArrayList<Server>(servers.asMap().values()));
+        return Collections.unmodifiableList(new ArrayList<>(servers.asMap().values()));
     }
 
     /**
@@ -304,7 +304,7 @@ public class MCStats {
      * @return
      */
     public List<Plugin> getCachedPlugins() {
-        return Collections.unmodifiableList(new ArrayList<Plugin>(pluginsById.values()));
+        return Collections.unmodifiableList(new ArrayList<>(pluginsById.values()));
     }
 
     /**

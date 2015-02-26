@@ -50,7 +50,7 @@ public abstract class SimpleAggregator implements GraphGenerator {
     public abstract List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server);
 
     private Map<Column, GeneratedData> aggregate(MCStats mcstats, Plugin plugin) {
-        Map<Column, GeneratedData> data = new HashMap<Column, GeneratedData>();
+        Map<Column, GeneratedData> data = new HashMap<>();
 
         Plugin pluginValue;
 
@@ -138,7 +138,7 @@ public abstract class SimpleAggregator implements GraphGenerator {
      * {@inheritDoc}
      */
     public Map<Column, GeneratedData> generate(MCStats mcstats) {
-        Map<Column, GeneratedData> data = new HashMap<Column, GeneratedData>();
+        Map<Column, GeneratedData> data = new HashMap<>();
 
         // aggregate all servers first
         data.putAll(aggregate(mcstats, null));

@@ -27,7 +27,7 @@ public class ServerBuildIdentifier {
     /**
      * The list of server definitions. LinkedHashMap to retain order.
      */
-    private final Map<String, String> definitions = new LinkedHashMap<String, String>();
+    private final Map<String, String> definitions = new LinkedHashMap<>();
 
     private final LoadingCache<String, String> definitionCache = CacheBuilder.newBuilder()
             .maximumSize(10000) // 10k

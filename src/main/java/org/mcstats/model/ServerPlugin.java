@@ -61,7 +61,7 @@ public class ServerPlugin implements Savable {
     /**
      * The version changes for this plugin
      */
-    public final Set<Tuple<String, String>> versionChanges = new HashSet<Tuple<String, String>>();
+    public final Set<Tuple<String, String>> versionChanges = new HashSet<>();
 
     public ServerPlugin(MCStats mcstats, Server server, Plugin plugin) {
         this.mcstats = mcstats;
@@ -103,7 +103,7 @@ public class ServerPlugin implements Savable {
      * @param newVersion the version changing to
      */
     public void addVersionChange(String oldVersion, String newVersion) {
-        versionChanges.add(new Tuple<String, String>(oldVersion, newVersion));
+        versionChanges.add(new Tuple<>(oldVersion, newVersion));
     }
 
     /**

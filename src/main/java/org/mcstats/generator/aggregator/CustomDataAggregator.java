@@ -19,7 +19,7 @@ public class CustomDataAggregator extends SimpleAggregator {
      */
     @Override
     public List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server) {
-        List<Tuple<Column, Long>> res = new ArrayList<Tuple<Column, Long>>();
+        List<Tuple<Column, Long>> res = new ArrayList<>();
         ServerPlugin serverPlugin = server.getPlugin(plugin);
 
         if (serverPlugin == null) {
@@ -27,7 +27,7 @@ public class CustomDataAggregator extends SimpleAggregator {
         }
 
         for (Map.Entry<Column, Long> entry : serverPlugin.getCustomData().entrySet()) {
-            res.add(new Tuple<Column, Long>(entry.getKey(), entry.getValue()));
+            res.add(new Tuple<>(entry.getKey(), entry.getValue()));
         }
 
         return res;

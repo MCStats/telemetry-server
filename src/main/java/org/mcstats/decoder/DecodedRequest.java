@@ -87,8 +87,7 @@ public class DecodedRequest {
         Field fields[] = getClass().getDeclaredFields();
         Field arr[] = fields;
 
-        for (int i = 0; i < arr.length; i++) {
-            Field field = arr[i];
+        for (Field field : arr) {
             result.append("  ");
             try {
                 result.append(field.getName());

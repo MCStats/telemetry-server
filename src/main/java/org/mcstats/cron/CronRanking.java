@@ -33,7 +33,7 @@ public class CronRanking implements Runnable {
             return;
         }
 
-        Map<Plugin, Integer> pluginServerCounts = new HashMap<Plugin, Integer>();
+        Map<Plugin, Integer> pluginServerCounts = new HashMap<>();
 
         for (Plugin plugin : mcstats.getCachedPlugins()) {
             if (plugin.getHidden() == 1) {
@@ -47,7 +47,7 @@ public class CronRanking implements Runnable {
         int rank = 1;
 
         Map<Plugin, Integer> sorted = MapUtil.sortByValue(pluginServerCounts);
-        List<Map.Entry<Plugin, Integer>> list = new ArrayList<Map.Entry<Plugin, Integer>>(sorted.entrySet());
+        List<Map.Entry<Plugin, Integer>> list = new ArrayList<>(sorted.entrySet());
 
         // traverse the list in reverse order (high - low)
         for (Map.Entry<Plugin, Integer> entry : Lists.reverse(list)) {

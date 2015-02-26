@@ -33,7 +33,7 @@ public class RevisionAggregator extends SimpleAggregator {
     @Override
     public List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server) {
         ServerPlugin serverPlugin = server.getPlugin(plugin);
-        final List<Tuple<Column, Long>> res = new ArrayList<Tuple<Column, Long>>();
+        final List<Tuple<Column, Long>> res = new ArrayList<>();
 
         try {
             final Graph graph = mcstats.loadGraph(plugin, graphName);
@@ -41,7 +41,7 @@ public class RevisionAggregator extends SimpleAggregator {
             if (serverPlugin != null) {
                 if (serverPlugin.getRevision() > 0) {
                     Column column = graph.loadColumn(Integer.toString(serverPlugin.getRevision()));
-                    res.add(new Tuple<Column, Long>(column, 1L));
+                    res.add(new Tuple<>(column, 1L));
                 }
             } else {
                 TIntIntHashMap sums = new TIntIntHashMap();

@@ -39,7 +39,7 @@ public class CronGraphGenerator implements Runnable {
     /**
      * A list of all generators
      */
-    private List<GraphGenerator> generators = new LinkedList<GraphGenerator>();
+    private List<GraphGenerator> generators = new LinkedList<>();
 
     public CronGraphGenerator(MCStats mcstats) {
         this.mcstats = mcstats;
@@ -84,7 +84,7 @@ public class CronGraphGenerator implements Runnable {
 
         generators.add(new RankAggregator());
 
-        generators.add(new DecoderAggregator<Integer>("online_mode", "Auth Mode", new DecoderAggregator.Decoder<Integer>() {
+        generators.add(new DecoderAggregator<>("online_mode", "Auth Mode", new DecoderAggregator.Decoder<Integer>() {
             public String decode(Integer value) {
                 switch (value) {
                     case 1:
@@ -124,7 +124,7 @@ public class CronGraphGenerator implements Runnable {
 
                 logger.info("Storing " + data.size() + " columns of data");
 
-                Map<Graph, List<Tuple<Column, GeneratedData>>> grouped = new HashMap<Graph, List<Tuple<Column, GeneratedData>>>();
+                Map<Graph, List<Tuple<Column, GeneratedData>>> grouped = new HashMap<>();
 
                 // group together the data for each graph
                 for (Map.Entry<Column, GeneratedData> entry : data.entrySet()) {
@@ -138,11 +138,11 @@ public class CronGraphGenerator implements Runnable {
                     List<Tuple<Column, GeneratedData>> listdata = grouped.get(column.getGraph());
 
                     if (listdata == null) {
-                        listdata = new ArrayList<Tuple<Column, GeneratedData>>();
+                        listdata = new ArrayList<>();
                         grouped.put(column.getGraph(), listdata);
                     }
 
-                    listdata.add(new Tuple<Column, GeneratedData>(column, columnData));
+                    listdata.add(new Tuple<>(column, columnData));
                 }
 
                 for (Map.Entry<Graph, List<Tuple<Column, GeneratedData>>> entry : grouped.entrySet()) {

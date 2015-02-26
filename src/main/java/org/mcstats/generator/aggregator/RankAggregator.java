@@ -13,7 +13,7 @@ import java.util.Map;
 public class RankAggregator implements GraphGenerator {
 
     private Map<Column, GeneratedData> aggregate(MCStats mcstats, Plugin plugin) {
-        Map<Column, GeneratedData> data = new HashMap<Column, GeneratedData>();
+        Map<Column, GeneratedData> data = new HashMap<>();
 
         if (plugin.getId() == -1 || plugin.getParent() != -1) {
             return data;
@@ -46,7 +46,7 @@ public class RankAggregator implements GraphGenerator {
      * {@inheritDoc}
      */
     public Map<Column, GeneratedData> generate(MCStats mcstats) {
-        Map<Column, GeneratedData> data = new HashMap<Column, GeneratedData>();
+        Map<Column, GeneratedData> data = new HashMap<>();
 
         for (Plugin plugin : mcstats.getCachedPlugins()) {
             data.putAll(aggregate(mcstats, plugin));

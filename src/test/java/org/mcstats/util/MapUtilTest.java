@@ -16,7 +16,7 @@ public class MapUtilTest {
     @Test
     public void testSortByValue() {
         Random random = new Random(System.currentTimeMillis());
-        Map<String, Integer> testMap = new HashMap<String, Integer>(1000);
+        Map<String, Integer> testMap = new HashMap<>(1000);
         for (int i = 0; i < 1000; ++i) {
             testMap.put("SomeString" + random.nextInt(), random.nextInt());
         }

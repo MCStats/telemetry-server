@@ -27,7 +27,7 @@ public class CountryAggregator extends SimpleAggregator {
      */
     @Override
     public List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server) {
-        List<Tuple<Column, Long>> res = new ArrayList<Tuple<Column, Long>>();
+        List<Tuple<Column, Long>> res = new ArrayList<>();
 
         try {
             String countryName = mcstats.getCountryName(server.getCountry());
@@ -39,7 +39,7 @@ public class CountryAggregator extends SimpleAggregator {
             Graph graph = mcstats.loadGraph(plugin, graphName);
             Column column = graph.loadColumn(countryName);
 
-            res.add(new Tuple<Column, Long>(column, 1L));
+            res.add(new Tuple<>(column, 1L));
         } catch (Exception e) {
             e.printStackTrace();
         }

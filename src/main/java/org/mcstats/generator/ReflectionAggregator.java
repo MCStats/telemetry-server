@@ -103,7 +103,7 @@ public class ReflectionAggregator extends SimpleAggregator {
      */
     @Override
     public List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server) {
-        List<Tuple<Column, Long>> res = new ArrayList<Tuple<Column, Long>>();
+        List<Tuple<Column, Long>> res = new ArrayList<>();
 
         if (field == null) {
             return res;
@@ -130,7 +130,7 @@ public class ReflectionAggregator extends SimpleAggregator {
             Graph graph = mcstats.loadGraph(plugin, graphName);
             Column column = graph.loadColumn(usingColumn);
 
-            res.add(new Tuple<Column, Long>(column, columnValue));
+            res.add(new Tuple<>(column, columnValue));
         } catch (Exception e) {
             e.printStackTrace();
         }

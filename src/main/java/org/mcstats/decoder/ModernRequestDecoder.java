@@ -128,20 +128,20 @@ public class ModernRequestDecoder implements RequestDecoder {
 
         for (Object o : graphs.entrySet()) {
             Map.Entry<String, JSONObject> entry = (Map.Entry<String, JSONObject>) o;
-            String graphName = (String) entry.getKey();
-            JSONObject columns = (JSONObject) entry.getValue();
+            String graphName = entry.getKey();
+            JSONObject columns = entry.getValue();
             Graph graph = mcstats.loadGraph(plugin, graphName);
 
             if (graph != null && graph.getActive() != 0) {
                 for (Object o2 : columns.entrySet()) {
                     Map.Entry<String, Long> entryColumn = (Map.Entry<String, Long>) o2;
 
-                    String columnName = (String) entryColumn.getKey();
+                    String columnName = entryColumn.getKey();
                     long value = tryParseLong(entryColumn.getValue());
                     org.mcstats.model.Column column = graph.loadColumn(columnName);
 
                     if (column != null) {
-                        customData.put(column, Long.valueOf(value));
+                        customData.put(column, value);
                     }
                 }
             }
