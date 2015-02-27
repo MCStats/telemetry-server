@@ -26,6 +26,7 @@ import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
 import org.mcstats.util.RequestCalculator;
 import org.mcstats.util.ServerBuildIdentifier;
+import redis.clients.jedis.Jedis;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -70,6 +71,11 @@ public class MCStats {
      * The database we are connected to
      */
     private Database database;
+
+    /**
+     * Redis connection
+     */
+    private Jedis redis;
 
     /**
      * The storage for graph data
@@ -224,6 +230,7 @@ public class MCStats {
         logger.info("Loaded " + countries.size() + " countries");
 
         graphStore = new MongoDBGraphStore(this);
+        redis = new Jedis(config.getProperty("redis.host"), Integer.parseInt(config.getProperty("redis.port")));
 
         // Load all of the pluginsByName
         for (Plugin plugin : database.loadPlugins()) {
@@ -638,6 +645,15 @@ public class MCStats {
      */
     public Database getDatabase() {
         return database;
+    }
+
+    /**
+     * Returns the redis database instance
+     *
+     * @return
+     */
+    public Jedis getRedis() {
+        return redis;
     }
 
     /**
