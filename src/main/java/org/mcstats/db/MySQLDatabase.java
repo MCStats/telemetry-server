@@ -58,14 +58,6 @@ public class MySQLDatabase implements Database {
         ds.setMaxActive(100);
     }
 
-    public void executeUpdate(String query) throws SQLException {
-        try (Connection connection = ds.getConnection();
-            Statement statement = connection.createStatement()) {
-            statement.executeUpdate(query);
-            QUERIES++;
-        }
-    }
-
     public Map<String, String> loadCountries() {
         Map<String, String> countries = new HashMap<>();
 

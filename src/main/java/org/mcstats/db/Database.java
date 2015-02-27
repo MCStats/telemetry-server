@@ -14,11 +14,6 @@ import java.util.Map;
 public interface Database {
 
     /**
-     * Execute a raw query
-     */
-    public void executeUpdate(String query) throws SQLException;
-
-    /**
      * Load all countries from the database
      *
      * @return

@@ -97,11 +97,6 @@ public class MCStats {
     private final RequestCalculator requestsAllTime;
 
     /**
-     * The request calculator for requests per second for the last 5 seconds
-     */
-    private final RequestCalculator requestsFiveSeconds;
-
-    /**
      * Debug mode
      */
     private boolean debug = false;
@@ -163,7 +158,6 @@ public class MCStats {
         Callable<Long> requestsCallable = requests::get;
 
         requestsAllTime = new RequestCalculator(RequestCalculator.CalculationMethod.ALL_TIME, requestsCallable);
-        requestsFiveSeconds = new RequestCalculator(RequestCalculator.CalculationMethod.FIVE_SECONDS, requestsCallable);
     }
 
     /**
@@ -671,15 +665,6 @@ public class MCStats {
      */
     public RequestCalculator getRequestCalculatorAllTime() {
         return requestsAllTime;
-    }
-
-    /**
-     * Get the request calculator for requests in the last 5 seconds
-     *
-     * @return
-     */
-    public RequestCalculator getRequestCalculatorFiveSeconds() {
-        return requestsFiveSeconds;
     }
 
     /**
