@@ -630,18 +630,9 @@ public class MCStats {
      * Connect to the database
      */
     private void connectToDatabase() {
-        // First load the mysql.properties file
-        Properties properties = new Properties();
-
-        try {
-            properties.load(new FileInputStream("mysql.properties"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         // Create the database
-        database = new PluginOnlyMySQLDatabase(this, properties.getProperty("mysql.hostname"), properties.getProperty("mysql.database")
-                , properties.getProperty("mysql.username"), properties.getProperty("mysql.password"));
+        database = new PluginOnlyMySQLDatabase(this, config.getProperty("mysql.hostname"), config.getProperty("mysql.database"),
+                config.getProperty("mysql.username"), config.getProperty("mysql.password"));
 
         logger.info("Connected to MySQL");
     }
