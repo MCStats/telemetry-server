@@ -15,6 +15,7 @@ import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
 import org.mcstats.util.URLUtils;
+import redis.clients.jedis.Jedis;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -141,7 +142,7 @@ public class ReportHandler extends AbstractHandler {
     }
 
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        try {
+        try (Jedis redis = mcstats.getRedisPool().getResource()) {
             if (!request.getMethod().equals("POST")) {
                 return;
             }
@@ -170,6 +171,9 @@ public class ReportHandler extends AbstractHandler {
             }
 
             final Plugin plugin = mcstats.loadPlugin(pluginName);
+
+            // TODO
+            redis.sadd("plugins", Integer.toString(plugin.getId()));
 
             String userAgent = request.getHeader("User-Agent");
             final DecodedRequest decoded;
@@ -226,6 +230,10 @@ public class ReportHandler extends AbstractHandler {
 
             try {
                 Server server = mcstats.loadServer(decoded.guid);
+
+                // TODO
+                redis.sadd("servers", decoded.guid);
+                redis.sadd("server-plugins:" + decoded.guid, Integer.toString(plugin.getId()));
 
                 if ((server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) && (!server.isBlacklisted())) {
                     server.setBlacklisted(true);
