@@ -20,4 +20,9 @@ public class CustomDataAccumulator implements Accumulator {
         }
     }
 
+    @Override
+    public boolean isGlobal() {
+        return false;
+    }
+
 }
