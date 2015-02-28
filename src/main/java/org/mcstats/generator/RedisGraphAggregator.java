@@ -11,7 +11,9 @@ import org.mcstats.util.Tuple;
 import redis.clients.jedis.Jedis;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,8 +38,12 @@ public class RedisGraphAggregator implements Runnable {
             int epoch = ReportHandler.normalizeTime();
             long start = System.currentTimeMillis();
 
-            plugins.forEach(pluginId -> {
+            plugins.parallelStream().forEach(pluginId -> {
                 Plugin plugin = mcstats.loadPlugin(pluginId);
+
+                for (Graph graph : mcstats.getDatabase().loadGraphs(plugin)) {
+                    plugin.addGraph(graph);
+                }
 
                 logger.info("Generating data for " + plugin.getName());
 
@@ -46,7 +52,7 @@ public class RedisGraphAggregator implements Runnable {
 
                 for (String graphName : graphNames) {
                     // TODO this does not create the graph if it does not exist
-                    Graph graph = mcstats.getDatabase().loadGraph(plugin, graphName);
+                    Graph graph = plugin.getGraph(graphName);
 
                     if (graph == null || graph.getName() == null) {
                         continue;
@@ -57,8 +63,14 @@ public class RedisGraphAggregator implements Runnable {
                     // all columns for the graph
                     Set<String> columnNames = redis.smembers("columns:" + pluginId + ":" + graphName);
 
+                    Map<String, Column> columns = new HashMap<>();
+
+                    for (Column column : mcstats.getDatabase().loadColumns(graph)) {
+                        columns.put(column.getName(), column);
+                    }
+
                     for (String columnName : columnNames) {
-                        Column column = mcstats.getDatabase().loadColumn(graph, columnName);
+                        Column column = columns.get(columnName);
 
                         if (column == null || column.getName() == null) {
                             continue;
