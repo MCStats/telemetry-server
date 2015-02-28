@@ -21,6 +21,7 @@ import org.mcstats.model.ServerPlugin;
 import org.mcstats.util.Tuple;
 import org.mcstats.util.URLUtils;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Pipeline;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -397,8 +398,10 @@ public class ReportHandler extends AbstractHandler {
                 serverPluginData.put("revision", Integer.toString(decoded.revision));
                 serverPluginData.put("version", decoded.pluginVersion);
 
-                redis.hmset("server:" + decoded.uuid, serverData);
-                redis.hmset("server-plugin:" + decoded.uuid + ":" + plugin.getId(), serverPluginData);
+                Pipeline pipeline = redis.pipelined();
+
+                pipeline.hmset("server:" + decoded.uuid, serverData);
+                pipeline.hmset("server-plugin:" + decoded.uuid + ":" + plugin.getId(), serverPluginData);
 
                 // accumulate all graph data
                 // TODO break out to somewhere else?
@@ -416,12 +419,14 @@ public class ReportHandler extends AbstractHandler {
                     String redisDataKey = String.format("data:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
 
                     // metadata
-                    redis.sadd("graphs:" + graph.getPlugin().getId(), graph.getName());
-                    redis.sadd("columns:" + graph.getPlugin().getId() + ":" + graph.getName(), column.getName());
+                    pipeline.sadd("graphs:" + graph.getPlugin().getId(), graph.getName());
+                    pipeline.sadd("columns:" + graph.getPlugin().getId() + ":" + graph.getName(), column.getName());
 
                     // data
-                    redis.zadd(redisDataKey, value, server.getUUID());
+                    pipeline.zadd(redisDataKey, value, server.getUUID());
                 }
+
+                pipeline.sync();
 
                 // serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
                 plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
