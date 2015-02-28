@@ -6,9 +6,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.util.ByteArrayISO8859Writer;
 import org.mcstats.AccumulatorDelegator;
 import org.mcstats.MCStats;
-import org.mcstats.accumulator.GameVersionAccumulator;
-import org.mcstats.accumulator.GlobalStatisticsAccumulator;
-import org.mcstats.accumulator.ServerSoftwareAccumulator;
+import org.mcstats.accumulator.MCStatsInfoAccumulator;
+import org.mcstats.accumulator.ServerInfoAccumulator;
+import org.mcstats.accumulator.VersionInfoAccumulator;
 import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.decoder.LegacyRequestDecoder;
 import org.mcstats.decoder.ModernRequestDecoder;
@@ -83,9 +83,9 @@ public class ReportHandler extends AbstractHandler {
      * Registers accumulators
      */
     private void registerAccumulators() {
-        accumulatorDelegator.add(new GlobalStatisticsAccumulator());
-        accumulatorDelegator.add(new ServerSoftwareAccumulator());
-        accumulatorDelegator.add(new GameVersionAccumulator());
+        accumulatorDelegator.add(new ServerInfoAccumulator());
+        accumulatorDelegator.add(new MCStatsInfoAccumulator());
+        accumulatorDelegator.add(new VersionInfoAccumulator());
     }
 
     /**
@@ -408,6 +408,10 @@ public class ReportHandler extends AbstractHandler {
                     Column column = data.first();
                     Graph graph = column.getGraph();
                     long value = data.second();
+
+                    if (graph.getName() == null || column.getName() == null) {
+                        continue;
+                    }
 
                     String redisDataKey = String.format("data:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
 

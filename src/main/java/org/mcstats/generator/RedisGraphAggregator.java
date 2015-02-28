@@ -45,7 +45,13 @@ public class RedisGraphAggregator implements Runnable {
                 Set<String> graphNames = redis.smembers("graphs:" + pluginId);
 
                 for (String graphName : graphNames) {
+                    // TODO this does not create the graph if it does not exist
                     Graph graph = mcstats.getDatabase().loadGraph(plugin, graphName);
+
+                    if (graph == null || graph.getName() == null) {
+                        continue;
+                    }
+
                     List<Tuple<Column, GeneratedData>> data = new ArrayList<>();
 
                     // all columns for the graph
@@ -53,6 +59,10 @@ public class RedisGraphAggregator implements Runnable {
 
                     for (String columnName : columnNames) {
                         Column column = mcstats.getDatabase().loadColumn(graph, columnName);
+
+                        if (column == null || column.getName() == null) {
+                            continue;
+                        }
 
                         String redisDataKey = String.format("data:%d:%s:%s", plugin.getId(), graphName, columnName);
 

@@ -48,6 +48,18 @@ public class AccumulatorContext {
         result.add(new Tuple<>(column, value));
     }
 
+    /**
+     * Adds data using the donut graph data representation
+     *
+     * @param graphName
+     * @param innerColumnName
+     * @param outerColumnName
+     * @param value
+     */
+    public void addDonutData(String graphName, String innerColumnName, String outerColumnName, long value) {
+        addData(graphName, String.format("%s~=~%s", innerColumnName, outerColumnName), value);
+    }
+
     public DecodedRequest getRequest() {
         return request;
     }
