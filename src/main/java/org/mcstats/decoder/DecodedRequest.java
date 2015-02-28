@@ -25,47 +25,47 @@ public class DecodedRequest {
     /**
      * The version of the server software
      */
-    public String serverVersion;
+    public String serverVersion = "Unknown";
 
     /**
      * The version of the plugin
      */
-    public String pluginVersion;
+    public String pluginVersion = "Unknown";
 
     /**
      * The number of players online
      */
-    public int playersOnline;
+    public int playersOnline = 0;
 
     /**
      * OS name
      */
-    public String osname;
+    public String osname = "Unknown";
 
     /**
      * OS version
      */
-    public String osversion;
+    public String osversion = "Unknown";
 
     /**
      * OS arch (e.g. x64_64)
      */
-    public String osarch;
+    public String osarch = "Unknown";
 
     /**
      * Major java version
      */
-    public String javaName;
+    public String javaName = "Unknown";
 
     /**
      * Minor java version
      */
-    public String javaVersion;
+    public String javaVersion = "Unknown";
 
     /**
      * Number of cores on the hardware running the server
      */
-    public int cores;
+    public int cores = -1;
 
     /**
      * The auth mode of the server

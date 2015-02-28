@@ -348,8 +348,28 @@ public class ReportHandler extends AbstractHandler {
                     if (!decoded.javaVersion.equals(server.getJavaVersion())) {
                         server.setJavaVersion(decoded.javaVersion);
                     }
-
                 }
+
+                // TODO
+                Map<String, String> serverData = new HashMap<>();
+                serverData.put("country", geoipCountryCode);
+                serverData.put("serverSoftware", canonicalServerVersion);
+                serverData.put("minecraftVersion", minecraftVersion);
+                serverData.put("players.online", Integer.toString(decoded.playersOnline));
+                serverData.put("os.name", decoded.osname);
+                serverData.put("os.version", decoded.osversion);
+                serverData.put("os.arch", decoded.osarch);
+                serverData.put("java.name", decoded.javaName);
+                serverData.put("java.version", decoded.javaVersion);
+                serverData.put("cores", Integer.toString(decoded.cores));
+                serverData.put("authMode", Integer.toString(decoded.authMode));
+
+                Map<String, String> serverPluginData = new HashMap<>();
+                serverPluginData.put("revision", Integer.toString(decoded.revision));
+                serverPluginData.put("version", decoded.pluginVersion);
+
+                redis.hmset("server:" + decoded.guid, serverData);
+                redis.hmset("server-plugin:" + decoded.guid + ":" + plugin.getId(), serverPluginData);
 
                 serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
                 plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
