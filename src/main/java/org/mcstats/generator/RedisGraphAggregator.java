@@ -1,5 +1,7 @@
 package org.mcstats.generator;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 import org.mcstats.MCStats;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Column;
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
  */
 public class RedisGraphAggregator implements Runnable {
 
+    private static final Logger logger = Logger.getLogger(RedisGraphAggregator.class);
+
     private MCStats mcstats;
 
     public RedisGraphAggregator(MCStats mcstats) {
@@ -30,11 +34,12 @@ public class RedisGraphAggregator implements Runnable {
             plugins.add(-1); // All Plugins
 
             int epoch = ReportHandler.normalizeTime();
+            long start = System.currentTimeMillis();
 
             plugins.forEach(pluginId -> {
                 Plugin plugin = mcstats.loadPlugin(pluginId);
 
-                System.out.println("Generating data for " + plugin.getName());
+                logger.info("Generating data for " + plugin.getName());
 
                 // all graphs for the plugin
                 Set<String> graphNames = redis.smembers("graphs:" + pluginId);
@@ -73,13 +78,18 @@ public class RedisGraphAggregator implements Runnable {
 
                     // TODO insert
                     // mcstats.getGraphStore().batchInsert(graph, data, epoch);
-                    data.forEach(t -> System.out.println(t.first().getName() + " " + t.second()));
+                    data.forEach(t -> logger.info(t.first().getName() + " " + t.second()));
                 }
             });
+
+            long taken = System.currentTimeMillis() - start;
+
+            logger.info("Generation completed in " + taken + "ms");
         }
     }
 
     public static void main(String[] args) {
+        BasicConfigurator.configure();
         MCStats.getInstance().init();
         new RedisGraphAggregator(MCStats.getInstance()).run();
     }
