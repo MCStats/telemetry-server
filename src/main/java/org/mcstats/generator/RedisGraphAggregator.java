@@ -31,7 +31,6 @@ public class RedisGraphAggregator implements Runnable {
 
             int epoch = ReportHandler.normalizeTime();
 
-            // iterate over all plugins
             plugins.forEach(pluginId -> {
                 Plugin plugin = mcstats.loadPlugin(pluginId);
 
