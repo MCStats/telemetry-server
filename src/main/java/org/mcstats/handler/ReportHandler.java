@@ -12,6 +12,7 @@ import org.mcstats.decoder.LegacyRequestDecoder;
 import org.mcstats.decoder.ModernRequestDecoder;
 import org.mcstats.decoder.RequestDecoder;
 import org.mcstats.model.Column;
+import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
@@ -401,10 +402,16 @@ public class ReportHandler extends AbstractHandler {
 
                 for (Tuple<Column, Long> data : accumulatedData) {
                     Column column = data.first();
+                    Graph graph = column.getGraph();
                     long value = data.second();
 
-                    String redisDataKey = String.format("data:%d:%s:%s", column.getGraph().getPlugin().getId(), column.getGraph().getName(), column.getName());
+                    String redisDataKey = String.format("data:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
 
+                    // metadata
+                    redis.sadd("graphs:" + graph.getPlugin().getId(), graph.getName());
+                    redis.sadd("columns:" + graph.getPlugin().getId() + ":" + graph.getName(), column.getName());
+
+                    // data
                     redis.zadd(redisDataKey, value, server.getUUID());
                 }
 
