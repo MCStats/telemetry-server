@@ -88,7 +88,9 @@ public class RedisGraphAggregator implements Runnable {
 
                     // TODO insert
                     // mcstats.getGraphStore().batchInsert(graph, data, epoch);
-                    data.forEach(t -> logger.info(t.first().getName() + " " + t.second()));
+                    if (plugin.getId() == -1) {
+                        data.forEach(t -> logger.info(t.first().getName() + " " + t.second()));
+                    }
                 }
             });
 
