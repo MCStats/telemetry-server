@@ -1,6 +1,5 @@
 package org.mcstats.model;
 
-import org.mcstats.MCStats;
 import org.mcstats.util.Tuple;
 
 import java.util.Collections;

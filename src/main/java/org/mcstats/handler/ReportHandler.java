@@ -4,16 +4,18 @@ import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.util.ByteArrayISO8859Writer;
+import org.mcstats.AccumulatorDelegator;
 import org.mcstats.MCStats;
+import org.mcstats.accumulator.GlobalStatisticsAccumulator;
 import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.decoder.LegacyRequestDecoder;
 import org.mcstats.decoder.ModernRequestDecoder;
 import org.mcstats.decoder.RequestDecoder;
 import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
+import org.mcstats.util.Tuple;
 import org.mcstats.util.URLUtils;
 import redis.clients.jedis.Jedis;
 
@@ -22,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,6 +48,11 @@ public class ReportHandler extends AbstractHandler {
     private MCStats mcstats;
 
     /**
+     * The delegator for accumulators
+     */
+    private AccumulatorDelegator accumulatorDelegator;
+
+    /**
      * Modern request decoder
      */
     private final RequestDecoder modernDecoder;
@@ -61,8 +69,18 @@ public class ReportHandler extends AbstractHandler {
 
     public ReportHandler(MCStats mcstats) {
         this.mcstats = mcstats;
+        accumulatorDelegator = new AccumulatorDelegator(mcstats);
         modernDecoder = new ModernRequestDecoder(mcstats);
         legacyDecoder = new LegacyRequestDecoder(mcstats);
+
+        registerAccumulators();
+    }
+
+    /**
+     * Registers accumulators
+     */
+    private void registerAccumulators() {
+        accumulatorDelegator.add(new GlobalStatisticsAccumulator());
     }
 
     /**
@@ -376,6 +394,19 @@ public class ReportHandler extends AbstractHandler {
 
                 redis.hmset("server:" + decoded.uuid, serverData);
                 redis.hmset("server-plugin:" + decoded.uuid + ":" + plugin.getId(), serverPluginData);
+
+                // accumulate all graph data
+                // TODO break out to somewhere else?
+                List<Tuple<Column, Long>> accumulatedData = accumulatorDelegator.accumulate(decoded, serverPlugin);
+
+                for (Tuple<Column, Long> data : accumulatedData) {
+                    Column column = data.first();
+                    long value = data.second();
+
+                    String redisDataKey = String.format("data:%d:%s:%s", column.getGraph().getPlugin().getId(), column.getGraph().getName(), column.getName());
+
+                    redis.zadd(redisDataKey, value, server.getUUID());
+                }
 
                 // serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
                 plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));

@@ -3,7 +3,6 @@ package org.mcstats;
 import org.apache.log4j.Logger;
 import org.mcstats.db.Savable;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.Server;
 
 import java.util.ArrayList;
 import java.util.Collections;

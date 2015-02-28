@@ -15,7 +15,6 @@ import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.db.MySQLDatabase;
 import org.mcstats.handler.BlackholeHandler;
 import org.mcstats.handler.ReportHandler;
-import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.RequestCalculator;
 import org.mcstats.util.ServerBuildIdentifier;
@@ -80,7 +79,7 @@ public class MCStats {
     /**
      * The report handler for requests
      */
-    private ReportHandler handler = new ReportHandler(this);
+    private ReportHandler handler;
 
     /**
      * The server build identifier
@@ -170,6 +169,8 @@ public class MCStats {
         }
 
         logger.info("Loaded " + pluginsByName.size() + " plugins");
+
+        handler = new ReportHandler(this);
 
         // Create & open the webserver
         createWebServer();
