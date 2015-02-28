@@ -6,6 +6,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.util.ByteArrayISO8859Writer;
 import org.mcstats.AccumulatorDelegator;
 import org.mcstats.MCStats;
+import org.mcstats.accumulator.CustomDataAccumulator;
 import org.mcstats.accumulator.MCStatsInfoAccumulator;
 import org.mcstats.accumulator.ServerInfoAccumulator;
 import org.mcstats.accumulator.VersionInfoAccumulator;
@@ -87,6 +88,7 @@ public class ReportHandler extends AbstractHandler {
         accumulatorDelegator.add(new ServerInfoAccumulator());
         accumulatorDelegator.add(new MCStatsInfoAccumulator());
         accumulatorDelegator.add(new VersionInfoAccumulator());
+        accumulatorDelegator.add(new CustomDataAccumulator());
     }
 
     /**
