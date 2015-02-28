@@ -1,55 +1,30 @@
 package org.mcstats.model;
 
-import org.mcstats.MCStats;
-
 public class Column {
 
     /**
-     * The mcstats object
+     * The graph this column belongs to
      */
-    private MCStats mcstats;
+    private final Graph graph;
 
     /**
-     * The id for the column
+     * The id of the column (if available)
      */
     private int id;
 
     /**
-     * The plugin object
+     * The name of this column
      */
-    private Plugin plugin;
+    private final String name;
 
     /**
-     * The graph object
+     * Flag for if the graph has the full data from the database
      */
-    private Graph graph;
+    private boolean isFromDatabase = false;
 
-    /**
-     * The column's name
-     */
-    private String name;
-
-    public Column(MCStats mcstats, Graph graph, Plugin plugin) {
-        this.mcstats = mcstats;
+    public Column(Graph graph, String name) {
         this.graph = graph;
-        this.plugin = plugin;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("Column(Plugin = %s, Graph = %s, Name = %s)", plugin.getName(), graph.getName(), name);
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public Plugin getPlugin() {
-        return plugin;
+        this.name = name;
     }
 
     public Graph getGraph() {
@@ -60,23 +35,36 @@ public class Column {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void initFromDatabase(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public boolean isFromDatabase() {
+        return isFromDatabase;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Column)) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        Column oc = (Column) o;
-        return id == oc.id;
+        Column column = (Column) o;
+
+        if (graph != null ? !graph.equals(column.graph) : column.graph != null) return false;
+        if (name != null ? !name.equals(column.name) : column.name != null) return false;
+
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return id;
+        int result = graph != null ? graph.hashCode() : 0;
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        return result;
     }
 
 }

@@ -217,15 +217,6 @@
 
                     <tr>
                         <td style="width: 20px; text-align: center;">
-                            Servers (cached)
-                        </td>
-                        <td style="width: 100px; text-align: center;">
-                            <%= numberFormatter.format(mcstats.getCachedServers().size()) %>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td style="width: 20px; text-align: center;">
                             Plugins (cached)
                         </td>
                         <td style="width: 100px; text-align: center;">

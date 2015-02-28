@@ -3,11 +3,7 @@ package org.mcstats.db;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.PluginVersion;
-import org.mcstats.model.Server;
-import org.mcstats.model.ServerPlugin;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -57,94 +53,6 @@ public interface Database {
      * @param plugin
      */
     public void savePlugin(Plugin plugin);
-
-    /**
-     * Create a version for the given plugin and then reload the versions it has
-     *
-     * @param plugin
-     * @param version
-     */
-    public PluginVersion createPluginVersion(Plugin plugin, String version);
-
-    /**
-     * Load a plugin's versions and add them to it
-     *
-     * @param plugin
-     */
-    public List<PluginVersion> loadPluginVersions(Plugin plugin);
-
-    /**
-     * Load a plugin version
-     *
-     * @param plugin
-     * @param version
-     * @return
-     */
-    public PluginVersion loadPluginVersion(Plugin plugin, String version);
-
-    /**
-     * Create a ServerPlugin entry in the database for the server/plugin pair
-     *
-     * @param server
-     * @param plugin
-     * @return
-     */
-    public ServerPlugin createServerPlugin(Server server, Plugin plugin, String version);
-
-    /**
-     * Load the ServerPlugin object for the server/plugin pair
-     *
-     * @param server
-     * @param plugin
-     * @return
-     */
-    public ServerPlugin loadServerPlugin(Server server, Plugin plugin);
-
-    /**
-     * Load all of the server plugin objects for the given server
-     *
-     * @param server
-     * @return
-     */
-    public List<ServerPlugin> loadServerPlugins(Server server);
-
-    /**
-     * Save the ServerPlugin to the database
-     *
-     * @param serverPlugin
-     */
-    public void saveServerPlugin(ServerPlugin serverPlugin);
-
-    /**
-     * Add version history for the given server/plugin combo to the database
-     *
-     * @param server
-     * @param version
-     */
-    public void addPluginVersionHistory(Server server, PluginVersion version);
-
-    /**
-     * Create a server in the database using the given guid
-     *
-     * @param guid
-     * @return
-     */
-    public Server createServer(String guid);
-
-    /**
-     * Load a server from the database with the given guid
-     *
-     * @param guid
-     * @return
-     */
-    public Server loadServer(String guid);
-
-    /**
-     * Save the given server to the database
-     *
-     * @param server
-     */
-    public void saveServer(Server server);
 
     /**
      * Create a graph for the given plugin
@@ -197,20 +105,5 @@ public interface Database {
      * @return
      */
     public List<Column> loadColumns(Graph graph);
-
-    /**
-     * Blacklist a server
-     *
-     * @param server
-     */
-    public void blacklistServer(Server server);
-
-    /**
-     * Check if a server is blacklisted.
-     *
-     * @param server
-     * @return
-     */
-    public boolean isServerBlacklisted(Server server);
 
 }

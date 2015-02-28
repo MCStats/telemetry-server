@@ -136,10 +136,6 @@ public class DatabaseQueue {
                             Savable savable = (Savable) iter.next();
 
                             if (!(savable instanceof Plugin)) {
-                                if ((savable instanceof Server)) {
-                                    ((Server) savable).resetQueuedStatus();
-                                }
-
                                 iter.remove();
                             }
                         }

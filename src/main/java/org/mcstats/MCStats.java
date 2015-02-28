@@ -1,9 +1,5 @@
 package org.mcstats;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Sets;
 import it.sauronsoftware.cron4j.Scheduler;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
@@ -16,14 +12,11 @@ import org.mcstats.cron.CronRanking;
 import org.mcstats.db.Database;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
-import org.mcstats.db.PluginOnlyMySQLDatabase;
+import org.mcstats.db.MySQLDatabase;
 import org.mcstats.handler.BlackholeHandler;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.PluginVersion;
-import org.mcstats.model.Server;
-import org.mcstats.model.ServerPlugin;
 import org.mcstats.util.RequestCalculator;
 import org.mcstats.util.ServerBuildIdentifier;
 import redis.clients.jedis.JedisPool;
@@ -33,14 +26,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MCStats {
@@ -108,39 +98,6 @@ public class MCStats {
     private boolean debug = false;
 
     /**
-     * A map of all of the currently loaded servers
-     */
-    private final LoadingCache<String, Server> servers = CacheBuilder.newBuilder()
-            .maximumSize(400000) // 100k
-            .build(new CacheLoader<String, Server>() {
-
-                public Server load(String key) {
-                    Server server = database.loadServer(key);
-
-                    if (server == null) {
-                        server = database.createServer(key);
-                    }
-
-                    if (server == null) {
-                        logger.error("Failed to create server for \"" + key + "\"");
-                        return null;
-                    }
-
-                    // Now load the plugins
-                    for (ServerPlugin serverPlugin : database.loadServerPlugins(server)) {
-                        server.addPlugin(serverPlugin);
-                    }
-
-                    if (database.isServerBlacklisted(server)) {
-                        server.setBlacklisted(true);
-                    }
-
-                    return server;
-                }
-
-            });
-
-    /**
      * A map of all of the currently loaded pluginsByName, by the plugin's name
      */
     private final Map<String, Plugin> pluginsByName = new ConcurrentHashMap<>();
@@ -155,11 +112,6 @@ public class MCStats {
      */
     private final Map<String, String> countries = new ConcurrentHashMap<>();
 
-    /**
-     * Cache of server plugins mapped by their plugins
-     */
-    private final Map<Plugin, Set<ServerPlugin>> serverPluginsByPlugin = new ConcurrentHashMap<>();
-
     private MCStats() {
         Callable<Long> requestsCallable = requests::get;
 
@@ -170,29 +122,7 @@ public class MCStats {
      * Reset data used for each interval
      */
     public void resetIntervalData() {
-        if (database instanceof PluginOnlyMySQLDatabase) {
-            ((PluginOnlyMySQLDatabase) database).resetIntervalData();
-            servers.invalidateAll();
-            resetInternalCaches();
-            serverPluginsByPlugin.clear();
-        }
-    }
-
-    /**
-     * Count the number of servers that recently sent data
-     *
-     * @return
-     */
-    public int countRecentServers() {
-        int count = 0;
-
-        for (Server server : getCachedServers()) {
-            if (server.recentlySentData()) {
-                count ++;
-            }
-        }
-
-        return count;
+        resetInternalCaches();
     }
 
     /**
@@ -236,21 +166,10 @@ public class MCStats {
         for (Plugin plugin : database.loadPlugins()) {
             if (plugin.getId() >= 0) {
                 addPlugin(plugin);
-                serverPluginsByPlugin.put(plugin, Sets.newSetFromMap(new ConcurrentHashMap<>()));
             }
         }
 
         logger.info("Loaded " + pluginsByName.size() + " plugins");
-
-        int numGraphs = 0;
-        for (Plugin plugin : pluginsByName.values()) {
-            for (Graph graph : database.loadGraphs(plugin)) {
-                plugin.addGraph(graph);
-                numGraphs ++;
-            }
-        }
-
-        logger.info("Loaded " + numGraphs + " graphs");
 
         // Create & open the webserver
         createWebServer();
@@ -285,15 +204,6 @@ public class MCStats {
     }
 
     /**
-     * Get an unmodifiable list of the cached servers
-     *
-     * @return
-     */
-    public List<Server> getCachedServers() {
-        return Collections.unmodifiableList(new ArrayList<>(servers.asMap().values()));
-    }
-
-    /**
      * Get an unmodifiable list of the cached plugins
      *
      * @return
@@ -303,131 +213,12 @@ public class MCStats {
     }
 
     /**
-     * Get the server plugins for a given plugin
-     *
-     * @param plugin
-     * @return
-     */
-    public Set<ServerPlugin> getServerPlugins(Plugin plugin) {
-        return serverPluginsByPlugin.containsKey(plugin) ? serverPluginsByPlugin.get(plugin) : new HashSet<>();
-    }
-
-    /**
-     * Notify an addition of server plugin
-     *
-     * @param serverPlugin
-     */
-    public void notifyServerPlugin(ServerPlugin serverPlugin) {
-        if (serverPlugin == null) {
-            return;
-        }
-
-        Set<ServerPlugin> serverPlugins = serverPluginsByPlugin.get(serverPlugin.getPlugin());
-
-        if (serverPlugins == null) {
-            serverPlugins = Sets.newSetFromMap(new ConcurrentHashMap<>());
-            serverPluginsByPlugin.put(serverPlugin.getPlugin(), serverPlugins);
-        }
-
-        serverPlugins.add(serverPlugin);
-    }
-
-    /**
      * Increment and return the amount of requests server on the server
      *
      * @return
      */
     public long incrementAndGetRequests() {
         return requests.incrementAndGet();
-    }
-
-    /**
-     * Load a version for the given plugin
-     *
-     * @param plugin
-     * @param version
-     * @return
-     */
-    public PluginVersion loadPluginVersion(Plugin plugin, String version) {
-        PluginVersion pluginVersion = plugin.getVersionByName(version);
-
-        if (pluginVersion != null) {
-            return pluginVersion;
-        }
-
-        // attempt to load it
-        pluginVersion = database.loadPluginVersion(plugin, version);
-
-        if (pluginVersion == null) {
-            // Create it
-            pluginVersion = database.createPluginVersion(plugin, version);
-        }
-
-        if (pluginVersion == null) {
-            // ????
-            return null;
-        }
-
-        plugin.addVersion(pluginVersion);
-        return pluginVersion;
-    }
-
-    /**
-     * Load the graph for the given plugin or create if it is does not already exist
-     *
-     * @param plugin
-     * @param name
-     * @return
-     */
-    public Graph loadGraph(Plugin plugin, String name) {
-        Graph graph = plugin.getGraph(name);
-
-        if (graph != null) {
-            return graph;
-        }
-
-        graph = database.loadGraph(plugin, name);
-
-        if (graph == null) {
-            graph = database.createGraph(plugin, name);
-        }
-
-        if (graph == null) {
-            logger.error("Failed to create graph for " + plugin.getName() + ", \"" + name + "\"");
-            return null;
-        }
-
-        plugin.addGraph(graph);
-        return graph;
-    }
-
-    /**
-     * Load the server plugin for the given server/plugin combo
-     *
-     * @param server
-     * @param plugin
-     * @param version If the server plugin needs to be created, this is the version that will be used initially
-     * @return
-     */
-    public ServerPlugin loadServerPlugin(Server server, Plugin plugin, String version) {
-        ServerPlugin serverPlugin = server.getPlugin(plugin);
-
-        // it is already loaded !
-        if (serverPlugin != null) {
-            return serverPlugin;
-        }
-
-        // attempt to load the plugin
-        serverPlugin = database.loadServerPlugin(server, plugin);
-
-        if (serverPlugin == null) {
-            // we just need to create it
-            serverPlugin = database.createServerPlugin(server, plugin, version);
-        }
-
-        // now cache it
-        server.addPlugin(serverPlugin);
-        return serverPlugin;
     }
 
     /**
@@ -460,11 +251,6 @@ public class MCStats {
             }
 
             return parent;
-        }
-
-        // Load the versions
-        for (PluginVersion version : database.loadPluginVersions(plugin)) {
-            plugin.addVersion(version);
         }
 
         // Cache it
@@ -517,31 +303,11 @@ public class MCStats {
             return parent;
         }
 
-        // Load the versions
-        for (PluginVersion version : database.loadPluginVersions(plugin)) {
-            plugin.addVersion(version);
-        }
-
         // Cache it
         addPlugin(plugin);
 
         // and go !
         return plugin;
-    }
-
-    /**
-     * Load a server and if it does not exist it will be created
-     *
-     * @param guid
-     * @return
-     */
-    public Server loadServer(String guid) {
-        try {
-            return servers.get(guid); /* automatically loaded by CacheLoader if needed */
-        } catch (ExecutionException e) {
-            logger.error("Exception occurred while loading server (loadServer(" + guid + "))",  e);
-            return null;
-        }
     }
 
     /**
@@ -632,7 +398,7 @@ public class MCStats {
      */
     private void connectToDatabase() {
         // Create the database
-        database = new PluginOnlyMySQLDatabase(this, config.getProperty("mysql.hostname"), config.getProperty("mysql.database"),
+        database = new MySQLDatabase(this, config.getProperty("mysql.hostname"), config.getProperty("mysql.database"),
                 config.getProperty("mysql.username"), config.getProperty("mysql.password"));
 
         logger.info("Connected to MySQL");

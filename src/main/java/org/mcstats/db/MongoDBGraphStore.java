@@ -70,7 +70,7 @@ public class MongoDBGraphStore implements GraphStore {
 
     public void insert(Column column, int epoch, int sum, int count, int avg, int max, int min) {
         Graph graph = column.getGraph();
-        Plugin plugin = column.getPlugin();
+        Plugin plugin = column.getGraph().getPlugin();
 
         // logger.info(String.format("insert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
 

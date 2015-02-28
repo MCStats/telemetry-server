@@ -22,7 +22,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -209,7 +208,7 @@ public class ReportHandler extends AbstractHandler {
 
             long lastSent = 0L;
 
-            String serverCacheKey = decoded.guid + "/" + plugin.getId();
+            String serverCacheKey = decoded.uuid + "/" + plugin.getId();
 
             if (serverLastSendCache.containsKey(serverCacheKey)) {
                 lastSent = serverLastSendCache.get(serverCacheKey);
@@ -229,27 +228,45 @@ public class ReportHandler extends AbstractHandler {
             }
 
             try {
-                Server server = mcstats.loadServer(decoded.guid);
+                Server server = new Server(decoded.uuid);
 
-                boolean isBlacklisted = redis.sismember("server-blacklist", decoded.guid);
+                // TODO dao?
+                Map<String, String> serverData = redis.hgetAll("server:" + server.getUUID());
+
+                if (serverData != null && !serverData.isEmpty()) {
+                    server.setJavaName(serverData.get("java.name"));
+                    server.setJavaVersion(serverData.get("java.version"));
+                    server.setOSName(serverData.get("os.name"));
+                    server.setOSVersion(serverData.get("os.version"));
+                    server.setOSArch(serverData.get("os.arch"));
+
+                    server.setOnlineMode(Integer.parseInt(serverData.get("authMode")));
+
+                    server.setCountry(serverData.get("country"));
+                    server.setServerSoftware(serverData.get("serverSoftware"));
+                    server.setMinecraftVersion(serverData.get("minecraftVersion"));
+                    server.setPlayers(Integer.parseInt(serverData.get("players.online")));
+                    server.setCores(Integer.parseInt(serverData.get("cores")));
+                }
+
+                boolean isBlacklisted = redis.sismember("server-blacklist", decoded.uuid);
 
                 // TODO
-                redis.sadd("servers", decoded.guid);
-                redis.sadd("server-plugins:" + decoded.guid, Integer.toString(plugin.getId()));
+                redis.sadd("servers", decoded.uuid);
+                redis.sadd("server-plugins:" + decoded.uuid, Integer.toString(plugin.getId()));
 
-                if ((server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) && !server.isBlacklisted()) {
-                    redis.sadd("server-blacklist", decoded.guid);
+                if ((server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) && !isBlacklisted) {
+                    redis.sadd("server-blacklist", decoded.uuid);
                     return;
                 }
 
-                if (plugin == null || server == null) {
-                    return;
-                }
+                ServerPlugin serverPlugin = new ServerPlugin(server, plugin);
 
-                ServerPlugin serverPlugin = mcstats.loadServerPlugin(server, plugin, decoded.pluginVersion);
+                // TODO dao?
+                Map<String, String> serverPluginData = redis.hgetAll("server-plugin:" + server.getUUID() + ":" + plugin.getId());
 
-                if (serverPlugin == null) {
-                    return;
+                if (serverPluginData != null && !serverPluginData.isEmpty()) {
+                    serverPlugin.setVersion(serverPluginData.get("version"));
                 }
 
                 if ((!serverPlugin.getVersion().equals(decoded.pluginVersion)) && !isBlacklisted) {
@@ -276,16 +293,6 @@ public class ReportHandler extends AbstractHandler {
 
                 String canonicalServerVersion = mcstats.getServerBuildIdentifier().getServerVersion(decoded.serverVersion);
                 String minecraftVersion = mcstats.getServerBuildIdentifier().getMinecraftVersion(decoded.serverVersion);
-
-                if (canonicalServerVersion.equals("CraftBukkit")) {
-                    ServerPlugin cbplusplus = server.getPlugin(mcstats.loadPlugin(137));
-
-                    if (cbplusplus != null) {
-                        if (cbplusplus.recentlyUpdated()) {
-                            canonicalServerVersion = "CraftBukkit++";
-                        }
-                    }
-                }
 
                 if (!server.getServerSoftware().equals(canonicalServerVersion)) {
                     server.setServerSoftware(canonicalServerVersion);
@@ -352,7 +359,6 @@ public class ReportHandler extends AbstractHandler {
                 }
 
                 // TODO
-                Map<String, String> serverData = new HashMap<>();
                 serverData.put("country", geoipCountryCode);
                 serverData.put("serverSoftware", canonicalServerVersion);
                 serverData.put("minecraftVersion", minecraftVersion);
@@ -365,14 +371,13 @@ public class ReportHandler extends AbstractHandler {
                 serverData.put("cores", Integer.toString(decoded.cores));
                 serverData.put("authMode", Integer.toString(decoded.authMode));
 
-                Map<String, String> serverPluginData = new HashMap<>();
                 serverPluginData.put("revision", Integer.toString(decoded.revision));
                 serverPluginData.put("version", decoded.pluginVersion);
 
-                redis.hmset("server:" + decoded.guid, serverData);
-                redis.hmset("server-plugin:" + decoded.guid + ":" + plugin.getId(), serverPluginData);
+                redis.hmset("server:" + decoded.uuid, serverData);
+                redis.hmset("server-plugin:" + decoded.uuid + ":" + plugin.getId(), serverPluginData);
 
-                serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
+                // serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
                 plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
                 server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
             } catch (Exception e) {
@@ -404,111 +409,6 @@ public class ReportHandler extends AbstractHandler {
     }
 
     /**
-     * Extract the custom data from a post request
-     *
-     * @param plugin
-     * @param post
-     * @return
-     */
-    private Map<Column, Integer> extractCustomData(Plugin plugin, Map<String, String> post) {
-        Map<Column, Integer> customData = new HashMap<>();
-
-        for (Map.Entry<String, String> entry : post.entrySet()) {
-            String postKey = entry.getKey();
-            String postValue = entry.getValue();
-
-            // we only want numeric values, skip the rest
-            int value;
-
-            try {
-                value = Integer.parseInt(postValue);
-            } catch (NumberFormatException e) {
-                continue;
-            }
-
-            // Split by the separator
-            // [0] = magic str
-            // [1] = graph name
-            // [2] = column name
-            String[] graphData = postKey.split("~~");
-
-            if (graphData.length != 3) {
-                continue;
-            }
-
-            // get the data as mentioned above
-            String graphName = graphData[1];
-            String columnName = graphData[2];
-
-            // Load the graph
-            Graph graph = mcstats.loadGraph(plugin, graphName);
-
-            if (graph == null || graph.getActive() == 0) {
-                continue;
-            }
-
-            // Load the column
-            Column column = graph.loadColumn(columnName);
-
-            if (column != null) {
-                customData.put(column, value);
-            }
-        }
-
-        return customData;
-    }
-
-    /**
-     * Extract custom data from a Metrics R4 reporter
-     *
-     * @param plugin
-     * @param post
-     * @return
-     */
-    private Map<Column, Integer> extractCustomDataLegacy(Plugin plugin, Map<String, String> post) {
-        Map<Column, Integer> customData = new HashMap<>();
-
-        // All of the custom data is thrown onto the 'Default' graph since we have no
-        // idea what a "graph" is back in R4
-        Graph graph = mcstats.loadGraph(plugin, "Default");
-
-        for (Map.Entry<String, String> entry : post.entrySet()) {
-            String postKey = entry.getKey();
-            String postValue = entry.getValue();
-
-            // we only want numeric values, skip the rest
-            int value;
-
-            try {
-                value = Integer.parseInt(postValue);
-            } catch (NumberFormatException e) {
-                continue;
-            }
-
-            // Look for the magic string
-            if (!postKey.startsWith("Custom")) {
-                continue;
-            }
-
-            // Extract the column name
-            String columnName = postKey.substring(6).replaceAll("_", " ");
-
-            if (graph == null) {
-                continue;
-            }
-
-            // Load the column
-            Column column = graph.loadColumn(columnName);
-
-            if (column != null) {
-                customData.put(column, value);
-            }
-        }
-
-        return customData;
-    }
-
-    /**
      * Get the plugin name from a request
      *
      * @param request
@@ -527,36 +427,6 @@ public class ReportHandler extends AbstractHandler {
         } else {
             return null;
         }
-    }
-
-    /**
-     * Process a post request and return all of its key/value pairs
-     *
-     * @param content
-     * @return
-     */
-    private Map<String, String> processPostRequest(String content) {
-        Map<String, String> store = new HashMap<>();
-
-        // Split the post data by &
-        for (String entry : content.split("&")) {
-            // Split it by =
-            String[] data = entry.split("=");
-
-            // Check that there is sufficient data in the data array
-            if (data.length != 2) {
-                continue;
-            }
-
-            // decode the data
-            String key = URLUtils.decode(data[0]);
-            String value = URLUtils.decode(data[1]);
-
-            // Add it to the store
-            store.put(key, value);
-        }
-
-        return store;
     }
 
 }

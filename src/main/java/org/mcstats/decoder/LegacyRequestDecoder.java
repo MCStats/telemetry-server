@@ -2,8 +2,8 @@ package org.mcstats.decoder;
 
 import org.eclipse.jetty.server.Request;
 import org.mcstats.MCStats;
-import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
+import org.mcstats.model.Column;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.URLUtils;
 
@@ -41,7 +41,7 @@ public class LegacyRequestDecoder implements RequestDecoder {
         }
 
         DecodedRequest decoded = new DecodedRequest();
-        decoded.guid = post.get("guid");
+        decoded.uuid = post.get("guid");
         decoded.serverVersion = post.get("server");
         decoded.pluginVersion = post.get("version");
         decoded.isPing = post.containsKey("ping");
@@ -53,7 +53,7 @@ public class LegacyRequestDecoder implements RequestDecoder {
             return null;
         }
 
-        if (decoded.guid == null || decoded.serverVersion == null || decoded.pluginVersion == null) {
+        if (decoded.uuid == null || decoded.serverVersion == null || decoded.pluginVersion == null) {
             return null;
         }
 
@@ -146,13 +146,11 @@ public class LegacyRequestDecoder implements RequestDecoder {
             if (graphData.length == 3) {
                 String graphName = graphData[1];
                 String columnName = graphData[2];
-                Graph graph = mcstats.loadGraph(plugin, graphName);
-                if (graph != null && graph.getActive() != 0) {
-                    org.mcstats.model.Column column = graph.loadColumn(columnName);
-                    if (column != null) {
-                        customData.put(column, value);
-                    }
-                }
+
+                Graph graph = new Graph(plugin, graphName);
+                Column column = new Column(graph, columnName);
+
+                customData.put(column, value);
             }
         }
 
@@ -168,7 +166,7 @@ public class LegacyRequestDecoder implements RequestDecoder {
      */
     private Map<Column, Long> extractCustomDataLegacy(Plugin plugin, Map<String, String> post) {
         Map<Column, Long> customData = new HashMap<>();
-        Graph graph = mcstats.loadGraph(plugin, "Default");
+        Graph graph = new Graph(plugin, "Default");
 
         for (Map.Entry<String, String> entry : post.entrySet()) {
             String postKey = entry.getKey();
@@ -187,12 +185,10 @@ public class LegacyRequestDecoder implements RequestDecoder {
 
             if (postKey.startsWith("Custom")) {
                 String columnName = postKey.substring(6).replaceAll("_", " ");
-                if (graph != null) {
-                    Column column = graph.loadColumn(columnName);
-                    if (column != null) {
-                        customData.put(column, value);
-                    }
-                }
+
+                Column column = new Column(graph, columnName);
+
+                customData.put(column, value);
             }
         }
 

@@ -18,9 +18,9 @@ public class DecodedRequest {
     public boolean isPing;
 
     /**
-     * The guid in the request
+     * The uuid in the request
      */
-    public String guid;
+    public String uuid;
 
     /**
      * The version of the server software

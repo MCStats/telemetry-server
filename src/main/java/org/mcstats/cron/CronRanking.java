@@ -26,13 +26,6 @@ public class CronRanking implements Runnable {
      * {@inheritDoc}
      */
     public void run() {
-
-        if (mcstats.countRecentServers() < 50000) {
-            logger.info("Not enough data. Auto correcting internal caches.");
-            mcstats.resetInternalCaches();
-            return;
-        }
-
         Map<Plugin, Integer> pluginServerCounts = new HashMap<>();
 
         for (Plugin plugin : mcstats.getCachedPlugins()) {

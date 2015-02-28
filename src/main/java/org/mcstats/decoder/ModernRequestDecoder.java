@@ -50,7 +50,7 @@ public class ModernRequestDecoder implements RequestDecoder {
         }
 
         DecodedRequest decoded = new DecodedRequest();
-        decoded.guid = String.valueOf(post.get("guid"));
+        decoded.uuid = String.valueOf(post.get("guid"));
         decoded.serverVersion = (new StringBuilder()).append("").append(post.get("server_version")).toString();
         decoded.pluginVersion = (new StringBuilder()).append("").append(post.get("plugin_version")).toString();
         decoded.isPing = post.containsKey("ping");
@@ -64,7 +64,7 @@ public class ModernRequestDecoder implements RequestDecoder {
             decoded.isPing = false;
         }
 
-        if (decoded.guid == null || decoded.serverVersion == null || decoded.pluginVersion == null) {
+        if (decoded.uuid == null || decoded.serverVersion == null || decoded.pluginVersion == null) {
             return null;
         }
 
@@ -130,20 +130,17 @@ public class ModernRequestDecoder implements RequestDecoder {
             Map.Entry<String, JSONObject> entry = (Map.Entry<String, JSONObject>) o;
             String graphName = entry.getKey();
             JSONObject columns = entry.getValue();
-            Graph graph = mcstats.loadGraph(plugin, graphName);
+            Graph graph = new Graph(plugin, graphName);
 
-            if (graph != null && graph.getActive() != 0) {
-                for (Object o2 : columns.entrySet()) {
-                    Map.Entry<String, Long> entryColumn = (Map.Entry<String, Long>) o2;
+            for (Object o2 : columns.entrySet()) {
+                Map.Entry<String, Long> entryColumn = (Map.Entry<String, Long>) o2;
 
-                    String columnName = entryColumn.getKey();
-                    long value = tryParseLong(entryColumn.getValue());
-                    org.mcstats.model.Column column = graph.loadColumn(columnName);
+                String columnName = entryColumn.getKey();
+                long value = tryParseLong(entryColumn.getValue());
 
-                    if (column != null) {
-                        customData.put(column, value);
-                    }
-                }
+                Column column = new Column(graph, columnName);
+
+                customData.put(column, value);
             }
         }
 
