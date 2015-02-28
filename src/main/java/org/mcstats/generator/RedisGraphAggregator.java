@@ -39,69 +39,71 @@ public class RedisGraphAggregator implements Runnable {
             long start = System.currentTimeMillis();
 
             plugins.parallelStream().forEach(pluginId -> {
-                Plugin plugin = mcstats.loadPlugin(pluginId);
+                try (Jedis pluginRedis = mcstats.getRedisPool().getResource()) {
+                    Plugin plugin = mcstats.loadPlugin(pluginId);
 
-                for (Graph graph : mcstats.getDatabase().loadGraphs(plugin)) {
-                    plugin.addGraph(graph);
-                }
-
-                logger.info("Generating data for " + plugin.getName());
-
-                // all graphs for the plugin
-                Set<String> graphNames = redis.smembers("graphs:" + pluginId);
-
-                for (String graphName : graphNames) {
-                    // TODO this does not create the graph if it does not exist
-                    Graph graph = plugin.getGraph(graphName);
-
-                    if (graph == null || graph.getName() == null) {
-                        continue;
+                    for (Graph graph : mcstats.getDatabase().loadGraphs(plugin)) {
+                        plugin.addGraph(graph);
                     }
 
-                    List<Tuple<Column, GeneratedData>> data = new ArrayList<>();
+                    logger.info("Generating data for " + plugin.getName());
 
-                    // all columns for the graph
-                    Set<String> columnNames = redis.smembers("columns:" + pluginId + ":" + graphName);
+                    // all graphs for the plugin
+                    Set<String> graphNames = pluginRedis.smembers("graphs:" + pluginId);
 
-                    Map<String, Column> columns = new HashMap<>();
+                    for (String graphName : graphNames) {
+                        // TODO this does not create the graph if it does not exist
+                        Graph graph = plugin.getGraph(graphName);
 
-                    for (Column column : mcstats.getDatabase().loadColumns(graph)) {
-                        columns.put(column.getName(), column);
-                    }
-
-                    for (String columnName : columnNames) {
-                        Column column = columns.get(columnName);
-
-                        if (column == null || column.getName() == null) {
+                        if (graph == null || graph.getName() == null) {
                             continue;
                         }
 
-                        String redisDataKey = String.format("data:%d:%s:%s", plugin.getId(), graphName, columnName);
+                        List<Tuple<Column, GeneratedData>> data = new ArrayList<>();
 
-                        Set<redis.clients.jedis.Tuple> redisData = redis.zrangeWithScores(redisDataKey, 0, -1);
+                        // all columns for the graph
+                        Set<String> columnNames = pluginRedis.smembers("columns:" + pluginId + ":" + graphName);
 
-                        // data aggregation
-                        int sum = 0;
-                        int count = 0;
-                        int min = Integer.MAX_VALUE;
-                        int max = Integer.MIN_VALUE;
+                        Map<String, Column> columns = new HashMap<>();
 
-                        for (redis.clients.jedis.Tuple tuple : redisData) {
-                            int score = (int) tuple.getScore();
-
-                            sum += score;
-                            count++;
-                            min = Math.min(min, score);
-                            max = Math.max(max, score);
+                        for (Column column : mcstats.getDatabase().loadColumns(graph)) {
+                            columns.put(column.getName(), column);
                         }
 
-                        data.add(new Tuple<>(column, new GeneratedData(sum, count, max, min)));
-                    }
+                        for (String columnName : columnNames) {
+                            Column column = columns.get(columnName);
 
-                    // TODO insert
-                    // mcstats.getGraphStore().batchInsert(graph, data, epoch);
-                    if (plugin.getId() == -1) {
-                        data.forEach(t -> logger.info(t.first().getName() + " " + t.second()));
+                            if (column == null || column.getName() == null) {
+                                continue;
+                            }
+
+                            String redisDataKey = String.format("data:%d:%s:%s", plugin.getId(), graphName, columnName);
+
+                            Set<redis.clients.jedis.Tuple> redisData = pluginRedis.zrangeWithScores(redisDataKey, 0, -1);
+
+                            // data aggregation
+                            int sum = 0;
+                            int count = 0;
+                            int min = Integer.MAX_VALUE;
+                            int max = Integer.MIN_VALUE;
+
+                            for (redis.clients.jedis.Tuple tuple : redisData) {
+                                int score = (int) tuple.getScore();
+
+                                sum += score;
+                                count++;
+                                min = Math.min(min, score);
+                                max = Math.max(max, score);
+                            }
+
+                            data.add(new Tuple<>(column, new GeneratedData(sum, count, max, min)));
+                        }
+
+                        // TODO insert
+                        // mcstats.getGraphStore().batchInsert(graph, data, epoch);
+                        if (plugin.getId() == -1) {
+                            data.forEach(t -> logger.info(t.first().getName() + " " + t.second()));
+                        }
                     }
                 }
             });
