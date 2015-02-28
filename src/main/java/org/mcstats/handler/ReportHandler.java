@@ -231,17 +231,18 @@ public class ReportHandler extends AbstractHandler {
             try {
                 Server server = mcstats.loadServer(decoded.guid);
 
+                boolean isBlacklisted = redis.sismember("server-blacklist", decoded.guid);
+
                 // TODO
                 redis.sadd("servers", decoded.guid);
                 redis.sadd("server-plugins:" + decoded.guid, Integer.toString(plugin.getId()));
 
-                if ((server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) && (!server.isBlacklisted())) {
-                    server.setBlacklisted(true);
-                    mcstats.getDatabase().blacklistServer(server);
+                if ((server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) && !server.isBlacklisted()) {
+                    redis.sadd("server-blacklist", decoded.guid);
                     return;
                 }
 
-                if ((plugin == null) || (server == null)) {
+                if (plugin == null || server == null) {
                     return;
                 }
 
@@ -251,7 +252,7 @@ public class ReportHandler extends AbstractHandler {
                     return;
                 }
 
-                if ((!serverPlugin.getVersion().equals(decoded.pluginVersion)) && (!server.isBlacklisted())) {
+                if ((!serverPlugin.getVersion().equals(decoded.pluginVersion)) && !isBlacklisted) {
                     serverPlugin.addVersionChange(serverPlugin.getVersion(), decoded.pluginVersion);
                     serverPlugin.setVersion(decoded.pluginVersion);
                     server.incrementViolations();
