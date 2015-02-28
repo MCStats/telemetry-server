@@ -9,7 +9,8 @@ public class Main {
         BasicConfigurator.configure();
 
         // start
-        MCStats.getInstance().start();
+        MCStats.getInstance().init();
+        MCStats.getInstance().createWebServer();
     }
 
 }

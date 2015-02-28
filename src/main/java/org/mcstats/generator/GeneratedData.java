@@ -27,6 +27,13 @@ public class GeneratedData {
         return String.format("GeneratedData(sum=%d, count=%d, avg=%d, max=%d, min=%d)", sum, count, getAverage(), max, min);
     }
 
+    public GeneratedData(int sum, int count, int max, int min) {
+        this.sum = sum;
+        this.count = count;
+        this.max = max;
+        this.min = min;
+    }
+
     public int getAverage() {
         return sum / count;
     }

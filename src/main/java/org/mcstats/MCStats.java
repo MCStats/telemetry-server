@@ -135,7 +135,7 @@ public class MCStats {
     /**
      * Starts the MCStats backend
      */
-    public void start() {
+    public void init() {
         config = new Properties();
 
         try {
@@ -169,11 +169,6 @@ public class MCStats {
         }
 
         logger.info("Loaded " + pluginsByName.size() + " plugins");
-
-        handler = new ReportHandler(this);
-
-        // Create & open the webserver
-        createWebServer();
     }
 
     /**
@@ -329,7 +324,9 @@ public class MCStats {
     /**
      * Create and open the web server
      */
-    private void createWebServer() {
+    public void createWebServer() {
+        handler = new ReportHandler(this);
+
         int listenPort = Integer.parseInt(config.getProperty("listen.port"));
         int blackholePort = Integer.parseInt(config.getProperty("blackhole.port"));
         webServer = new org.eclipse.jetty.server.Server();
