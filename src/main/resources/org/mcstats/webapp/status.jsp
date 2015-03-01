@@ -164,7 +164,7 @@
 
                     <tr>
                         <td style="width: 20px; text-align: center;">
-                            SQL queue size
+                            MySQL queue size
                         </td>
                         <td style="width: 100px; text-align: center;">
                             <%= numberFormatter.format(mcstats.getDatabaseQueue().size()) %>
@@ -209,7 +209,7 @@
 
                     <tr>
                         <td style="width: 20px; text-align: center;">
-                            Total queries
+                            Total MySQL queries
                         </td>
                         <td style="width: 100px; text-align: center;">
                             <%= numberFormatter.format(MySQLDatabase.QUERIES) %>
