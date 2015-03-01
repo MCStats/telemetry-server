@@ -153,7 +153,6 @@ public class MCStats {
      */
     public void resetInternalCaches() {
         databaseQueue.clear();
-        handler.clearQueue();
     }
 
     /**

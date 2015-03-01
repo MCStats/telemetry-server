@@ -92,22 +92,6 @@ public class ReportHandler extends AbstractHandler {
     }
 
     /**
-     * Clear the current thread queue
-     */
-    public void clearQueue() {
-        // executor.getQueue().clear();
-    }
-
-    /**
-     * Get the size of the work queue in the background
-     *
-     * @return
-     */
-    public int queueSize() {
-        return 0;
-    }
-
-    /**
      * Finish a request and end it by closing it immediately
      *
      * @param decoded
