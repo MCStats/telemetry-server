@@ -149,7 +149,7 @@
                             Time running
                         </td>
                         <td style="width: 100px; text-align: center;">
-                            <%= TimeUtils.timeToString((System.currentTimeMillis() - mcstats.getRequestCalculatorAllTime().getStart()) / 1000) %>
+                            <%= TimeUtils.timeToString((System.currentTimeMillis() - mcstats.getStartTime()) / 1000) %>
                         </td>
                     </tr>
 
@@ -194,7 +194,7 @@
                             Requests per second
                         </td>
                         <td style="width: 100px; text-align: center;">
-                            <%= numberFormatter.format(mcstats.getRequestCalculatorAllTime().calculateRequestsPerSecond()) %>
+                            <%= numberFormatter.format(mcstats.getRequestsMovingAverage().getAverage()) %>
                         </td>
                     </tr>
 

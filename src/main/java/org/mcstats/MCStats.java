@@ -16,7 +16,7 @@ import org.mcstats.db.MySQLDatabase;
 import org.mcstats.handler.BlackholeHandler;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Plugin;
-import org.mcstats.util.RequestCalculator;
+import org.mcstats.util.ExponentialMovingAverage;
 import org.mcstats.util.ServerBuildIdentifier;
 import redis.clients.jedis.JedisPool;
 
@@ -30,6 +30,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MCStats {
@@ -45,6 +48,11 @@ public class MCStats {
      * The web server object
      */
     private org.eclipse.jetty.server.Server webServer;
+
+    /**
+     * The time the instance was started
+     */
+    private long startTime = System.currentTimeMillis();
 
     /**
      * The amount of requests that have been served
@@ -87,9 +95,9 @@ public class MCStats {
     private final ServerBuildIdentifier serverBuildIdentifier = new ServerBuildIdentifier();
 
     /**
-     * The request calculator for requests per second since the server started
+     * The moving average of requests
      */
-    private final RequestCalculator requestsAllTime;
+    private final ExponentialMovingAverage requestsMovingAverage = new ExponentialMovingAverage(0.25);
 
     /**
      * Debug mode
@@ -111,10 +119,21 @@ public class MCStats {
      */
     private final Map<String, String> countries = new ConcurrentHashMap<>();
 
+    /**
+     * Scheduler thread pool
+     */
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
     private MCStats() {
         Callable<Long> requestsCallable = requests::get;
 
-        requestsAllTime = new RequestCalculator(RequestCalculator.CalculationMethod.ALL_TIME, requestsCallable);
+        // requests count when this.requests was last polled
+        final AtomicLong requestsAtLastPoll = new AtomicLong(0);
+
+        scheduler.scheduleAtFixedRate(() -> {
+            requestsMovingAverage.update(requests.get() - requestsAtLastPoll.get());
+            requestsAtLastPoll.set(requests.get());
+        }, 1, 1, TimeUnit.SECONDS);
     }
 
     /**
@@ -169,6 +188,15 @@ public class MCStats {
         }
 
         logger.info("Loaded " + pluginsByName.size() + " plugins");
+    }
+
+    /**
+     * Gets the time the instance started at
+     *
+     * @return
+     */
+    public long getStartTime() {
+        return startTime;
     }
 
     /**
@@ -439,12 +467,12 @@ public class MCStats {
     }
 
     /**
-     * Get the request calculator for all-time requests
+     * Get the request count's moving average
      *
      * @return
      */
-    public RequestCalculator getRequestCalculatorAllTime() {
-        return requestsAllTime;
+    public ExponentialMovingAverage getRequestsMovingAverage() {
+        return requestsMovingAverage;
     }
 
     /**
