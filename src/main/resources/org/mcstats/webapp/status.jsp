@@ -194,7 +194,16 @@
                             Requests per second
                         </td>
                         <td style="width: 100px; text-align: center;">
-                            <%= numberFormatter.format(mcstats.getRequestsMovingAverage().getAverage()) %>
+                            <%= numberFormatter.format(mcstats.getRequestsAverage().getAverage()) %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 20px; text-align: center;">
+                            Average API response time
+                        </td>
+                        <td style="width: 100px; text-align: center;">
+                            <%= String.format("%.2f", mcstats.getRequestProcessingTimeAverage().getAverage()) %> ms
                         </td>
                     </tr>
 

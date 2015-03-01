@@ -97,7 +97,12 @@ public class MCStats {
     /**
      * The moving average of requests
      */
-    private final ExponentialMovingAverage requestsMovingAverage = new ExponentialMovingAverage(0.25);
+    private final ExponentialMovingAverage requestsAverage = new ExponentialMovingAverage(0.25);
+
+    /**
+     * Request processing time
+     */
+    private final ExponentialMovingAverage requestProcessingTimeAverage = new ExponentialMovingAverage(0.25);
 
     /**
      * Debug mode
@@ -131,7 +136,7 @@ public class MCStats {
         final AtomicLong requestsAtLastPoll = new AtomicLong(0);
 
         scheduler.scheduleAtFixedRate(() -> {
-            requestsMovingAverage.update(requests.get() - requestsAtLastPoll.get());
+            requestsAverage.update(requests.get() - requestsAtLastPoll.get());
             requestsAtLastPoll.set(requests.get());
         }, 1, 1, TimeUnit.SECONDS);
     }
@@ -467,12 +472,21 @@ public class MCStats {
     }
 
     /**
-     * Get the request count's moving average
+     * Get the requests/sec moving average
      *
      * @return
      */
-    public ExponentialMovingAverage getRequestsMovingAverage() {
-        return requestsMovingAverage;
+    public ExponentialMovingAverage getRequestsAverage() {
+        return requestsAverage;
+    }
+
+    /**
+     * Gets the request processing time average
+     *
+     * @return
+     */
+    public ExponentialMovingAverage getRequestProcessingTimeAverage() {
+        return requestProcessingTimeAverage;
     }
 
     /**

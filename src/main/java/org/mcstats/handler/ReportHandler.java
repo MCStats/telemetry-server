@@ -167,6 +167,8 @@ public class ReportHandler extends AbstractHandler {
     }
 
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        long startTimeNano = System.nanoTime();
+
         try (Jedis redis = mcstats.getRedisPool().getResource()) {
             if (!request.getMethod().equals("POST")) {
                 return;
@@ -440,6 +442,11 @@ public class ReportHandler extends AbstractHandler {
             e.printStackTrace();
 
             finishRequest(null, ResponseType.OK, baseRequest, response);
+        } finally {
+            long takenNano = System.nanoTime() - startTimeNano;
+            double takenMs = takenNano / 1_000_000d;
+
+            mcstats.getRequestProcessingTimeAverage().update(takenMs);
         }
     }
 
