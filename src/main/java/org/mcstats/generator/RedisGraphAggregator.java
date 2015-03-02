@@ -77,7 +77,7 @@ public class RedisGraphAggregator implements Runnable {
                                 continue;
                             }
 
-                            String redisDataKey = String.format("data:%d:%s:%s", plugin.getId(), graphName, columnName);
+                            String redisDataKey = "data:" + plugin.getId() + ":" + graphName + ":" + columnName;
 
                             Set<redis.clients.jedis.Tuple> redisData = pluginRedis.zrangeWithScores(redisDataKey, 0, -1);
 
