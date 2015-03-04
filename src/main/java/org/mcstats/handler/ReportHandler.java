@@ -32,6 +32,8 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ReportHandler extends AbstractHandler {
 
@@ -72,6 +74,16 @@ public class ReportHandler extends AbstractHandler {
      */
     private Map<String, Integer> serverLastSendCache = new ConcurrentHashMap<>();
 
+    /**
+     * Executor for off-thread work
+     */
+    private final ExecutorService executor = Executors.newCachedThreadPool();
+
+    /**
+     * SHA of the redis sum add script
+     */
+    private final String redisAddSumScriptSha;
+
     public ReportHandler(MCStats mcstats) {
         this.mcstats = mcstats;
         accumulatorDelegator = new AccumulatorDelegator(mcstats);
@@ -79,6 +91,26 @@ public class ReportHandler extends AbstractHandler {
         legacyDecoder = new LegacyRequestDecoder(mcstats);
 
         registerAccumulators();
+
+        // TODO move this?
+        try (Jedis redis = mcstats.getRedisPool().getResource()) {
+            redisAddSumScriptSha = redis.scriptLoad("local key = KEYS[1]\n" +
+                    "local dest = KEYS[2]\n" +
+                    "\n" +
+                    "for i=3, #KEYS, 2 do\n" +
+                    "    local score = KEYS[i]\n" +
+                    "    local member = KEYS[i + 1]\n" +
+                    "\n" +
+                    "    local sum = tonumber(redis.call('get', dest)) or 0\n" +
+                    "\n" +
+                    "    local currentValue = tonumber(redis.call('zscore', key, member)) or 0\n" +
+                    "\n" +
+                    "    sum = sum + (score - currentValue)\n" +
+                    "\n" +
+                    "    redis.call('zadd', key, score, member)\n" +
+                    "    redis.call('set', dest, sum)\n" +
+                    "end\n");
+        }
     }
 
     /**
@@ -386,35 +418,40 @@ public class ReportHandler extends AbstractHandler {
                 serverPluginData.put("revision", Integer.toString(decoded.revision));
                 serverPluginData.put("version", decoded.pluginVersion);
 
-                Pipeline pipeline = redis.pipelined();
+                executor.execute(() -> {
+                    try (Jedis executorRedis = mcstats.getRedisPool().getResource()) {
+                        Pipeline pipeline = executorRedis.pipelined();
 
-                pipeline.hmset("server:" + decoded.uuid, serverData);
-                pipeline.hmset("server-plugin:" + decoded.uuid + ":" + plugin.getId(), serverPluginData);
+                        pipeline.hmset("server:" + decoded.uuid, serverData);
+                        pipeline.hmset("server-plugin:" + decoded.uuid + ":" + plugin.getId(), serverPluginData);
 
-                // accumulate all graph data
-                // TODO break out to somewhere else?
-                List<Tuple<Column, Long>> accumulatedData = accumulatorDelegator.accumulate(decoded, serverPlugin);
+                        // accumulate all graph data
+                        // TODO break out to somewhere else?
+                        List<Tuple<Column, Long>> accumulatedData = accumulatorDelegator.accumulate(decoded, serverPlugin);
 
-                for (Tuple<Column, Long> data : accumulatedData) {
-                    Column column = data.first();
-                    Graph graph = column.getGraph();
-                    long value = data.second();
+                        for (Tuple<Column, Long> data : accumulatedData) {
+                            Column column = data.first();
+                            Graph graph = column.getGraph();
+                            long value = data.second();
 
-                    if (graph.getName() == null || column.getName() == null) {
-                        continue;
+                            if (graph.getName() == null || column.getName() == null) {
+                                continue;
+                            }
+
+                            String redisDataKey = String.format("data:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
+                            String redisDataSumKey = String.format("data-sum:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
+
+                            // metadata
+                            pipeline.sadd("graphs:" + graph.getPlugin().getId(), graph.getName());
+                            pipeline.sadd("columns:" + graph.getPlugin().getId() + ":" + graph.getName(), column.getName());
+
+                            // data
+                            pipeline.evalsha(redisAddSumScriptSha, 4, redisDataKey, redisDataSumKey, Long.toString(value), server.getUUID());
+                        }
+
+                        pipeline.sync();
                     }
-
-                    String redisDataKey = String.format("data:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
-
-                    // metadata
-                    pipeline.sadd("graphs:" + graph.getPlugin().getId(), graph.getName());
-                    pipeline.sadd("columns:" + graph.getPlugin().getId() + ":" + graph.getName(), column.getName());
-
-                    // data
-                    pipeline.zadd(redisDataKey, value, server.getUUID());
-                }
-
-                pipeline.sync();
+                });
 
                 // serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
                 plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));

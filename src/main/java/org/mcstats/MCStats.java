@@ -1,6 +1,8 @@
 package org.mcstats;
 
 import it.sauronsoftware.cron4j.Scheduler;
+import org.apache.commons.pool2.impl.BaseObjectPoolConfig;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -182,7 +184,11 @@ public class MCStats {
         logger.info("Loaded " + countries.size() + " countries");
 
         graphStore = new MongoDBGraphStore(this);
-        redisPool = new JedisPool(config.getProperty("redis.host"), Integer.parseInt(config.getProperty("redis.port")));
+
+        GenericObjectPoolConfig redisConfig = new GenericObjectPoolConfig();
+        redisConfig.setMaxTotal(32);
+
+        redisPool = new JedisPool(redisConfig, config.getProperty("redis.host"), Integer.parseInt(config.getProperty("redis.port")));
 
         // Load all of the pluginsByName
         for (Plugin plugin : database.loadPlugins()) {
