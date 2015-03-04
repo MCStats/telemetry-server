@@ -295,10 +295,6 @@ public class ReportHandler extends AbstractHandler {
 
                 boolean isBlacklisted = redis.sismember("server-blacklist", decoded.uuid);
 
-                // TODO
-                redis.sadd("servers", decoded.uuid);
-                redis.sadd("server-plugins:" + decoded.uuid, Integer.toString(plugin.getId()));
-
                 if ((server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) && !isBlacklisted) {
                     redis.sadd("server-blacklist", decoded.uuid);
                     return;
@@ -422,6 +418,8 @@ public class ReportHandler extends AbstractHandler {
                     try (Jedis executorRedis = mcstats.getRedisPool().getResource()) {
                         Pipeline pipeline = executorRedis.pipelined();
 
+                        pipeline.sadd("servers", decoded.uuid);
+                        pipeline.sadd("server-plugins:" + decoded.uuid, Integer.toString(plugin.getId()));
                         pipeline.hmset("server:" + decoded.uuid, serverData);
                         pipeline.hmset("server-plugin:" + decoded.uuid + ":" + plugin.getId(), serverPluginData);
 
