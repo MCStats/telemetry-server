@@ -139,10 +139,17 @@ public class RedisGraphAggregator implements Runnable {
                 return null;
             }
 
+            Set<redis.clients.jedis.Tuple> minSet = minResponse.get();
+            Set<redis.clients.jedis.Tuple> maxSet = maxResponse.get();
+
+            if (minSet.isEmpty() || maxSet.isEmpty()) {
+                return null;
+            }
+
             long count = countResponse.get();
             long sum = castToLong(sumValue);
-            long min = castToLong(minResponse.get().iterator().next().getScore());
-            long max = castToLong(maxResponse.get().iterator().next().getScore());
+            long min = castToLong(minSet.iterator().next().getScore());
+            long max = castToLong(maxSet.iterator().next().getScore());
 
             return new GeneratedData((int) sum, (int) count, (int) max, (int) min);
         };
