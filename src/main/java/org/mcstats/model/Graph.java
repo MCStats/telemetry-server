@@ -60,13 +60,15 @@ public class Graph {
         Graph graph = (Graph) o;
 
         if (name != null ? !name.equals(graph.name) : graph.name != null) return false;
+        if (plugin != null ? !plugin.equals(graph.plugin) : graph.plugin != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return name != null ? name.hashCode() : 0;
+        int result = plugin != null ? plugin.hashCode() : 0;
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        return result;
     }
-
 }
