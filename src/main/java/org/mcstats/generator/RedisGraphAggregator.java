@@ -54,6 +54,19 @@ public class RedisGraphAggregator implements Runnable {
                     // all graphs for the plugin
                     Set<String> graphNames = pluginRedis.smembers("graphs:" + pluginId);
 
+                    // graphName => List<ColumnName>
+                    // this abuses pipelining
+                    Map<String, Set<String>> columnsForGraph = new HashMap<>();
+
+                    // preload column names
+                    graphNames.forEach(graphName -> columnsForGraph.put(graphName, pluginRedis.smembers("columns:" + pluginId + ":" + graphName)));
+
+                    // future suppliers that are called after the pipeline is closed
+                    Map<Graph, List<Tuple<Column, GeneratedData>>> data = new HashMap<>();
+                    List<Tuple<Column, Supplier<GeneratedData>>> suppliers = new ArrayList<>();
+
+                    Pipeline pipeline = pluginRedis.pipelined();
+
                     for (String graphName : graphNames) {
                         // TODO this does not create the graph if it does not exist
                         Graph graph = plugin.getGraph(graphName);
@@ -62,21 +75,18 @@ public class RedisGraphAggregator implements Runnable {
                             continue;
                         }
 
-                        List<Tuple<Column, GeneratedData>> data = new ArrayList<>();
-
                         // all columns for the graph
-                        Set<String> columnNames = pluginRedis.smembers("columns:" + pluginId + ":" + graphName);
+                        Set<String> columnNames = columnsForGraph.get(graphName);
+
+                        if (columnNames == null) {
+                            continue;
+                        }
 
                         Map<String, Column> columns = new HashMap<>();
 
                         for (Column column : mcstats.getDatabase().loadColumns(graph)) {
                             columns.put(column.getName(), column);
                         }
-
-                        // future suppliers that are called after the pipeline is closed
-                        List<Tuple<Column, Supplier<GeneratedData>>> suppliers = new ArrayList<>();
-
-                        Pipeline pipeline = pluginRedis.pipelined();
 
                         for (String columnName : columnNames) {
                             Column column = columns.get(columnName);
@@ -88,23 +98,28 @@ public class RedisGraphAggregator implements Runnable {
                             suppliers.add(new Tuple<>(column, aggregateNew(pipeline, plugin, graphName, columnName)));
                             // GeneratedData generatedData = aggregateOld(pluginRedis, plugin, graphName, columnName);
                         }
-
-                        pipeline.sync();
-
-                        suppliers.forEach(t -> {
-                            GeneratedData generatedData = t.second().get();
-
-                            if (generatedData != null) {
-                                data.add(new Tuple<>(t.first(), generatedData));
-                            }
-                        });
-
-                        // TODO insert
-                        // mcstats.getGraphStore().batchInsert(graph, data, epoch);
-                        if (plugin.getId() == -1) {
-                            data.forEach(t -> logger.info(t.first().getName() + " " + t.second()));
-                        }
                     }
+
+                    pipeline.sync();
+
+                    suppliers.forEach(t -> {
+                        Column column = t.first();
+                        GeneratedData generatedData = t.second().get();
+
+                        if (generatedData != null) {
+                            List<Tuple<Column, GeneratedData>> graphData = data.get(column.getGraph());
+
+                            if (graphData == null) {
+                                graphData = new ArrayList<>();
+                                data.put(column.getGraph(), graphData);
+                            }
+
+                            graphData.add(new Tuple<>(t.first(), generatedData));
+                        }
+                    });
+
+                    // TODO insert
+                    // mcstats.getGraphStore().batchInsert(graph, data, epoch);
                 }
             });
 
