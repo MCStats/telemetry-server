@@ -103,12 +103,8 @@ public class ReportHandler extends AbstractHandler {
                     "    local member = ARGV[i + 1]\n" +
                     "    local currentScore = tonumber(redis.call('zscore', key, member))\n" +
                     "\n" +
-                    "    if currentScore == nil or score ~= currentScore then\n" +
-                    "        if currentScore == nil then\n" +
-                    "            currentScore = 0\n" +
-                    "        end\n" +
-                    "\n" +
-                    "        sum = sum + score - currentScore\n" +
+                    "    if score ~= currentScore then\n" +
+                    "        sum = sum + score - (currentScore or 0)\n" +
                     "        redis.call('zadd', key, score, member)\n" +
                     "    end\n" +
                     "end\n" +
