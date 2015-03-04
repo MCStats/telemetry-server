@@ -104,7 +104,7 @@ public class MCStats {
     /**
      * Request processing time
      */
-    private final ExponentialMovingAverage requestProcessingTimeAverage = new ExponentialMovingAverage(0.25);
+    private final ExponentialMovingAverage requestProcessingTimeAverage = new ExponentialMovingAverage(1d / 2000 / 5);
 
     /**
      * Debug mode
