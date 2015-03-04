@@ -101,15 +101,15 @@ public class ReportHandler extends AbstractHandler {
                     "    local score = KEYS[i]\n" +
                     "    local member = KEYS[i + 1]\n" +
                     "\n" +
-                    "    local sum = tonumber(redis.call('get', dest)) or 0\n" +
+                    "    local currentScore = tonumber(redis.call('zscore', key, member))\n" +
                     "\n" +
-                    "    local currentValue = tonumber(redis.call('zscore', key, member)) or 0\n" +
+                    "    if currentScore == nil or score ~= currentScore then\n" +
+                    "        local sum = tonumber(redis.call('get', dest)) or 0\n" +
                     "\n" +
-                    "    sum = sum + (score - currentValue)\n" +
-                    "\n" +
-                    "    redis.call('zadd', key, score, member)\n" +
-                    "    redis.call('set', dest, sum)\n" +
-                    "end\n");
+                    "        redis.call('set', dest, sum + score)\n" +
+                    "        redis.call('zadd', key, score, member)\n" +
+                    "    end\n" +
+                    "end");
         }
     }
 
