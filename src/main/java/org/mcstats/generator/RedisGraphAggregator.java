@@ -54,16 +54,13 @@ public class RedisGraphAggregator implements Runnable {
                     // all graphs for the plugin
                     Set<String> graphNames = pluginRedis.smembers("graphs:" + pluginId);
 
-                    // graphName => List<ColumnName>
-                    // this abuses pipelining
-                    Map<String, Set<String>> columnsForGraph = new HashMap<>();
-
-                    // preload column names
-                    graphNames.forEach(graphName -> columnsForGraph.put(graphName, pluginRedis.smembers("columns:" + pluginId + ":" + graphName)));
+                    // graphName => Set<ColumnName>
+                    // note that this pipelines!
+                    Map<String, Set<String>> columnsForGraph = loadColumns(pluginRedis, pluginId, graphNames);
 
                     // future suppliers that are called after the pipeline is closed
-                    Map<Graph, List<Tuple<Column, GeneratedData>>> data = new HashMap<>();
-                    List<Tuple<Column, Supplier<GeneratedData>>> suppliers = new ArrayList<>();
+                    Map<Graph, Map<Column, GeneratedData>> data = new HashMap<>();
+                    Map<Column, Supplier<GeneratedData>> suppliers = new HashMap<>();
 
                     Pipeline pipeline = pluginRedis.pipelined();
 
@@ -95,26 +92,24 @@ public class RedisGraphAggregator implements Runnable {
                                 continue;
                             }
 
-                            suppliers.add(new Tuple<>(column, aggregateNew(pipeline, plugin, graphName, columnName)));
-                            // GeneratedData generatedData = aggregateOld(pluginRedis, plugin, graphName, columnName);
+                            suppliers.put(column, aggregateNew(pipeline, plugin, graphName, columnName));
                         }
                     }
 
                     pipeline.sync();
 
-                    suppliers.forEach(t -> {
-                        Column column = t.first();
-                        GeneratedData generatedData = t.second().get();
+                    suppliers.forEach((column, supplier) -> {
+                        GeneratedData generatedData = supplier.get();
 
                         if (generatedData != null) {
-                            List<Tuple<Column, GeneratedData>> graphData = data.get(column.getGraph());
+                            Map<Column, GeneratedData> graphData = data.get(column.getGraph());
 
                             if (graphData == null) {
-                                graphData = new ArrayList<>();
+                                graphData = new HashMap<>();
                                 data.put(column.getGraph(), graphData);
                             }
 
-                            graphData.add(new Tuple<>(t.first(), generatedData));
+                            graphData.put(column, generatedData);
                         }
                     });
 
@@ -127,6 +122,35 @@ public class RedisGraphAggregator implements Runnable {
 
             logger.info("Generation completed in " + taken + "ms");
         }
+    }
+
+    /**
+     * Loads all columns for the given plugin & graph set
+     *
+     * @param redis
+     * @param pluginId
+     * @param graphNames
+     * @return
+     */
+    private Map<String, Set<String>> loadColumns(Jedis redis, int pluginId, Set<String> graphNames) {
+        Map<String, Set<String>> columnsForGraph = new HashMap<>();
+
+        Map<String, Supplier<Set<String>>> suppliers = new HashMap<>();
+        Pipeline pipeline = redis.pipelined();
+
+        for (String graphName : graphNames) {
+            final Response<Set<String>> response = pipeline.smembers("columns:" + pluginId + ":" + graphName);
+            suppliers.put(graphName, response::get);
+        }
+
+        pipeline.sync();
+
+        // resolve the suppliers
+        for (String graphName : graphNames) {
+            columnsForGraph.put(graphName, suppliers.get(graphName).get());
+        }
+
+        return columnsForGraph;
     }
 
     /**
