@@ -96,20 +96,24 @@ public class ReportHandler extends AbstractHandler {
         try (Jedis redis = mcstats.getRedisPool().getResource()) {
             redisAddSumScriptSha = redis.scriptLoad("local key = KEYS[1]\n" +
                     "local dest = KEYS[2]\n" +
+                    "local sum = tonumber(redis.call('get', dest)) or 0\n" +
                     "\n" +
-                    "for i=3, #KEYS, 2 do\n" +
-                    "    local score = KEYS[i]\n" +
-                    "    local member = KEYS[i + 1]\n" +
-                    "\n" +
+                    "for i=1, #ARGV, 2 do\n" +
+                    "    local score = tonumber(ARGV[i]) or 0\n" +
+                    "    local member = ARGV[i + 1]\n" +
                     "    local currentScore = tonumber(redis.call('zscore', key, member))\n" +
                     "\n" +
                     "    if currentScore == nil or score ~= currentScore then\n" +
-                    "        local sum = tonumber(redis.call('get', dest)) or 0\n" +
+                    "        if currentScore == nil then\n" +
+                    "            currentScore = 0\n" +
+                    "        end\n" +
                     "\n" +
-                    "        redis.call('set', dest, sum + score)\n" +
+                    "        sum = sum + score - currentScore\n" +
                     "        redis.call('zadd', key, score, member)\n" +
                     "    end\n" +
-                    "end");
+                    "end\n" +
+                    "\n" +
+                    "redis.call('set', dest, sum)");
         }
     }
 
@@ -444,7 +448,7 @@ public class ReportHandler extends AbstractHandler {
                             pipeline.sadd("columns:" + graph.getPlugin().getId() + ":" + graph.getName(), column.getName());
 
                             // data
-                            pipeline.evalsha(redisAddSumScriptSha, 4, redisDataKey, redisDataSumKey, Long.toString(value), server.getUUID());
+                            pipeline.evalsha(redisAddSumScriptSha, 2, redisDataKey, redisDataSumKey, Long.toString(value), server.getUUID());
                         }
 
                         pipeline.sync();
