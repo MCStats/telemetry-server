@@ -7,12 +7,10 @@ import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
-import org.mcstats.util.Tuple;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +90,7 @@ public class RedisGraphAggregator implements Runnable {
                                 continue;
                             }
 
-                            suppliers.put(column, aggregateNew(pipeline, plugin, graphName, columnName));
+                            suppliers.put(column, aggregateGraphData(pipeline, plugin, graphName, columnName));
                         }
                     }
 
@@ -154,7 +152,7 @@ public class RedisGraphAggregator implements Runnable {
     }
 
     /**
-     * New aggregate test function: lua aggregation.
+     * Aggregates graph data. The returned supplier can only be retrieved AFTER the pipeline has been synced.
      *
      * @param pipeline
      * @param plugin
@@ -162,7 +160,7 @@ public class RedisGraphAggregator implements Runnable {
      * @param columnName
      * @return
      */
-    private Supplier<GeneratedData> aggregateNew(Pipeline pipeline, Plugin plugin, String graphName, String columnName) {
+    private Supplier<GeneratedData> aggregateGraphData(Pipeline pipeline, Plugin plugin, String graphName, String columnName) {
         String redisDataKey = "data:" + plugin.getId() + ":" + graphName + ":" + columnName;
         String redisDataSumKey = "data-sum:" + plugin.getId() + ":" + graphName + ":" + columnName;
 
@@ -191,39 +189,6 @@ public class RedisGraphAggregator implements Runnable {
             long max = castToLong(maxSet.iterator().next().getScore());
 
             return new GeneratedData((int) sum, (int) count, (int) max, (int) min);
-        };
-    }
-
-    /**
-     * Old aggregate function: works on official redis, but is slower.
-     *
-     * @param pipeline
-     * @param plugin
-     * @param graphName
-     * @param columnName
-     * @return
-     */
-    private Supplier<GeneratedData> aggregateOld(Pipeline pipeline, Plugin plugin, String graphName, String columnName) {
-        String redisDataKey = "data:" + plugin.getId() + ":" + graphName + ":" + columnName;
-
-        Response<Set<redis.clients.jedis.Tuple>> rangeResponse = pipeline.zrangeWithScores(redisDataKey, 0, -1);
-
-        return () -> {
-            int sum = 0;
-            int count = 0;
-            int min = Integer.MAX_VALUE;
-            int max = Integer.MIN_VALUE;
-
-            for (redis.clients.jedis.Tuple tuple : rangeResponse.get()) {
-                int score = (int) tuple.getScore();
-
-                sum += score;
-                count++;
-                min = Math.min(min, score);
-                max = Math.max(max, score);
-            }
-
-            return new GeneratedData(sum, count, max, min);
         };
     }
 
