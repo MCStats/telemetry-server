@@ -132,8 +132,6 @@ public class MCStats {
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     private MCStats() {
-        Callable<Long> requestsCallable = requests::get;
-
         // requests count when this.requests was last polled
         final AtomicLong requestsAtLastPoll = new AtomicLong(0);
 
@@ -141,20 +139,6 @@ public class MCStats {
             requestsAverage.update(requests.get() - requestsAtLastPoll.get());
             requestsAtLastPoll.set(requests.get());
         }, 1, 1, TimeUnit.SECONDS);
-    }
-
-    /**
-     * Reset data used for each interval
-     */
-    public void resetIntervalData() {
-        resetInternalCaches();
-    }
-
-    /**
-     * Reset any internal caches
-     */
-    public void resetInternalCaches() {
-        databaseQueue.clear();
     }
 
     /**
@@ -492,14 +476,6 @@ public class MCStats {
      */
     public ExponentialMovingAverage getRequestProcessingTimeAverage() {
         return requestProcessingTimeAverage;
-    }
-
-    /**
-     * Get the {@link ReportHandler}
-     * @return
-     */
-    public ReportHandler getReportHandler() {
-        return handler;
     }
 
     /**
