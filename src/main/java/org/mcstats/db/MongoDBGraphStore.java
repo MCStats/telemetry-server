@@ -35,7 +35,12 @@ public class MongoDBGraphStore implements GraphStore {
     /**
      * The collection graphdata is stored in
      */
-    private DBCollection coll;
+    private DBCollection graphDataCollection;
+
+    /**
+     * The collection new graphdata is stored in
+     */
+    private DBCollection graphDataCollectionNew;
 
     /**
      * The statistic collection
@@ -49,13 +54,32 @@ public class MongoDBGraphStore implements GraphStore {
             client.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
 
             db = client.getDB(mcstats.getConfig().getProperty("mongo.db"));
-            coll = db.getCollection(mcstats.getConfig().getProperty("mongo.collection"));
+            graphDataCollection = db.getCollection(mcstats.getConfig().getProperty("mongo.collection"));
+            graphDataCollectionNew = db.getCollection(mcstats.getConfig().getProperty("mongo.collection") + "-new");
             collStatistic = db.getCollection("statistic");
 
             logger.info("Connected to MongoDB");
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Returns the collection graph data is stored in
+     *
+     * @return
+     */
+    public DBCollection getGraphDataCollection() {
+        return graphDataCollection;
+    }
+
+    /**
+     * Returns the collection graph data is stored in
+     *
+     * @return
+     */
+    public DBCollection getGraphDataNewCollection() {
+        return graphDataCollection;
     }
 
     /**
@@ -103,7 +127,7 @@ public class MongoDBGraphStore implements GraphStore {
         data.append(Integer.toString(column.getId()), col);
         toset.append("data", data);
 
-        coll.insert(toset);
+        graphDataCollection.insert(toset);
     }
 
     public void batchInsert(Graph graph, List<Tuple<Column, GeneratedData>> batchData, int epoch) {
@@ -152,6 +176,6 @@ public class MongoDBGraphStore implements GraphStore {
 
         toset.append("data", data);
 
-        coll.insert(toset);
+        graphDataCollection.insert(toset);
     }
 }
