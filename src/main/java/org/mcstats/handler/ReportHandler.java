@@ -29,6 +29,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -92,25 +96,7 @@ public class ReportHandler extends AbstractHandler {
 
         registerAccumulators();
 
-        // TODO move this?
-        try (Jedis redis = mcstats.getRedisPool().getResource()) {
-            redisAddSumScriptSha = redis.scriptLoad("local key = KEYS[1]\n" +
-                    "local dest = KEYS[2]\n" +
-                    "local sum = tonumber(redis.call('get', dest)) or 0\n" +
-                    "\n" +
-                    "for i=1, #ARGV, 2 do\n" +
-                    "    local score = tonumber(ARGV[i]) or 0\n" +
-                    "    local member = ARGV[i + 1]\n" +
-                    "    local currentScore = tonumber(redis.call('zscore', key, member))\n" +
-                    "\n" +
-                    "    if score ~= currentScore then\n" +
-                    "        sum = sum + score - (currentScore or 0)\n" +
-                    "        redis.call('zadd', key, score, member)\n" +
-                    "    end\n" +
-                    "end\n" +
-                    "\n" +
-                    "redis.call('set', dest, sum)");
-        }
+        redisAddSumScriptSha = redisLoadResourceScript("/scripts/redis/zadd-sum.lua");
     }
 
     /**
@@ -485,6 +471,35 @@ public class ReportHandler extends AbstractHandler {
         int denom = interval * 60;
 
         return (int) Math.round((currentTimeSeconds - (denom / 2d)) / denom) * denom;
+    }
+
+    /**
+     * Stores a redis script at the given resource into redis and returns the SHA hash.
+     *
+     * @param resource
+     * @return SHA hash of the stored script
+     */
+    private String redisLoadResourceScript(String resource) {
+        String script = "";
+
+        try {
+            Path path = Paths.get(getClass().getResource(resource).toURI());
+
+            for (String line : Files.readAllLines(path)) {
+                line = line.replaceAll("--.*", "").trim();
+
+                if (!line.isEmpty()) {
+                    script += line + " ";
+                }
+            }
+        } catch (IOException | URISyntaxException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        try (Jedis redis = mcstats.getRedisPool().getResource()) {
+            return redis.scriptLoad(script);
+        }
     }
 
     /**
