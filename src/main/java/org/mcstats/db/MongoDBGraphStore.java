@@ -55,7 +55,7 @@ public class MongoDBGraphStore implements GraphStore {
 
             db = client.getDB(mcstats.getConfig().getProperty("mongo.db"));
             graphDataCollection = db.getCollection(mcstats.getConfig().getProperty("mongo.collection"));
-            graphDataCollectionNew = db.getCollection(mcstats.getConfig().getProperty("mongo.collection") + "-new");
+            graphDataCollectionNew = db.getCollection(mcstats.getConfig().getProperty("mongo.collection") + "new");
             collStatistic = db.getCollection("statistic");
 
             logger.info("Connected to MongoDB");
@@ -79,7 +79,7 @@ public class MongoDBGraphStore implements GraphStore {
      * @return
      */
     public DBCollection getGraphDataNewCollection() {
-        return graphDataCollection;
+        return graphDataCollectionNew;
     }
 
     /**
