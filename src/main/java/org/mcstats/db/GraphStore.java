@@ -20,13 +20,13 @@ public interface GraphStore {
      * @param max
      * @param min
      */
-    public void insert(Column column, int epoch, int sum, int count, int avg, int max, int min);
+    void insert(Column column, int epoch, int sum, int count, int avg, int max, int min);
 
     /**
      * Insert data into the graph store
      *
      * @param data
      */
-    public void batchInsert(Graph graph, List<Tuple<Column, GeneratedData>> data, int epoch);
+    void batchInsert(Graph graph, List<Tuple<Column, GeneratedData>> data, int epoch);
 
 }

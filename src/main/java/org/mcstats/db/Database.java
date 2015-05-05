@@ -15,14 +15,14 @@ public interface Database {
      * @param name
      * @return
      */
-    public Plugin createPlugin(String name);
+    Plugin createPlugin(String name);
 
     /**
      * Load all of the plugins from the database
      *
      * @return
      */
-    public List<Plugin> loadPlugins();
+    List<Plugin> loadPlugins();
 
     /**
      * Load the plugin from the database with the given ID
@@ -30,7 +30,7 @@ public interface Database {
      * @param id
      * @return
      */
-    public Plugin loadPlugin(int id);
+    Plugin loadPlugin(int id);
 
     /**
      * Load the plugin from the database with the given name
@@ -38,14 +38,14 @@ public interface Database {
      * @param name
      * @return
      */
-    public Plugin loadPlugin(String name);
+    Plugin loadPlugin(String name);
 
     /**
      * Save the given plugin to the database
      *
      * @param plugin
      */
-    public void savePlugin(Plugin plugin);
+    void savePlugin(Plugin plugin);
 
     /**
      * Create a graph for the given plugin
@@ -54,7 +54,7 @@ public interface Database {
      * @param name
      * @return
      */
-    public Graph createGraph(Plugin plugin, String name);
+    Graph createGraph(Plugin plugin, String name);
 
     /**
      * Load the graph for the given plugin
@@ -63,7 +63,7 @@ public interface Database {
      * @param name
      * @return
      */
-    public Graph loadGraph(Plugin plugin, String name);
+    Graph loadGraph(Plugin plugin, String name);
 
     /**
      * Load all of the graphs for a given plugin
@@ -71,7 +71,7 @@ public interface Database {
      * @param plugin
      * @return
      */
-    public List<Graph> loadGraphs(Plugin plugin);
+    List<Graph> loadGraphs(Plugin plugin);
 
     /**
      * Create a column for the given graph
@@ -80,7 +80,7 @@ public interface Database {
      * @param name
      * @return
      */
-    public Column createColumn(Graph graph, String name);
+    Column createColumn(Graph graph, String name);
 
     /**
      * Load a column for the given graph
@@ -89,7 +89,7 @@ public interface Database {
      * @param name
      * @return
      */
-    public Column loadColumn(Graph graph, String name);
+    Column loadColumn(Graph graph, String name);
 
     /**
      * Load all columns for the given graph
@@ -97,6 +97,6 @@ public interface Database {
      * @param graph
      * @return
      */
-    public List<Column> loadColumns(Graph graph);
+    List<Column> loadColumns(Graph graph);
 
 }

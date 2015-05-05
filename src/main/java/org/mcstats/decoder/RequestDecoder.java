@@ -15,6 +15,6 @@ public interface RequestDecoder {
      * @return
      * @throws IOException
      */
-    public DecodedRequest decode(Plugin plugin, Request request) throws IOException;
+    DecodedRequest decode(Plugin plugin, Request request) throws IOException;
 
 }
