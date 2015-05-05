@@ -10,13 +10,6 @@ import java.util.Map;
 public interface Database {
 
     /**
-     * Load all countries from the database
-     *
-     * @return
-     */
-    public Map<String, String> loadCountries();
-
-    /**
      * Create a bare plugin with the given name
      *
      * @param name

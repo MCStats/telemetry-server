@@ -1,7 +1,6 @@
 package org.mcstats;
 
 import it.sauronsoftware.cron4j.Scheduler;
-import org.apache.commons.pool2.impl.BaseObjectPoolConfig;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
@@ -9,6 +8,9 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.mcstats.cron.CronGraphGenerator;
 import org.mcstats.cron.CronRanking;
 import org.mcstats.db.Database;
@@ -24,13 +26,15 @@ import redis.clients.jedis.JedisPool;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -164,7 +168,7 @@ public class MCStats {
         // Connect to the database
         connectToDatabase();
 
-        countries.putAll(database.loadCountries());
+        countries.putAll(loadCountries());
         logger.info("Loaded " + countries.size() + " countries");
 
         graphStore = new MongoDBGraphStore(this);
@@ -497,6 +501,31 @@ public class MCStats {
     private void addPlugin(String name, Plugin plugin) {
         pluginsById.put(plugin.getId(), plugin);
         pluginsByName.put(name.toLowerCase().toLowerCase(), plugin);
+    }
+
+    /**
+     * Loads all countries.
+     */
+    private Map<String, String> loadCountries() {
+        Map<String, String> result = new HashMap<>();
+
+        try (InputStream stream = getClass().getResourceAsStream("/countries.json")) {
+            JSONArray root = (JSONArray) JSONValue.parse(new InputStreamReader(stream));
+
+            for (Object value : root) {
+                JSONObject countryData = (JSONObject) value;
+
+                String shortCode = countryData.get("short").toString();
+                String fullName = countryData.get("name").toString();
+
+                // TODO Country object?
+                result.put(shortCode, fullName);
+            }
+        } catch (IOException e) {
+            logger.error("Failed to load countries.json", e);
+        }
+
+        return result;
     }
 
     /**

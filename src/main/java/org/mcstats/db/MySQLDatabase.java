@@ -54,23 +54,6 @@ public class MySQLDatabase implements Database {
         ds.setMaxActive(100);
     }
 
-    public Map<String, String> loadCountries() {
-        Map<String, String> countries = new HashMap<>();
-
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT ShortCode, FullName FROM Country")) {
-            try (ResultSet set = statement.executeQuery()) {
-                while (set.next()) {
-                    countries.put(set.getString("ShortCode"), set.getString("FullName"));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return countries;
-    }
-
     public Plugin createPlugin(String name) {
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("INSERT INTO Plugin (Name, Author, Hidden, GlobalHits, Created) VALUES (?, '', 0, 0, UNIX_TIMESTAMP())")) {
