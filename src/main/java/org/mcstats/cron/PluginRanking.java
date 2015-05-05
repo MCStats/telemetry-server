@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public class CronRanking implements Runnable {
+public class PluginRanking implements Runnable {
 
     private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
     private MCStats mcstats;
 
-    public CronRanking(MCStats mcstats) {
+    public PluginRanking(MCStats mcstats) {
         this.mcstats = mcstats;
     }
 

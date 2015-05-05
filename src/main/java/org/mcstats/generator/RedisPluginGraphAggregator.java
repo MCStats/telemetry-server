@@ -1,6 +1,5 @@
 package org.mcstats.generator;
 
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.mcstats.MCStats;
 import org.mcstats.handler.ReportHandler;
@@ -21,13 +20,13 @@ import java.util.stream.Collectors;
 /**
  * Aggregates data from redis and then inserts it into MongoDB
  */
-public class RedisGraphAggregator implements Runnable {
+public class RedisPluginGraphAggregator implements Runnable {
 
-    private static final Logger logger = Logger.getLogger(RedisGraphAggregator.class);
+    private static final Logger logger = Logger.getLogger(RedisPluginGraphAggregator.class);
 
     private MCStats mcstats;
 
-    public RedisGraphAggregator(MCStats mcstats) {
+    public RedisPluginGraphAggregator(MCStats mcstats) {
         this.mcstats = mcstats;
     }
 
@@ -37,7 +36,6 @@ public class RedisGraphAggregator implements Runnable {
             plugins.add(-1); // All Plugins
 
             int epoch = ReportHandler.normalizeTime();
-            long start = System.currentTimeMillis();
 
             plugins.parallelStream().forEach(pluginId -> {
                 try (Jedis pluginRedis = mcstats.getRedisPool().getResource()) {
@@ -115,10 +113,6 @@ public class RedisGraphAggregator implements Runnable {
                     // mcstats.getGraphStore().batchInsert(graph, data, epoch);
                 }
             });
-
-            long taken = System.currentTimeMillis() - start;
-
-            logger.info("Generation completed in " + taken + "ms");
         }
     }
 
@@ -210,12 +204,6 @@ public class RedisGraphAggregator implements Runnable {
         } else {
             throw new UnsupportedOperationException("Unsupported type " + value.getClass().getName() + ": " + value.toString());
         }
-    }
-
-    public static void main(String[] args) {
-        BasicConfigurator.configure();
-        MCStats.getInstance().init();
-        new RedisGraphAggregator(MCStats.getInstance()).run();
     }
 
 }

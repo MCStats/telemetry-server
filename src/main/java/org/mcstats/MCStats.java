@@ -11,8 +11,8 @@ import org.eclipse.jetty.webapp.WebAppContext;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.mcstats.cron.CronGraphGenerator;
-import org.mcstats.cron.CronRanking;
+import org.mcstats.cron.PluginGraphGenerator;
+import org.mcstats.cron.PluginRanking;
 import org.mcstats.db.Database;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
@@ -388,8 +388,8 @@ public class MCStats {
 
         if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
             Scheduler scheduler = new Scheduler();
-            scheduler.schedule("*/30 * * * *", new CronGraphGenerator(this));
-            scheduler.schedule("45 * * * *", new CronRanking(this));
+            scheduler.schedule("*/30 * * * *", new PluginGraphGenerator(this));
+            scheduler.schedule("45 * * * *", new PluginRanking(this));
             scheduler.start();
             logger.info("Graph & rank generator is active");
         } else {
