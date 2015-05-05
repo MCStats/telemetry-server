@@ -19,9 +19,6 @@ public class PluginGraphGenerator implements Runnable {
         aggregator = new RedisPluginGraphAggregator(mcstats);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public void run() {
         try {
             logger.info("Generating graphs for plugins");

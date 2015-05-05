@@ -23,9 +23,6 @@ public class ModernRequestDecoder implements RequestDecoder {
         this.mcstats = mcstats;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public DecodedRequest decode(Plugin plugin, Request request) throws IOException {
         String encoding = request.getHeader("Content-Encoding");
         String content = "";

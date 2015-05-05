@@ -21,9 +21,6 @@ public class LegacyRequestDecoder implements RequestDecoder {
         this.mcstats = mcstats;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public DecodedRequest decode(Plugin plugin, Request request) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"));
         String content = "";

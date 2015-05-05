@@ -22,9 +22,6 @@ public class PluginRanking implements Runnable {
         this.mcstats = mcstats;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public void run() {
         Map<Plugin, Integer> pluginServerCounts = new HashMap<>();
 
