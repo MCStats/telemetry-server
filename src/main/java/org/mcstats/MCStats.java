@@ -22,13 +22,18 @@ import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.ExponentialMovingAverage;
 import org.mcstats.util.ServerBuildIdentifier;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -186,6 +191,39 @@ public class MCStats {
         }
 
         logger.info("Loaded " + pluginsByName.size() + " plugins");
+    }
+
+    /**
+     * Loads a redis script from the given resource (in the jar file).
+     *
+     * @param resource
+     * @return SHA hash of the script that can be used to execute the script.
+     */
+    public String loadRedisScript(String resource) {
+        String script = "";
+
+        try {
+            Path path = Paths.get(getClass().getResource(resource).toURI());
+
+            for (String line : Files.readAllLines(path)) {
+                line = line.replaceAll("--.*", "").trim();
+
+                if (!line.isEmpty()) {
+                    script += line + " ";
+                }
+            }
+        } catch (IOException | URISyntaxException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        try (Jedis redis = redisPool.getResource()) {
+            String sha = redis.scriptLoad(script);
+
+            logger.info("Loaded redis script " + resource + " -> " + sha);
+
+            return sha;
+        }
     }
 
     /**

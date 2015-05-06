@@ -96,7 +96,7 @@ public class ReportHandler extends AbstractHandler {
 
         registerAccumulators();
 
-        redisAddSumScriptSha = redisLoadResourceScript("/scripts/redis/zadd-sum.lua");
+        redisAddSumScriptSha = mcstats.loadRedisScript("/scripts/redis/zadd-sum.lua");
     }
 
     /**
@@ -471,35 +471,6 @@ public class ReportHandler extends AbstractHandler {
         int denom = interval * 60;
 
         return (int) Math.round((currentTimeSeconds - (denom / 2d)) / denom) * denom;
-    }
-
-    /**
-     * Stores a redis script at the given resource into redis and returns the SHA hash.
-     *
-     * @param resource
-     * @return SHA hash of the stored script
-     */
-    private String redisLoadResourceScript(String resource) {
-        String script = "";
-
-        try {
-            Path path = Paths.get(getClass().getResource(resource).toURI());
-
-            for (String line : Files.readAllLines(path)) {
-                line = line.replaceAll("--.*", "").trim();
-
-                if (!line.isEmpty()) {
-                    script += line + " ";
-                }
-            }
-        } catch (IOException | URISyntaxException e) {
-            e.printStackTrace();
-            return null;
-        }
-
-        try (Jedis redis = mcstats.getRedisPool().getResource()) {
-            return redis.scriptLoad(script);
-        }
     }
 
     /**
