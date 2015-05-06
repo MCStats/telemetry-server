@@ -28,11 +28,6 @@ public class MySQLDatabase implements Database {
     private final MCStats mcstats;
 
     /**
-     * A map of the already prepared statements
-     */
-    private final Map<String, PreparedStatement> statementCache = new HashMap<>();
-
-    /**
      * The dataSource.getConnectionion() data source
      */
     private BasicDataSource ds;
@@ -44,7 +39,6 @@ public class MySQLDatabase implements Database {
 
         this.mcstats = mcstats;
 
-        // Create the mysql data dataSource.getConnectionion() pool
         ds = new BasicDataSource();
         ds.setDriverClassName("com.mysql.jdbc.Driver");
         ds.setUsername(username);
@@ -64,7 +58,6 @@ public class MySQLDatabase implements Database {
             e.printStackTrace();
         }
 
-        // re-load the plugin
         return loadPlugin(name);
     }
 
