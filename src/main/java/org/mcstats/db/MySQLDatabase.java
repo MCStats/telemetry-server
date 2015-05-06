@@ -50,7 +50,7 @@ public class MySQLDatabase implements Database {
         ds.setUsername(username);
         ds.setPassword(password);
         ds.setUrl("jdbc:mysql://" + hostname + "/" + databaseName);
-        ds.setInitialSize(16);
+        ds.setInitialSize(4);
         ds.setMaxTotal(64);
     }
 
@@ -137,6 +137,8 @@ public class MySQLDatabase implements Database {
 
             statement.executeUpdate();
             QUERIES++;
+
+            mcstats.getModelCache().cachePlugin(plugin);
         } catch (SQLException e) {
             e.printStackTrace();
         }

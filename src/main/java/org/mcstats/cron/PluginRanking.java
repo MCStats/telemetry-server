@@ -25,7 +25,7 @@ public class PluginRanking implements Runnable {
     public void run() {
         Map<Plugin, Integer> pluginServerCounts = new HashMap<>();
 
-        for (Plugin plugin : mcstats.getCachedPlugins()) {
+        for (Plugin plugin : mcstats.getDatabase().loadPlugins()) {
             if (plugin.getHidden() == 1) {
                 continue;
             }

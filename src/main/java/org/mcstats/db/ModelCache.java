@@ -6,6 +6,29 @@ import org.mcstats.model.Plugin;
 public interface ModelCache {
 
     /**
+     * Loads a plugin from the cache with the given name
+     *
+     * @param name
+     * @return
+     */
+    Plugin getPlugin(String name);
+
+    /**
+     * Loads a plugin from the cache with the given id
+     *
+     * @param id
+     * @return
+     */
+    Plugin getPlugin(int id);
+
+    /**
+     * Stores a plugin in the cache
+     *
+     * @param plugin
+     */
+    void cachePlugin(Plugin plugin);
+
+    /**
      * Loads a graph from the cache
      *
      * @param plugin

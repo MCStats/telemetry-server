@@ -198,9 +198,6 @@ public class ReportHandler extends AbstractHandler {
 
             final Plugin plugin = mcstats.loadPlugin(pluginName);
 
-            // TODO
-            redis.sadd("plugins", Integer.toString(plugin.getId()));
-
             String userAgent = request.getHeader("User-Agent");
             final DecodedRequest decoded;
 

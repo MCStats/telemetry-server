@@ -128,16 +128,6 @@ public class MCStats {
     private boolean debug = false;
 
     /**
-     * A map of all of the currently loaded pluginsByName, by the plugin's name
-     */
-    private final Map<String, Plugin> pluginsByName = new ConcurrentHashMap<>();
-
-    /**
-     * A map of all of the currently loaded pluginsByName, by the plugin's internal id
-     */
-    private final Map<Integer, Plugin> pluginsById = new ConcurrentHashMap<>();
-
-    /**
      * A map of all countries, keyed by the 2 letter country code
      */
     private final Map<String, String> countries = new ConcurrentHashMap<>();
@@ -187,18 +177,14 @@ public class MCStats {
 
         GenericObjectPoolConfig redisConfig = new GenericObjectPoolConfig();
         redisConfig.setMaxTotal(64);
+        redisConfig.setTestOnBorrow(true);
+        redisConfig.setTestOnReturn(true);
+        redisConfig.setTestWhileIdle(true);
+        redisConfig.setNumTestsPerEvictionRun(10);
+        redisConfig.setTimeBetweenEvictionRunsMillis(1000);
 
         redisPool = new JedisPool(redisConfig, config.getProperty("redis.host"), Integer.parseInt(config.getProperty("redis.port")));
-        modelCache = new RedisCache(redisPool);
-
-        // Load all of the pluginsByName
-        for (Plugin plugin : database.loadPlugins()) {
-            if (plugin.getId() >= 0) {
-                addPlugin(plugin);
-            }
-        }
-
-        logger.info("Loaded " + pluginsByName.size() + " plugins");
+        modelCache = new RedisCache(this, redisPool);
     }
 
     /**
@@ -281,15 +267,6 @@ public class MCStats {
     }
 
     /**
-     * Get an unmodifiable list of the cached plugins
-     *
-     * @return
-     */
-    public List<Plugin> getCachedPlugins() {
-        return Collections.unmodifiableList(new ArrayList<>(pluginsById.values()));
-    }
-
-    /**
      * Increment and return the amount of requests server on the server
      *
      * @return
@@ -305,35 +282,25 @@ public class MCStats {
      * @return
      */
     public Plugin loadPlugin(int id) {
-        if (pluginsById.containsKey(id)) {
-            return pluginsById.get(id);
+        Plugin plugin = modelCache.getPlugin(id);
+
+        if (plugin == null) {
+            plugin = database.loadPlugin(id);
+
+            if (plugin != null) {
+                modelCache.cachePlugin(plugin);
+            }
         }
 
-        // Attempt to load from the database
-        Plugin plugin = database.loadPlugin(id);
-
-        // Did we not find it ?
         if (plugin == null) {
             return null;
         }
 
-        // Check if the plugin is just a child
+        // Check if the plugin is just a child -- if so the parent is returned instead.
         if (plugin.getParent() != -1) {
-            // Load the parent
-            Plugin parent = loadPlugin(plugin.getParent());
-
-            if (parent != null) {
-                // cache the child's plugin name via the parent
-                addPlugin(plugin.getName(), parent);
-            }
-
-            return parent;
+            return loadPlugin(plugin.getParent());
         }
 
-        // Cache it
-        addPlugin(plugin);
-
-        // and go !
         return plugin;
     }
 
@@ -344,46 +311,30 @@ public class MCStats {
      * @return
      */
     public Plugin loadPlugin(String name) {
-        String cacheKey = name.toLowerCase();
+        Plugin plugin = modelCache.getPlugin(name);
 
-        if (pluginsByName.containsKey(cacheKey)) {
-            return pluginsByName.get(cacheKey);
-        }
-
-        logger.info("Plugin not cached: " + name);
-
-        // Attempt to load from the database
-        Plugin plugin = database.loadPlugin(name);
-
-        // Did we not find it ?
         if (plugin == null) {
-            plugin = database.createPlugin(name);
+            plugin = database.loadPlugin(name);
+
+            if (plugin == null) {
+                plugin = database.createPlugin(name);
+            }
+
+            if (plugin != null) {
+                modelCache.cachePlugin(plugin);
+            }
         }
 
-        // is it _still_ null?
-        // if it is, we have some problems :(
         if (plugin == null) {
             logger.error("Failed to create plugin for \"" + name + "\"");
             return null;
         }
 
-        // Check if the plugin is just a child
+        // Check if the plugin is just a child -- if so the parent is returned instead.
         if (plugin.getParent() != -1) {
-            // Load the parent
-            Plugin parent = loadPlugin(plugin.getParent());
-
-            if (parent != null) {
-                // cache the child's plugin name via the parent
-                addPlugin(plugin.getName(), parent);
-            }
-
-            return parent;
+            return loadPlugin(plugin.getParent());
         }
 
-        // Cache it
-        addPlugin(plugin);
-
-        // and go !
         return plugin;
     }
 
@@ -545,27 +496,6 @@ public class MCStats {
      */
     public ReportHandler getReportHandler() {
         return handler;
-    }
-
-    /**
-     * Add a plugin to the cache
-     *
-     * @param plugin
-     */
-    private void addPlugin(Plugin plugin) {
-        pluginsById.put(plugin.getId(), plugin);
-        pluginsByName.put(plugin.getName().toLowerCase(), plugin);
-    }
-
-    /**
-     * Add a plugin to the cache with the given name
-     *
-     * @param name
-     * @param plugin
-     */
-    private void addPlugin(String name, Plugin plugin) {
-        pluginsById.put(plugin.getId(), plugin);
-        pluginsByName.put(name.toLowerCase().toLowerCase(), plugin);
     }
 
     /**

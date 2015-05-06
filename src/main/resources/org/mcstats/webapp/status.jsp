@@ -3,6 +3,7 @@
 <%@ page import="org.mcstats.util.TimeUtils" %>
 <%@ page import="java.text.DecimalFormat" %>
 <%@ page import="org.mcstats.db.MySQLDatabase" %>
+<%@ page import="redis.clients.jedis.Jedis" %>
 <%
     MCStats mcstats = MCStats.getInstance();
     long requests = mcstats.incrementAndGetRequests();
@@ -224,14 +225,27 @@
 
                     <tbody>
 
+                    <% try (Jedis redis = mcstats.getRedisPool().getResource()) { %>
+
                     <tr>
                         <td style="width: 20px; text-align: center;">
-                            Plugins (cached)
+                            Servers (redis)
                         </td>
                         <td style="width: 100px; text-align: center;">
-                            <%= numberFormatter.format(mcstats.getCachedPlugins().size()) %>
+                            <%= numberFormatter.format(redis.scard("servers")) %>
                         </td>
                     </tr>
+
+                    <tr>
+                        <td style="width: 20px; text-align: center;">
+                            Plugins (redis)
+                        </td>
+                        <td style="width: 100px; text-align: center;">
+                            <%= numberFormatter.format(redis.scard("plugins")) %>
+                        </td>
+                    </tr>
+
+                    <% } %>
 
                     </tbody>
 
