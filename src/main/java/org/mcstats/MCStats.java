@@ -179,7 +179,7 @@ public class MCStats {
         graphStore = new MongoDBGraphStore(this);
 
         GenericObjectPoolConfig redisConfig = new GenericObjectPoolConfig();
-        redisConfig.setMaxTotal(32);
+        redisConfig.setMaxTotal(64);
 
         redisPool = new JedisPool(redisConfig, config.getProperty("redis.host"), Integer.parseInt(config.getProperty("redis.port")));
 

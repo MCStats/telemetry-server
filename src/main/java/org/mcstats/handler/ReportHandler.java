@@ -29,15 +29,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class ReportHandler extends AbstractHandler {
 
@@ -81,7 +79,7 @@ public class ReportHandler extends AbstractHandler {
     /**
      * Executor for off-thread work
      */
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final ExecutorService executor = new ThreadPoolExecutor(4, 16, 10, TimeUnit.MINUTES, new SynchronousQueue<>());
 
     /**
      * SHA of the redis sum add script
@@ -414,12 +412,19 @@ public class ReportHandler extends AbstractHandler {
                         List<Tuple<Column, Long>> accumulatedData = accumulatorDelegator.accumulate(decoded, serverPlugin);
 
                         for (Tuple<Column, Long> data : accumulatedData) {
+                            // N.B.: This column & graph are virtual, so are later
+                            // forcibly loaded from the database to rev up caches
+                            // and db state.
                             Column column = data.first();
                             Graph graph = column.getGraph();
                             long value = data.second();
 
                             if (graph.getName() == null || column.getName() == null) {
                                 continue;
+                            }
+
+                            if (!graph.isFromDatabase()) {
+                                graph = plugin.getGraph(graph.getName());
                             }
 
                             String redisDataKey = String.format("plugin-data:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());

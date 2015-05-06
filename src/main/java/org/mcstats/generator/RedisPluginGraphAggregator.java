@@ -41,10 +41,6 @@ public class RedisPluginGraphAggregator implements Runnable {
                 try (Jedis pluginRedis = mcstats.getRedisPool().getResource()) {
                     Plugin plugin = mcstats.loadPlugin(pluginId);
 
-                    for (Graph graph : mcstats.getDatabase().loadGraphs(plugin)) {
-                        plugin.addGraph(graph);
-                    }
-
                     logger.info("Generating data for " + plugin.getName());
 
                     // all graphs for the plugin

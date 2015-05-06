@@ -2,11 +2,14 @@ package org.mcstats.model;
 
 import org.mcstats.MCStats;
 import org.mcstats.db.Savable;
+import redis.clients.jedis.Jedis;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Plugin implements Savable {
+
+    public static final String REDIS_GRAPH_INDEX_KEY = "plugin-graph-index:%d:%s";
 
     /**
      * The MCStats object
@@ -108,22 +111,44 @@ public class Plugin implements Savable {
     }
 
     /**
-     * Get a graph using its name if it is already loaded
+     * Get a graph using its name. It will be loaded or created if it does not exist.
      *
      * @param name
      * @return
      */
     public Graph getGraph(String name) {
-        return graphs.get(name.toLowerCase());
-    }
+        if (graphs.containsKey(name)) {
+            return graphs.get(name);
+        }
 
-    /**
-     * Add a graph to the plugin
-     *
-     * @param graph
-     */
-    public void addGraph(Graph graph) {
-        graphs.put(graph.getName().toLowerCase(), graph);
+        try (Jedis redis = mcstats.getRedisPool().getResource()) {
+            String key = String.format(REDIS_GRAPH_INDEX_KEY, id, name);
+
+            if (redis.exists(key)) {
+                int graphId = Integer.parseInt(redis.get(key));
+
+                Graph graph = new Graph(this, graphId, name);
+
+                graphs.put(name, graph);
+
+                return graph;
+            } else {
+                Graph graph = mcstats.getDatabase().loadGraph(this, name);
+
+                if (graph == null) {
+                    graph = mcstats.getDatabase().createGraph(this, name);
+                }
+
+                // still failed to make one ...
+                if (graph == null) {
+                    return null;
+                }
+
+                redis.set(key, Integer.toString(graph.getId()));
+                graphs.put(name, graph);
+                return graph;
+            }
+        }
     }
 
     /**

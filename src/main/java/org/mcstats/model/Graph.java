@@ -27,6 +27,12 @@ public class Graph {
         this.name = name;
     }
 
+    public Graph(Plugin plugin, int id, String name) {
+        this(plugin, name);
+        this.id = id;
+        isFromDatabase = true;
+    }
+
     public Plugin getPlugin() {
         return plugin;
     }
