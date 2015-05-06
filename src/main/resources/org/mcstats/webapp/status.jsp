@@ -176,7 +176,7 @@
                             Executor queue size
                         </td>
                         <td style="width: 100px; text-align: center;">
-                            <%= numberFormatter.format(mcstats.getDatabaseQueue().size()) %>
+                            <%= numberFormatter.format(mcstats.getReportHandler().getExecutorQueueSize()) %>
                         </td>
                     </tr>
 
