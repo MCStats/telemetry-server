@@ -4,6 +4,7 @@ import org.apache.log4j.BasicConfigurator;
 import org.mcstats.MCStats;
 import org.mcstats.generator.RedisPluginGraphAggregator;
 import org.mcstats.handler.ReportHandler;
+import redis.clients.jedis.Jedis;
 
 import java.util.logging.Logger;
 
@@ -13,10 +14,13 @@ public class PluginGraphGenerator implements Runnable {
 
     private final MCStats mcstats;
     private final RedisPluginGraphAggregator aggregator;
+    private final String redisDelWildcardSha;
 
     public PluginGraphGenerator(MCStats mcstats) {
         this.mcstats = mcstats;
         aggregator = new RedisPluginGraphAggregator(mcstats);
+
+        redisDelWildcardSha = mcstats.loadRedisScript("/scripts/redis/del-wildcard.lua");
     }
 
     public void run() {
@@ -26,7 +30,10 @@ public class PluginGraphGenerator implements Runnable {
 
             // TODO Rank graph, ServerCount30 generation
             aggregator.run();
-            // TODO redis cleanup
+
+            try (Jedis redis = mcstats.getRedisPool().getResource()) {
+                redis.evalsha(redisDelWildcardSha, 0, "data:*", "data-sum:*");
+            }
 
             long taken = System.currentTimeMillis() - start;
             // TODO sampling
