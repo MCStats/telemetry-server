@@ -1,11 +1,11 @@
 package org.mcstats.db;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.WriteConcern;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
 import org.mcstats.MCStats;
 import org.mcstats.generator.GeneratedData;
 import org.mcstats.handler.ReportHandler;
@@ -14,9 +14,10 @@ import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.Tuple;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static com.mongodb.client.model.Filters.eq;
 
 public class MongoDBGraphStore implements GraphStore {
 
@@ -30,66 +31,35 @@ public class MongoDBGraphStore implements GraphStore {
     /**
      * The database used to store data
      */
-    private DB db;
+    private MongoDatabase db;
 
     /**
      * The collection graphdata is stored in
      */
-    private DBCollection graphDataCollection;
-
-    /**
-     * The collection new graphdata is stored in
-     */
-    private DBCollection graphDataCollectionNew;
+    private MongoCollection<Document> graphDataCollection;
 
     /**
      * The statistic collection
      */
-    private DBCollection collStatistic;
+    private MongoCollection<Document> collStatistic;
 
     public MongoDBGraphStore(MCStats mcstats) {
-        try {
-            client = new MongoClient(mcstats.getConfig().getProperty("mongo.host"));
+        client = new MongoClient(mcstats.getConfig().getProperty("mongo.host"), Integer.parseInt(mcstats.getConfig().getProperty("mongo.port")));
 
-            client.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
+        client.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
 
-            db = client.getDB(mcstats.getConfig().getProperty("mongo.db"));
-            graphDataCollection = db.getCollection(mcstats.getConfig().getProperty("mongo.collection"));
-            graphDataCollectionNew = db.getCollection(mcstats.getConfig().getProperty("mongo.collection") + "new");
-            collStatistic = db.getCollection("statistic");
+        db = client.getDatabase(mcstats.getConfig().getProperty("mongo.db"));
+        graphDataCollection = db.getCollection(mcstats.getConfig().getProperty("mongo.collection"));
+        collStatistic = db.getCollection("statistic");
 
-            logger.info("Connected to MongoDB");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Returns the collection graph data is stored in
-     *
-     * @return
-     */
-    public DBCollection getGraphDataCollection() {
-        return graphDataCollection;
-    }
-
-    /**
-     * Returns the collection graph data is stored in
-     *
-     * @return
-     */
-    public DBCollection getGraphDataNewCollection() {
-        return graphDataCollectionNew;
+        logger.info("Connected to MongoDB");
     }
 
     /**
      * Finish graph generation
      */
     public void finishGeneration() {
-        DBObject query = new BasicDBObject().append("_id", 1);
-        DBObject op = new BasicDBObject().append("$set", new BasicDBObject("max.epoch", ReportHandler.normalizeTime()));
-
-        collStatistic.update(query, op, true, false);
+        collStatistic.updateMany(eq("_id", 1), new Document("$set", new Document("max.epoch", ReportHandler.normalizeTime())));
     }
 
     public void insert(Column column, int epoch, int sum, int count, int avg, int max, int min) {
@@ -98,9 +68,9 @@ public class MongoDBGraphStore implements GraphStore {
 
         // logger.info(String.format("insert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
 
-        BasicDBObject toset = new BasicDBObject().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
-        BasicDBObject data = new BasicDBObject();
-        BasicDBObject col = new BasicDBObject();
+        Document toset = new Document().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
+        Document data = new Document();
+        Document col = new Document();
 
         if (sum != 0) {
             col.append("sum", sum);
@@ -127,7 +97,7 @@ public class MongoDBGraphStore implements GraphStore {
         data.append(Integer.toString(column.getId()), col);
         toset.append("data", data);
 
-        graphDataCollection.insert(toset);
+        graphDataCollection.insertOne(toset);
     }
 
     public void batchInsert(Graph graph, List<Tuple<Column, GeneratedData>> batchData, int epoch) {
@@ -135,8 +105,8 @@ public class MongoDBGraphStore implements GraphStore {
 
         // logger.info(String.format("batchInsert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
 
-        BasicDBObject toset = new BasicDBObject().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
-        BasicDBObject data = new BasicDBObject();
+        Document toset = new Document().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
+        Document data = new Document();
 
         for (Tuple<Column, GeneratedData> tuple : batchData) {
             BasicDBObject col = new BasicDBObject();
@@ -176,6 +146,6 @@ public class MongoDBGraphStore implements GraphStore {
 
         toset.append("data", data);
 
-        graphDataCollection.insert(toset);
+        graphDataCollection.insertOne(toset);
     }
 }

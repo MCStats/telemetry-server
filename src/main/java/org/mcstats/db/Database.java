@@ -5,7 +5,6 @@ import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 
 import java.util.List;
-import java.util.Map;
 
 public interface Database {
 

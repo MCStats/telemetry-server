@@ -1,6 +1,6 @@
 package org.mcstats.db;
 
-import org.apache.commons.dbcp.BasicDataSource;
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.log4j.Logger;
 import org.mcstats.MCStats;
 import org.mcstats.model.Column;
@@ -50,8 +50,8 @@ public class MySQLDatabase implements Database {
         ds.setUsername(username);
         ds.setPassword(password);
         ds.setUrl("jdbc:mysql://" + hostname + "/" + databaseName);
-        ds.setInitialSize(50);
-        ds.setMaxActive(100);
+        ds.setInitialSize(16);
+        ds.setMaxTotal(64);
     }
 
     public Plugin createPlugin(String name) {
