@@ -32,7 +32,7 @@ public class PluginGraphGenerator implements Runnable {
             aggregator.run();
 
             try (Jedis redis = mcstats.getRedisPool().getResource()) {
-                redis.evalsha(redisDelWildcardSha, 0, "data:*", "data-sum:*");
+                redis.evalsha(redisDelWildcardSha, 0, "plugin-data:*", "plugin-data-sum:*");
             }
 
             long taken = System.currentTimeMillis() - start;

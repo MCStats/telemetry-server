@@ -422,8 +422,8 @@ public class ReportHandler extends AbstractHandler {
                                 continue;
                             }
 
-                            String redisDataKey = String.format("data:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
-                            String redisDataSumKey = String.format("data-sum:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
+                            String redisDataKey = String.format("plugin-data:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
+                            String redisDataSumKey = String.format("plugin-data-sum:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
 
                             // metadata
                             pipeline.sadd("graphs:" + graph.getPlugin().getId(), graph.getName());

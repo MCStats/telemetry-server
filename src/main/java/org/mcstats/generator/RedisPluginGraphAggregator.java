@@ -155,8 +155,8 @@ public class RedisPluginGraphAggregator implements Runnable {
      * @return
      */
     private Supplier<GeneratedData> aggregateGraphData(Pipeline pipeline, Plugin plugin, String graphName, String columnName) {
-        String redisDataKey = "data:" + plugin.getId() + ":" + graphName + ":" + columnName;
-        String redisDataSumKey = "data-sum:" + plugin.getId() + ":" + graphName + ":" + columnName;
+        String redisDataKey = "plugin-data:" + plugin.getId() + ":" + graphName + ":" + columnName;
+        String redisDataSumKey = "plugin-data-sum:" + plugin.getId() + ":" + graphName + ":" + columnName;
 
         Response<String> sumValueResponse = pipeline.get(redisDataSumKey);
         Response<Long> countResponse = pipeline.zcard(redisDataKey);
