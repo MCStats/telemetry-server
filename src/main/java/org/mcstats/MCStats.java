@@ -15,8 +15,10 @@ import org.mcstats.cron.PluginGraphGenerator;
 import org.mcstats.cron.PluginRanking;
 import org.mcstats.db.Database;
 import org.mcstats.db.GraphStore;
+import org.mcstats.db.ModelCache;
 import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.db.MySQLDatabase;
+import org.mcstats.db.RedisCache;
 import org.mcstats.handler.BlackholeHandler;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Plugin;
@@ -84,6 +86,11 @@ public class MCStats {
      * Redis connection
      */
     private JedisPool redisPool;
+
+    /**
+     * The cache used to store models
+     */
+    private ModelCache modelCache;
 
     /**
      * The storage for graph data
@@ -182,6 +189,7 @@ public class MCStats {
         redisConfig.setMaxTotal(64);
 
         redisPool = new JedisPool(redisConfig, config.getProperty("redis.host"), Integer.parseInt(config.getProperty("redis.port")));
+        modelCache = new RedisCache(redisPool);
 
         // Load all of the pluginsByName
         for (Plugin plugin : database.loadPlugins()) {
@@ -191,6 +199,15 @@ public class MCStats {
         }
 
         logger.info("Loaded " + pluginsByName.size() + " plugins");
+    }
+
+    /**
+     * Gets the cache used to store models
+     *
+     * @return
+     */
+    public ModelCache getModelCache() {
+        return modelCache;
     }
 
     /**
