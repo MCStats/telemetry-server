@@ -521,6 +521,16 @@ public class MCStats {
     }
 
     /**
+     * Gets the report handler.
+     * TODO only used for executor queue size right now. Something else?
+     *
+     * @return
+     */
+    public ReportHandler getReportHandler() {
+        return handler;
+    }
+
+    /**
      * Add a plugin to the cache
      *
      * @param plugin

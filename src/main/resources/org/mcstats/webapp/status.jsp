@@ -173,6 +173,15 @@
 
                     <tr>
                         <td style="width: 20px; text-align: center;">
+                            Executor queue size
+                        </td>
+                        <td style="width: 100px; text-align: center;">
+                            <%= numberFormatter.format(mcstats.getDatabaseQueue().size()) %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="width: 20px; text-align: center;">
                             Total requests
                         </td>
                         <td style="width: 100px; text-align: center;">

@@ -32,8 +32,7 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -79,7 +78,7 @@ public class ReportHandler extends AbstractHandler {
     /**
      * Executor for off-thread work
      */
-    private final ExecutorService executor = new ThreadPoolExecutor(4, 16, 10, TimeUnit.MINUTES, new SynchronousQueue<>());
+    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 16, 10, TimeUnit.MINUTES, new LinkedBlockingQueue<>());
 
     /**
      * SHA of the redis sum add script
@@ -458,6 +457,15 @@ public class ReportHandler extends AbstractHandler {
 
             mcstats.getRequestProcessingTimeAverage().update(takenMs);
         }
+    }
+
+    /**
+     * Returns the size of the executor queue
+     *
+     * @return
+     */
+    public int getExecutorQueueSize() {
+        return executor.getQueue().size();
     }
 
     /**
