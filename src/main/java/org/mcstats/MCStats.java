@@ -177,11 +177,6 @@ public class MCStats {
 
         GenericObjectPoolConfig redisConfig = new GenericObjectPoolConfig();
         redisConfig.setMaxTotal(64);
-        redisConfig.setTestOnBorrow(true);
-        redisConfig.setTestOnReturn(true);
-        redisConfig.setTestWhileIdle(true);
-        redisConfig.setNumTestsPerEvictionRun(10);
-        redisConfig.setTimeBetweenEvictionRunsMillis(1000);
 
         redisPool = new JedisPool(redisConfig, config.getProperty("redis.host"), Integer.parseInt(config.getProperty("redis.port")));
         modelCache = new RedisCache(this, redisPool);

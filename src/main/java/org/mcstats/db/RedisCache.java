@@ -30,7 +30,7 @@ public class RedisCache implements ModelCache {
             String key = String.format(PLUGIN_NAME_INDEX_KEY, name);
 
             if (redis.exists(key)) {
-                return getPlugin(Integer.parseInt(redis.get(key)));
+                return internalGetPlugin(redis, Integer.parseInt(redis.get(key)));
             } else {
                 return null;
             }
@@ -39,32 +39,8 @@ public class RedisCache implements ModelCache {
 
     @Override
     public Plugin getPlugin(int id) {
-        String key = String.format(PLUGIN_KEY, id);
-
         try (Jedis redis = pool.getResource()) {
-            if (redis.exists(key)) {
-                Plugin plugin = new Plugin(mcstats);
-                // TODO pipeline
-
-                plugin.setId(id);
-                plugin.setParent(Integer.parseInt(redis.hget(key, "parent")));
-                plugin.setName(redis.hget(key, "name"));
-                plugin.setAuthors(redis.hget(key, "authors"));
-                plugin.setHidden(Integer.parseInt(redis.hget(key, "hidden")));
-                plugin.setGlobalHits(Integer.parseInt(redis.hget(key, "globalHits")));
-                plugin.setRank(Integer.parseInt(redis.hget(key, "rank")));
-                plugin.setLastRank(Integer.parseInt(redis.hget(key, "lastRank")));
-                plugin.setLastRankChange(Integer.parseInt(redis.hget(key, "lastRankChange")));
-                plugin.setCreated(Integer.parseInt(redis.hget(key, "created")));
-                plugin.setLastUpdated(Integer.parseInt(redis.hget(key, "lastUpdated")));
-                plugin.setServerCount30(Integer.parseInt(redis.hget(key, "serverCount30")));
-
-                plugin.setModified(false);
-
-                return plugin;
-            } else {
-                return null;
-            }
+            return internalGetPlugin(redis, id);
         }
     }
 
@@ -126,6 +102,40 @@ public class RedisCache implements ModelCache {
             // TODO other data
 
             pipeline.sync();
+        }
+    }
+
+    /**
+     * Gets a plugin for the given id.
+     *
+     * @param redis Redis connection. It will NOT be closed by this method.
+     * @param id
+     */
+    private Plugin internalGetPlugin(Jedis redis, int id) {
+        String key = String.format(PLUGIN_KEY, id);
+
+        if (redis.exists(key)) {
+            Plugin plugin = new Plugin(mcstats);
+            // TODO pipeline
+
+            plugin.setId(id);
+            plugin.setParent(Integer.parseInt(redis.hget(key, "parent")));
+            plugin.setName(redis.hget(key, "name"));
+            plugin.setAuthors(redis.hget(key, "authors"));
+            plugin.setHidden(Integer.parseInt(redis.hget(key, "hidden")));
+            plugin.setGlobalHits(Integer.parseInt(redis.hget(key, "globalHits")));
+            plugin.setRank(Integer.parseInt(redis.hget(key, "rank")));
+            plugin.setLastRank(Integer.parseInt(redis.hget(key, "lastRank")));
+            plugin.setLastRankChange(Integer.parseInt(redis.hget(key, "lastRankChange")));
+            plugin.setCreated(Integer.parseInt(redis.hget(key, "created")));
+            plugin.setLastUpdated(Integer.parseInt(redis.hget(key, "lastUpdated")));
+            plugin.setServerCount30(Integer.parseInt(redis.hget(key, "serverCount30")));
+
+            plugin.setModified(false);
+
+            return plugin;
+        } else {
+            return null;
         }
     }
 
