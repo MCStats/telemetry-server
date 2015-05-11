@@ -46,6 +46,8 @@ public class MySQLDatabase implements Database {
         ds.setUrl("jdbc:mysql://" + hostname + "/" + databaseName);
         ds.setInitialSize(4);
         ds.setMaxTotal(64);
+        ds.setTestOnBorrow(true);
+        ds.setValidationQuery("SELECT 1");
     }
 
     public Plugin createPlugin(String name) {
