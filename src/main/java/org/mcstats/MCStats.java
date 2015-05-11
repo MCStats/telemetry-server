@@ -20,7 +20,6 @@ import org.mcstats.db.ModelCache;
 import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.db.MySQLDatabase;
 import org.mcstats.db.RedisCache;
-import org.mcstats.handler.BlackholeHandler;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.ExponentialMovingAverage;
@@ -37,10 +36,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -356,7 +352,6 @@ public class MCStats {
         handler = new ReportHandler(this);
 
         int listenPort = Integer.parseInt(config.getProperty("listen.port"));
-        int blackholePort = Integer.parseInt(config.getProperty("blackhole.port"));
         webServer = new org.eclipse.jetty.server.Server(new QueuedThreadPool(4));
 
         String webApp = config.getProperty("webapp.path");
@@ -381,13 +376,6 @@ public class MCStats {
         connector.setSoLingerTime(0);
         webServer.addConnector(connector);
 
-        org.eclipse.jetty.server.Server blackholeServer = new org.eclipse.jetty.server.Server();
-        blackholeServer.setHandler(new BlackholeHandler());
-        ServerConnector connector2 = new ServerConnector(blackholeServer, 1, 1);
-        connector2.setPort(blackholePort);
-        connector2.setSoLingerTime(0);
-        blackholeServer.addConnector(connector2);
-
         if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
             Scheduler scheduler = new Scheduler();
             scheduler.schedule("*/30 * * * *", new PluginGraphGenerator(this));
@@ -405,13 +393,9 @@ public class MCStats {
         });
 
         try {
-            // Start the server
             webServer.start();
-            blackholeServer.start();
             logger.info("Created web server on port " + listenPort);
-            logger.info("Created blackhole server on port " + blackholePort);
 
-            // and now join it
             webServer.join();
         } catch (Exception e) {
             logger.error("Failed to create web server");
