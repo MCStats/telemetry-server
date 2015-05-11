@@ -7,6 +7,7 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -356,7 +357,7 @@ public class MCStats {
 
         int listenPort = Integer.parseInt(config.getProperty("listen.port"));
         int blackholePort = Integer.parseInt(config.getProperty("blackhole.port"));
-        webServer = new org.eclipse.jetty.server.Server();
+        webServer = new org.eclipse.jetty.server.Server(new QueuedThreadPool(4));
 
         String webApp = config.getProperty("webapp.path");
         String contextPath = config.getProperty("webapp.context");

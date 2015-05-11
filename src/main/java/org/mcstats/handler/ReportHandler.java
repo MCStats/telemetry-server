@@ -112,44 +112,48 @@ public class ReportHandler extends AbstractHandler {
      * @param decoded
      * @param responseType
      * @param message
-     * @param baseRequest
+     * @param request
      * @param response
      * @throws IOException
      */
-    private void finishRequest(DecodedRequest decoded, ResponseType responseType, String message, Request baseRequest, HttpServletResponse response) throws IOException {
-        ByteArrayISO8859Writer writer = new ByteArrayISO8859Writer(1500);
-        if (decoded != null && decoded.revision >= 7) {
-            if (responseType == ResponseType.OK) {
-                writer.write("0");
-            } else if (responseType == ResponseType.OK_FIRST_REQUEST) {
-                writer.write("1");
-            } else if (responseType == ResponseType.OK_REGENERATE_GUID) {
-                writer.write("2");
-            } else if (responseType == ResponseType.ERROR) {
-                writer.write("7");
+    private void finishRequest(DecodedRequest decoded, ResponseType responseType, String message, Request request, HttpServletResponse response) throws IOException {
+        try (ByteArrayISO8859Writer writer = new ByteArrayISO8859Writer(64)) {
+            if (decoded != null && decoded.revision >= 7) {
+                if (responseType == ResponseType.OK) {
+                    writer.write("0");
+                } else if (responseType == ResponseType.OK_FIRST_REQUEST) {
+                    writer.write("1");
+                } else if (responseType == ResponseType.OK_REGENERATE_GUID) {
+                    writer.write("2");
+                } else if (responseType == ResponseType.ERROR) {
+                    writer.write("7");
+                }
+                if (!message.isEmpty()) {
+                    writer.write((new StringBuilder()).append(",").append(message).toString());
+                }
+            } else {
+                if (responseType == ResponseType.OK || responseType == ResponseType.OK_REGENERATE_GUID) {
+                    writer.write("OK");
+                } else if (responseType == ResponseType.OK_FIRST_REQUEST) {
+                    writer.write("OK This is your first update this hour.");
+                } else if (responseType == ResponseType.ERROR) {
+                    writer.write("ERR");
+                }
+                if (!message.isEmpty()) {
+                    writer.write((new StringBuilder()).append(" ").append(message).toString());
+                }
             }
-            if (!message.isEmpty()) {
-                writer.write((new StringBuilder()).append(",").append(message).toString());
+
+            response.setContentLength(writer.size());
+
+            try (OutputStream outputStream = response.getOutputStream()) {
+                writer.writeTo(outputStream);
             }
-        } else {
-            if (responseType == ResponseType.OK || responseType == ResponseType.OK_REGENERATE_GUID) {
-                writer.write("OK");
-            } else if (responseType == ResponseType.OK_FIRST_REQUEST) {
-                writer.write("OK This is your first update this hour.");
-            } else if (responseType == ResponseType.ERROR) {
-                writer.write("ERR");
-            }
-            if (!message.isEmpty()) {
-                writer.write((new StringBuilder()).append(" ").append(message).toString());
-            }
+
+            writer.close();
         }
-        writer.flush();
-        response.setContentLength(writer.size());
-        OutputStream outputStream = response.getOutputStream();
-        writer.writeTo(outputStream);
-        outputStream.close();
-        writer.close();
-        baseRequest.getHttpChannel().getEndPoint().close();
+
+        request.getHttpChannel().getEndPoint().close();
     }
 
     /**
