@@ -65,6 +65,8 @@ public class RedisCache implements ModelCache {
             pipeline.hset(key, "lastUpdated", Integer.toString(plugin.getLastUpdated()));
             pipeline.hset(key, "serverCount30", Integer.toString(plugin.getServerCount30()));
 
+            pipeline.set(String.format(PLUGIN_NAME_INDEX_KEY, plugin.getName()), Integer.toString(plugin.getId()));
+
             pipeline.sync();
         }
     }
