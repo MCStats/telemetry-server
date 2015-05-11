@@ -146,11 +146,7 @@ public class ReportHandler extends AbstractHandler {
 
             response.setContentLength(writer.size());
 
-            try (OutputStream outputStream = response.getOutputStream()) {
-                writer.writeTo(outputStream);
-            }
-
-            writer.close();
+            writer.writeTo(response.getOutputStream());
         }
 
         request.getHttpChannel().getEndPoint().close();
@@ -201,6 +197,11 @@ public class ReportHandler extends AbstractHandler {
             }
 
             final Plugin plugin = mcstats.loadPlugin(pluginName);
+
+            if (plugin == null) {
+                finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
+                return;
+            }
 
             String userAgent = request.getHeader("User-Agent");
             final DecodedRequest decoded;

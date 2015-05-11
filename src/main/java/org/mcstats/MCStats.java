@@ -372,8 +372,6 @@ public class MCStats {
 
         ServerConnector connector = new ServerConnector(webServer, 1, 1);
         connector.setPort(listenPort);
-        connector.setAcceptQueueSize(2048);
-        connector.setSoLingerTime(0);
         webServer.addConnector(connector);
 
         if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
