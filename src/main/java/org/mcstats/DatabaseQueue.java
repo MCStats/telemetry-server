@@ -5,6 +5,7 @@ import org.mcstats.db.Savable;
 import org.mcstats.model.Plugin;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,28 +35,24 @@ public class DatabaseQueue {
     private final List<QueueWorker> workers = new ArrayList<>();
 
     /**
-     * The number of database queue workers
-     */
-    private int workerCount = 4;
-
-    /**
      * Max amount of flushes per round
      */
-    private int flushesPerRound = 5000;
+    private final int flushesPerRound;
 
     /**
      * The max size of the queue
      */
-    private int maxSize = 500000;
+    private final int maxSize;
 
     @Inject
-    public DatabaseQueue(MCStats mcstats) {
+    public DatabaseQueue(MCStats mcstats,
+                         @Named("queue.workers") int workerCount,
+                         @Named("queue.flushes") int flushes,
+                         @Named("queue.maxSize") int maxSize) {
         this.mcstats = mcstats;
-        workerCount = Integer.parseInt(mcstats.getConfig().getProperty("queue.workers"));
-        flushesPerRound = Integer.parseInt(mcstats.getConfig().getProperty("queue.flushes"));
-        maxSize = Integer.parseInt(mcstats.getConfig().getProperty("queue.maxSize"));
+        this.flushesPerRound = flushes;
+        this.maxSize = maxSize;
 
-        // Create workers
         for (int i = 0; i < workerCount; i++) {
             QueueWorker worker = new QueueWorker(i + 1);
             workers.add(worker);

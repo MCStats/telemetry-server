@@ -23,8 +23,8 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,7 +35,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -66,11 +65,6 @@ public class MCStats {
      * The amount of requests that have been served
      */
     private AtomicLong requests = new AtomicLong(0);
-
-    /**
-     * MCStats configuration
-     */
-    private Properties config;
 
     /**
      * The database we are connected to
@@ -133,8 +127,24 @@ public class MCStats {
      */
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-    public MCStats() {
+    /**
+     * Server config. TODO - will be moved to dedicated server class.
+     */
+    private final int listenPort;
+    private final String webappPath;
+    private final String webappContext;
+    private final boolean generateGraphs;
+
+    @Inject
+    public MCStats(@Named("listen.port") int listenPort,
+                   @Named("webapp.path") String webappPath,
+                   @Named("webapp.context") String webappContext,
+                   @Named("graphs.generate") boolean generateGraphs) {
         instance = this;
+        this.listenPort = listenPort;
+        this.webappPath = webappPath;
+        this.webappContext = webappContext;
+        this.generateGraphs = generateGraphs;
 
         // requests count when this.requests was last polled
         final AtomicLong requestsAtLastPoll = new AtomicLong(0);
@@ -151,20 +161,6 @@ public class MCStats {
      * Starts the MCStats backend
      */
     private void init() {
-        config = new Properties();
-
-        try {
-            config.load(new FileInputStream("mcstats.properties"));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        debug = config.getProperty("debug").equalsIgnoreCase("true");
-
-        logger.info("Starting MCStats");
-        logger.info("Debug mode is " + (debug ? "ON" : "OFF"));
-
         countries.putAll(loadCountries());
         logger.info("Loaded " + countries.size() + " countries");
     }
@@ -218,15 +214,6 @@ public class MCStats {
      */
     public long getStartTime() {
         return startTime;
-    }
-
-    /**
-     * Get the config
-     *
-     * @return
-     */
-    public Properties getConfig() {
-        return config;
     }
 
     /**
@@ -339,18 +326,14 @@ public class MCStats {
      * Create and open the web server
      */
     public void createWebServer() {
-        int listenPort = Integer.parseInt(config.getProperty("listen.port"));
         webServer = new org.eclipse.jetty.server.Server(new QueuedThreadPool(4));
 
-        String webApp = config.getProperty("webapp.path");
-        String contextPath = config.getProperty("webapp.context");
-
         if (debug) {
-            logger.debug("Loading webapp from " + webApp + " at url " + contextPath);
+            logger.debug("Loading webapp from " + webappPath + " at url " + webappContext);
         }
 
-        URL warURL = getClass().getClassLoader().getResource(webApp);
-        WebAppContext webAppContext = new WebAppContext(warURL.toExternalForm(), contextPath);
+        URL warURL = getClass().getClassLoader().getResource(webappPath);
+        WebAppContext webAppContext = new WebAppContext(warURL.toExternalForm(), webappContext);
 
         // Create the handler list
         HandlerList handlers = new HandlerList();
@@ -362,7 +345,7 @@ public class MCStats {
         connector.setPort(listenPort);
         webServer.addConnector(connector);
 
-        if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
+        if (generateGraphs) {
             Scheduler scheduler = new Scheduler();
             scheduler.schedule("*/30 * * * *", new PluginGraphGenerator(this));
             scheduler.schedule("45 * * * *", new PluginRanking(this));
