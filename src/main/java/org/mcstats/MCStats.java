@@ -15,10 +15,7 @@ import org.json.simple.JSONValue;
 import org.mcstats.cron.PluginGraphGenerator;
 import org.mcstats.cron.PluginRanking;
 import org.mcstats.db.Database;
-import org.mcstats.db.GraphStore;
 import org.mcstats.db.ModelCache;
-import org.mcstats.db.MongoDBGraphStore;
-import org.mcstats.db.MySQLDatabase;
 import org.mcstats.db.RedisCache;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Plugin;
@@ -80,6 +77,7 @@ public class MCStats {
     /**
      * The database we are connected to
      */
+    @Inject
     private Database database;
 
     /**
@@ -92,11 +90,6 @@ public class MCStats {
      */
     @Inject // TODO identify for removal if it's getter-only
     private ModelCache modelCache;
-
-    /**
-     * The storage for graph data
-     */
-    private GraphStore graphStore;
 
     /**
      * The database save queue
@@ -172,13 +165,8 @@ public class MCStats {
         logger.info("Starting MCStats");
         logger.info("Debug mode is " + (debug ? "ON" : "OFF"));
 
-        // Connect to the database
-        connectToDatabase();
-
         countries.putAll(loadCountries());
         logger.info("Loaded " + countries.size() + " countries");
-
-        graphStore = new MongoDBGraphStore(this);
 
         GenericObjectPoolConfig redisConfig = new GenericObjectPoolConfig();
         redisConfig.setMaxTotal(64);
@@ -410,17 +398,6 @@ public class MCStats {
     }
 
     /**
-     * Connect to the database
-     */
-    private void connectToDatabase() {
-        // Create the database
-        database = new MySQLDatabase(this, config.getProperty("mysql.hostname"), config.getProperty("mysql.database"),
-                config.getProperty("mysql.username"), config.getProperty("mysql.password"));
-
-        logger.info("Connected to MySQL");
-    }
-
-    /**
      * Get the database mcstats is connected to
      *
      * @return
@@ -436,15 +413,6 @@ public class MCStats {
      */
     public JedisPool getRedisPool() {
         return redisPool;
-    }
-
-    /**
-     * Get the storage for graphs
-     *
-     * @return
-     */
-    public GraphStore getGraphStore() {
-        return graphStore;
     }
 
     /**

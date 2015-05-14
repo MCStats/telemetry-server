@@ -3,9 +3,9 @@ package org.mcstats.cron;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.log4j.BasicConfigurator;
-import org.mcstats.GuiceModule;
 import org.mcstats.MCStats;
 import org.mcstats.generator.RedisPluginGraphAggregator;
+import org.mcstats.guice.GuiceModule;
 import org.mcstats.handler.ReportHandler;
 import redis.clients.jedis.Jedis;
 

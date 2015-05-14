@@ -7,16 +7,17 @@ import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+@Singleton
 public class MySQLDatabase implements Database {
 
     private Logger logger = Logger.getLogger("Database");
@@ -33,8 +34,13 @@ public class MySQLDatabase implements Database {
      */
     private BasicDataSource ds;
 
-    public MySQLDatabase(MCStats mcstats, String hostname, String databaseName, String username, String password) {
-        if (hostname == null || databaseName == null || username == null || password == null) {
+    @Inject
+    public MySQLDatabase(MCStats mcstats,
+                         @Named("mysql.hostname") String hostname,
+                         @Named("mysql.database") String database,
+                         @Named("mysql.username") String username,
+                         @Named("mysql.password") String password) {
+        if (hostname == null || database == null || username == null || password == null) {
             throw new IllegalArgumentException("All arguments must not be null");
         }
 
@@ -44,7 +50,7 @@ public class MySQLDatabase implements Database {
         ds.setDriverClassName("com.mysql.jdbc.Driver");
         ds.setUsername(username);
         ds.setPassword(password);
-        ds.setUrl("jdbc:mysql://" + hostname + "/" + databaseName);
+        ds.setUrl("jdbc:mysql://" + hostname + "/" + database);
         ds.setInitialSize(4);
         ds.setMaxTotal(64);
         ds.setTestOnBorrow(true);

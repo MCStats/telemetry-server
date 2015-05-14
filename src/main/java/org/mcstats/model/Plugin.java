@@ -3,7 +3,6 @@ package org.mcstats.model;
 import org.mcstats.MCStats;
 import org.mcstats.db.ModelCache;
 import org.mcstats.db.Savable;
-import redis.clients.jedis.Jedis;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

@@ -4,8 +4,8 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-import org.mcstats.GuiceModule;
 import org.mcstats.MCStats;
+import org.mcstats.guice.GuiceModule;
 import org.mcstats.model.Plugin;
 
 import java.util.List;

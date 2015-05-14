@@ -6,7 +6,6 @@ import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
-import org.mcstats.MCStats;
 import org.mcstats.generator.GeneratedData;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Column;
@@ -15,6 +14,7 @@ import org.mcstats.model.Plugin;
 import org.mcstats.util.Tuple;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.List;
 import java.util.logging.Logger;
@@ -47,13 +47,16 @@ public class MongoDBGraphStore implements GraphStore {
     private MongoCollection<Document> collStatistic;
 
     @Inject
-    public MongoDBGraphStore(MCStats mcstats) {
-        client = new MongoClient(mcstats.getConfig().getProperty("mongo.host"), Integer.parseInt(mcstats.getConfig().getProperty("mongo.port")));
+    public MongoDBGraphStore(@Named("mongo.host") String hostname,
+                             @Named("mongo.port") int port,
+                             @Named("mongo.db") String database,
+                             @Named("mongo.collection") String graphDataCollectionName) {
+        client = new MongoClient(hostname, port);
 
         client.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
 
-        db = client.getDatabase(mcstats.getConfig().getProperty("mongo.db"));
-        graphDataCollection = db.getCollection(mcstats.getConfig().getProperty("mongo.collection"));
+        db = client.getDatabase(database);
+        graphDataCollection = db.getCollection(graphDataCollectionName);
         collStatistic = db.getCollection("statistic");
 
         logger.info("Connected to MongoDB");

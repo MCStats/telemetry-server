@@ -3,6 +3,7 @@ package org.mcstats;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.log4j.BasicConfigurator;
+import org.mcstats.guice.GuiceModule;
 
 public class Main {
 
