@@ -168,9 +168,7 @@ public class DatabaseQueue {
 
                 // just so we don't spam the console if there's only 0 entities which we don't need to know about
                 if (flushed > 0) {
-                    if (mcstats.isDebug()) {
-                        logger.debug("Flushed " + flushed + "/" + queue.size() + " entities to the database in " + (System.currentTimeMillis() - start) + "ms");
-                    }
+                    logger.debug("Flushed " + flushed + "/" + queue.size() + " entities to the database in " + (System.currentTimeMillis() - start) + "ms");
                 }
 
             }

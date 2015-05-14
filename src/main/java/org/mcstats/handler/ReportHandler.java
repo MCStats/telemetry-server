@@ -220,9 +220,7 @@ public class ReportHandler extends AbstractHandler {
                 return;
             }
 
-            if (mcstats.isDebug()) {
-                logger.debug("Processing request for " + plugin.getName() + " request=" + decoded);
-            }
+            logger.debug("Processing request for " + plugin.getName() + " request=" + decoded);
 
             String geoipCountryCodeNonFinal = request.getHeader("GEOIP_COUNTRY_CODE") == null ? request.getHeader("HTTP_X_GEOIP") : request.getHeader("GEOIP_COUNTRY_CODE");
 

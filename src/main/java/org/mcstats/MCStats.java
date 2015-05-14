@@ -113,11 +113,6 @@ public class MCStats {
     private final ExponentialMovingAverage requestProcessingTimeAverage = new ExponentialMovingAverage(1d / 2000 / 5);
 
     /**
-     * Debug mode
-     */
-    private boolean debug = false;
-
-    /**
      * A map of all countries, keyed by the 2 letter country code
      */
     private final Map<String, String> countries = new ConcurrentHashMap<>();
@@ -214,15 +209,6 @@ public class MCStats {
      */
     public long getStartTime() {
         return startTime;
-    }
-
-    /**
-     * Check if the service is in debug mode
-     *
-     * @return
-     */
-    public boolean isDebug() {
-        return debug;
     }
 
     /**
@@ -328,9 +314,7 @@ public class MCStats {
     public void createWebServer() {
         webServer = new org.eclipse.jetty.server.Server(new QueuedThreadPool(4));
 
-        if (debug) {
-            logger.debug("Loading webapp from " + webappPath + " at url " + webappContext);
-        }
+        logger.debug("Loading webapp from " + webappPath + " at url " + webappContext);
 
         URL warURL = getClass().getClassLoader().getResource(webappPath);
         WebAppContext webAppContext = new WebAppContext(warURL.toExternalForm(), webappContext);
