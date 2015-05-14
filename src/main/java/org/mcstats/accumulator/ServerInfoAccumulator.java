@@ -7,12 +7,18 @@ import org.mcstats.model.Server;
 
 public class ServerInfoAccumulator implements Accumulator {
 
+    private MCStats mcstats;
+
+    public ServerInfoAccumulator(MCStats mcstats) {
+        this.mcstats = mcstats;
+    }
+
     @Override
     public void accumulate(AccumulatorContext context) {
         Server server = context.getServerPlugin().getServer();
 
         // TODO remove need for MCStats.getInstance()
-        String countryName = MCStats.getInstance().getCountryName(server.getCountry());
+        String countryName = mcstats.getCountryName(server.getCountry());
 
         context.addData("Global Statistics", "Players", server.getPlayers());
         context.addData("Global Statistics", "Servers", 1);

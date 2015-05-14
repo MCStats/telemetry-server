@@ -7,6 +7,10 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class RedisCache implements ModelCache {
 
     public static final String PLUGINS_KEY = "plugins";
@@ -19,9 +23,10 @@ public class RedisCache implements ModelCache {
     private MCStats mcstats;
     private JedisPool pool;
 
-    public RedisCache(MCStats mcstats, JedisPool pool) {
+    @Inject
+    public RedisCache(MCStats mcstats) {
         this.mcstats = mcstats;
-        this.pool = pool;
+        this.pool = mcstats.getRedisPool();
     }
 
     @Override

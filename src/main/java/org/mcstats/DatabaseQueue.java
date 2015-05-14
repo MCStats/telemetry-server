@@ -4,6 +4,8 @@ import org.apache.log4j.Logger;
 import org.mcstats.db.Savable;
 import org.mcstats.model.Plugin;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -11,6 +13,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+@Singleton
 public class DatabaseQueue {
 
     private Logger logger = Logger.getLogger("DatabaseQueue");
@@ -45,6 +48,7 @@ public class DatabaseQueue {
      */
     private int maxSize = 500000;
 
+    @Inject
     public DatabaseQueue(MCStats mcstats) {
         this.mcstats = mcstats;
         workerCount = Integer.parseInt(mcstats.getConfig().getProperty("queue.workers"));

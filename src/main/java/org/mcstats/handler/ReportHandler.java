@@ -24,6 +24,8 @@ import org.mcstats.util.URLUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,6 +38,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+@Singleton
 public class ReportHandler extends AbstractHandler {
 
     private Logger logger = Logger.getLogger("ReportHandler");
@@ -85,6 +88,7 @@ public class ReportHandler extends AbstractHandler {
      */
     private final String redisAddSumScriptSha;
 
+    @Inject
     public ReportHandler(MCStats mcstats) {
         this.mcstats = mcstats;
         accumulatorDelegator = new AccumulatorDelegator(mcstats);
@@ -100,7 +104,7 @@ public class ReportHandler extends AbstractHandler {
      * Registers accumulators
      */
     private void registerAccumulators() {
-        accumulatorDelegator.add(new ServerInfoAccumulator());
+        accumulatorDelegator.add(new ServerInfoAccumulator(mcstats));
         accumulatorDelegator.add(new MCStatsInfoAccumulator());
         accumulatorDelegator.add(new VersionInfoAccumulator());
         accumulatorDelegator.add(new CustomDataAccumulator());

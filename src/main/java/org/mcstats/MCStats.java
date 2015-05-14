@@ -27,6 +27,8 @@ import org.mcstats.util.ServerBuildIdentifier;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,6 +47,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+@Singleton
 public class MCStats {
 
     private Logger logger = Logger.getLogger("MCStats");
@@ -52,7 +55,7 @@ public class MCStats {
     /**
      * The MCStats instance
      */
-    private static final MCStats instance = new MCStats();
+    private static MCStats instance;
 
     /**
      * The web server object
@@ -87,6 +90,7 @@ public class MCStats {
     /**
      * The cache used to store models
      */
+    @Inject // TODO identify for removal if it's getter-only
     private ModelCache modelCache;
 
     /**
@@ -97,11 +101,13 @@ public class MCStats {
     /**
      * The database save queue
      */
+    @Inject // TODO identify for removal if it's getter-only
     private DatabaseQueue databaseQueue;
 
     /**
      * The report handler for requests
      */
+    @Inject // TODO identify for removal if it's getter-only
     private ReportHandler handler;
 
     /**
@@ -134,7 +140,9 @@ public class MCStats {
      */
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-    private MCStats() {
+    public MCStats() {
+        instance = this;
+
         // requests count when this.requests was last polled
         final AtomicLong requestsAtLastPoll = new AtomicLong(0);
 
@@ -142,12 +150,14 @@ public class MCStats {
             requestsAverage.update(requests.get() - requestsAtLastPoll.get());
             requestsAtLastPoll.set(requests.get());
         }, 1, 1, TimeUnit.SECONDS);
+
+        init();
     }
 
     /**
      * Starts the MCStats backend
      */
-    public void init() {
+    private void init() {
         config = new Properties();
 
         try {
@@ -162,8 +172,6 @@ public class MCStats {
         logger.info("Starting MCStats");
         logger.info("Debug mode is " + (debug ? "ON" : "OFF"));
 
-        databaseQueue = new DatabaseQueue(this);
-
         // Connect to the database
         connectToDatabase();
 
@@ -176,7 +184,7 @@ public class MCStats {
         redisConfig.setMaxTotal(64);
 
         redisPool = new JedisPool(redisConfig, config.getProperty("redis.host"), Integer.parseInt(config.getProperty("redis.port")));
-        modelCache = new RedisCache(this, redisPool);
+        modelCache = new RedisCache(this);
     }
 
     /**
@@ -506,6 +514,7 @@ public class MCStats {
      *
      * @return
      */
+    @Deprecated
     public static MCStats getInstance() {
         return instance;
     }

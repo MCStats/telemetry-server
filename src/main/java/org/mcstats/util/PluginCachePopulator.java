@@ -1,7 +1,10 @@
 package org.mcstats.util;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
+import org.mcstats.GuiceModule;
 import org.mcstats.MCStats;
 import org.mcstats.model.Plugin;
 
@@ -16,8 +19,9 @@ public class PluginCachePopulator {
 
     public static void main(String[] args) {
         BasicConfigurator.configure();
-        MCStats mcstats = MCStats.getInstance();
-        mcstats.init();
+
+        Injector injector = Guice.createInjector(new GuiceModule());
+        MCStats mcstats = injector.getInstance(MCStats.class);
 
         List<Plugin> plugins = mcstats.getDatabase().loadPlugins();
 

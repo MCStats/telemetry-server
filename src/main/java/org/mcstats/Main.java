@@ -1,16 +1,18 @@
 package org.mcstats;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import org.apache.log4j.BasicConfigurator;
 
 public class Main {
 
     public static void main(String[] args) {
-        // log4j
         BasicConfigurator.configure();
 
-        // start
-        MCStats.getInstance().init();
-        MCStats.getInstance().createWebServer();
+        Injector injector = Guice.createInjector(new GuiceModule());
+        MCStats mcstats = injector.getInstance(MCStats.class);
+
+        mcstats.createWebServer();
     }
 
 }

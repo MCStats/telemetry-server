@@ -1,6 +1,9 @@
 package org.mcstats.cron;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import org.apache.log4j.BasicConfigurator;
+import org.mcstats.GuiceModule;
 import org.mcstats.MCStats;
 import org.mcstats.generator.RedisPluginGraphAggregator;
 import org.mcstats.handler.ReportHandler;
@@ -50,8 +53,11 @@ public class PluginGraphGenerator implements Runnable {
 
     public static void main(String[] args) {
         BasicConfigurator.configure();
-        MCStats.getInstance().init();
-        new PluginGraphGenerator(MCStats.getInstance()).run();
+
+        Injector injector = Guice.createInjector(new GuiceModule());
+        MCStats mcstats = injector.getInstance(MCStats.class);
+
+        new PluginGraphGenerator(mcstats).run();
     }
 
 }

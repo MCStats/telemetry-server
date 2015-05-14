@@ -14,11 +14,14 @@ import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.Tuple;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.List;
 import java.util.logging.Logger;
 
 import static com.mongodb.client.model.Filters.eq;
 
+@Singleton
 public class MongoDBGraphStore implements GraphStore {
 
     private Logger logger = Logger.getLogger("MongoDB");
@@ -43,6 +46,7 @@ public class MongoDBGraphStore implements GraphStore {
      */
     private MongoCollection<Document> collStatistic;
 
+    @Inject
     public MongoDBGraphStore(MCStats mcstats) {
         client = new MongoClient(mcstats.getConfig().getProperty("mongo.host"), Integer.parseInt(mcstats.getConfig().getProperty("mongo.port")));
 

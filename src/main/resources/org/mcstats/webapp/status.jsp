@@ -1,11 +1,10 @@
-<%@ page import="org.mcstats.DatabaseQueue" %>
 <%@ page import="org.mcstats.MCStats" %>
 <%@ page import="org.mcstats.util.TimeUtils" %>
 <%@ page import="java.text.DecimalFormat" %>
 <%@ page import="org.mcstats.db.MySQLDatabase" %>
 <%@ page import="redis.clients.jedis.Jedis" %>
 <%
-    MCStats mcstats = MCStats.getInstance();
+    MCStats mcstats = MCStats.getInstance(); // TODO DI?
     long requests = mcstats.incrementAndGetRequests();
     DecimalFormat numberFormatter = new DecimalFormat( "###,###,###,###" );
 %>
