@@ -20,13 +20,13 @@ public class RedisCache implements ModelCache {
     public static final String PLUGIN_GRAPHS_KEY = "plugin-graphs:%d";
     public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graph-index:%d:%s";
 
-    private MCStats mcstats;
-    private JedisPool pool;
+    private final MCStats mcstats;
+    private final JedisPool pool;
 
     @Inject
-    public RedisCache(MCStats mcstats) {
+    public RedisCache(MCStats mcstats, JedisPool pool) {
         this.mcstats = mcstats;
-        this.pool = mcstats.getRedisPool();
+        this.pool = pool;
     }
 
     @Override

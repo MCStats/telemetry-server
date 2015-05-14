@@ -1,7 +1,6 @@
 package org.mcstats;
 
 import it.sauronsoftware.cron4j.Scheduler;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -16,7 +15,6 @@ import org.mcstats.cron.PluginGraphGenerator;
 import org.mcstats.cron.PluginRanking;
 import org.mcstats.db.Database;
 import org.mcstats.db.ModelCache;
-import org.mcstats.db.RedisCache;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.ExponentialMovingAverage;
@@ -81,15 +79,17 @@ public class MCStats {
     private Database database;
 
     /**
-     * Redis connection
-     */
-    private JedisPool redisPool;
-
-    /**
      * The cache used to store models
      */
     @Inject // TODO identify for removal if it's getter-only
     private ModelCache modelCache;
+
+    /**
+     * Redis pool
+     * TODO replace #getResource(String) with an annotation maybe?
+     */
+    @Inject
+    private JedisPool redisPool;
 
     /**
      * The database save queue
@@ -167,12 +167,6 @@ public class MCStats {
 
         countries.putAll(loadCountries());
         logger.info("Loaded " + countries.size() + " countries");
-
-        GenericObjectPoolConfig redisConfig = new GenericObjectPoolConfig();
-        redisConfig.setMaxTotal(64);
-
-        redisPool = new JedisPool(redisConfig, config.getProperty("redis.host"), Integer.parseInt(config.getProperty("redis.port")));
-        modelCache = new RedisCache(this);
     }
 
     /**
@@ -345,8 +339,6 @@ public class MCStats {
      * Create and open the web server
      */
     public void createWebServer() {
-        handler = new ReportHandler(this);
-
         int listenPort = Integer.parseInt(config.getProperty("listen.port"));
         webServer = new org.eclipse.jetty.server.Server(new QueuedThreadPool(4));
 
@@ -402,15 +394,17 @@ public class MCStats {
      *
      * @return
      */
+    @Deprecated
     public Database getDatabase() {
         return database;
     }
 
     /**
-     * Returns the redis database instance
+     * Get the redis pool.
      *
      * @return
      */
+    @Deprecated
     public JedisPool getRedisPool() {
         return redisPool;
     }
@@ -420,6 +414,7 @@ public class MCStats {
      *
      * @return
      */
+    @Deprecated
     public DatabaseQueue getDatabaseQueue() {
         return databaseQueue;
     }
@@ -448,6 +443,7 @@ public class MCStats {
      *
      * @return
      */
+    @Deprecated
     public ReportHandler getReportHandler() {
         return handler;
     }
