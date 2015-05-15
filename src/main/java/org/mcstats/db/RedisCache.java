@@ -8,6 +8,7 @@ import redis.clients.jedis.Pipeline;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Map;
 
 @Singleton
 public class RedisCache implements ModelCache {
@@ -127,21 +128,22 @@ public class RedisCache implements ModelCache {
         String key = String.format(PLUGIN_KEY, id);
 
         if (redis.exists(key)) {
+            Map<String, String> data = redis.hgetAll(key);
+
             Plugin plugin = new Plugin(database, this);
-            // TODO pipeline
 
             plugin.setId(id);
-            plugin.setParent(Integer.parseInt(redis.hget(key, "parent")));
-            plugin.setName(redis.hget(key, "name"));
-            plugin.setAuthors(redis.hget(key, "authors"));
-            plugin.setHidden(Integer.parseInt(redis.hget(key, "hidden")));
-            plugin.setGlobalHits(Integer.parseInt(redis.hget(key, "globalHits")));
-            plugin.setRank(Integer.parseInt(redis.hget(key, "rank")));
-            plugin.setLastRank(Integer.parseInt(redis.hget(key, "lastRank")));
-            plugin.setLastRankChange(Integer.parseInt(redis.hget(key, "lastRankChange")));
-            plugin.setCreated(Integer.parseInt(redis.hget(key, "created")));
-            plugin.setLastUpdated(Integer.parseInt(redis.hget(key, "lastUpdated")));
-            plugin.setServerCount30(Integer.parseInt(redis.hget(key, "serverCount30")));
+            plugin.setParent(Integer.parseInt(data.get("parent")));
+            plugin.setName(data.get("name"));
+            plugin.setAuthors(data.get("authors"));
+            plugin.setHidden(Integer.parseInt(data.get("hidden")));
+            plugin.setGlobalHits(Integer.parseInt(data.get("globalHits")));
+            plugin.setRank(Integer.parseInt(data.get("rank")));
+            plugin.setLastRank(Integer.parseInt(data.get("lastRank")));
+            plugin.setLastRankChange(Integer.parseInt(data.get("lastRankChange")));
+            plugin.setCreated(Integer.parseInt(data.get("created")));
+            plugin.setLastUpdated(Integer.parseInt(data.get("lastUpdated")));
+            plugin.setServerCount30(Integer.parseInt(data.get("serverCount30")));
 
             plugin.setModified(false);
 
