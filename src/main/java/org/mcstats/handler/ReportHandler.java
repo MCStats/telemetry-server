@@ -22,6 +22,7 @@ import org.mcstats.model.ServerPlugin;
 import org.mcstats.util.Tuple;
 import org.mcstats.util.URLUtils;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 
 import javax.inject.Inject;
@@ -55,7 +56,12 @@ public class ReportHandler extends AbstractHandler {
     /**
      * The MCStats object
      */
-    private MCStats mcstats;
+    private final MCStats mcstats;
+
+    /**
+     * The redis pool
+     */
+    private final JedisPool redisPool;
 
     /**
      * The delegator for accumulators
@@ -88,8 +94,10 @@ public class ReportHandler extends AbstractHandler {
     private final String redisAddSumScriptSha;
 
     @Inject
-    public ReportHandler(MCStats mcstats) {
+    public ReportHandler(MCStats mcstats, JedisPool redisPool) {
         this.mcstats = mcstats;
+        this.redisPool = redisPool;
+
         accumulatorDelegator = new AccumulatorDelegator(mcstats);
         modernDecoder = new ModernRequestDecoder(mcstats);
         legacyDecoder = new LegacyRequestDecoder(mcstats);
@@ -171,7 +179,7 @@ public class ReportHandler extends AbstractHandler {
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         long startTimeNano = System.nanoTime();
 
-        try (Jedis redis = mcstats.getRedisPool().getResource()) {
+        try (Jedis redis = redisPool.getResource()) {
             if (!request.getMethod().equals("POST")) {
                 return;
             }
@@ -401,7 +409,7 @@ public class ReportHandler extends AbstractHandler {
                 serverPluginData.put("version", decoded.pluginVersion);
 
                 executor.execute(() -> {
-                    try (Jedis executorRedis = mcstats.getRedisPool().getResource()) {
+                    try (Jedis executorRedis = redisPool.getResource()) {
                         Pipeline pipeline = executorRedis.pipelined();
 
                         pipeline.sadd("servers", decoded.uuid);
