@@ -2,11 +2,6 @@ package org.mcstats;
 
 import it.sauronsoftware.cron4j.Scheduler;
 import org.apache.log4j.Logger;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.Handler;
-import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -14,8 +9,6 @@ import org.mcstats.cron.PluginGraphGenerator;
 import org.mcstats.cron.PluginRanking;
 import org.mcstats.db.Database;
 import org.mcstats.db.ModelCache;
-import org.mcstats.handler.ReportHandler;
-import org.mcstats.handler.StatusHandler;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.ExponentialMovingAverage;
 import org.mcstats.util.ServerBuildIdentifier;
@@ -46,16 +39,6 @@ public class MCStats {
     private Logger logger = Logger.getLogger("MCStats");
 
     /**
-     * The MCStats instance
-     */
-    private static MCStats instance;
-
-    /**
-     * The web server object
-     */
-    private org.eclipse.jetty.server.Server webServer;
-
-    /**
      * The time the instance was started
      */
     private long startTime = System.currentTimeMillis();
@@ -68,39 +51,18 @@ public class MCStats {
     /**
      * The database we are connected to
      */
-    @Inject
-    private Database database;
+    private final Database database;
 
     /**
      * The cache used to store models
      */
-    @Inject // TODO identify for removal if it's getter-only
-    private ModelCache modelCache;
+    private final ModelCache modelCache;
 
     /**
      * Redis pool
      * TODO replace #getResource(String) with an annotation maybe?
      */
-    @Inject
-    private JedisPool redisPool;
-
-    /**
-     * The database save queue
-     */
-    @Inject // TODO identify for removal if it's getter-only
-    private DatabaseQueue databaseQueue;
-
-    /**
-     * The report handler for requests
-     */
-    @Inject // TODO identify for removal if it's getter-only
-    private ReportHandler reportHandler;
-
-    /**
-     * The status handler
-     */
-    @Inject // TODO identify for removal
-    private StatusHandler statusHandler;
+    private final JedisPool redisPool;
 
     /**
      * The server build identifier
@@ -127,18 +89,12 @@ public class MCStats {
      */
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-    /**
-     * Server config. TODO - will be moved to dedicated server class.
-     */
-    private final int listenPort;
-    private final boolean generateGraphs;
-
     @Inject
-    public MCStats(@Named("listen.port") int listenPort,
-                   @Named("graphs.generate") boolean generateGraphs) {
-        instance = this;
-        this.listenPort = listenPort;
-        this.generateGraphs = generateGraphs;
+    public MCStats(@Named("graphs.generate") boolean generateGraphs,
+                   Database database, ModelCache modelCache, JedisPool redisPool) {
+        this.database = database;
+        this.modelCache = modelCache;
+        this.redisPool = redisPool;
 
         // requests count when this.requests was last polled
         final AtomicLong requestsAtLastPoll = new AtomicLong(0);
@@ -147,6 +103,22 @@ public class MCStats {
             requestsAverage.update(requests.get() - requestsAtLastPoll.get());
             requestsAtLastPoll.set(requests.get());
         }, 1, 1, TimeUnit.SECONDS);
+
+        if (generateGraphs) {
+            Scheduler scheduler = new Scheduler();
+            scheduler.schedule("*/30 * * * *", new PluginGraphGenerator(this));
+            scheduler.schedule("45 * * * *", new PluginRanking(this));
+            scheduler.start();
+            logger.info("Graph & rank generator is active");
+        } else {
+            logger.info("Graph & rank generator is NOT active");
+        }
+
+        new Scheduler().schedule("*/5 * * * *", () -> {
+            System.gc();
+            System.runFinalization();
+            System.gc();
+        });
 
         init();
     }
@@ -157,15 +129,6 @@ public class MCStats {
     private void init() {
         countries.putAll(loadCountries());
         logger.info("Loaded " + countries.size() + " countries");
-    }
-
-    /**
-     * Gets the cache used to store models
-     *
-     * @return
-     */
-    public ModelCache getModelCache() {
-        return modelCache;
     }
 
     /**
@@ -302,64 +265,6 @@ public class MCStats {
     }
 
     /**
-     * Get the number of currently open connections
-     *
-     * @return
-     */
-    public int countOpenConnections() {
-        int conn = 0;
-
-        for (Connector connector : webServer.getConnectors()) {
-            conn += connector.getConnectedEndPoints().size();
-        }
-
-        return conn;
-    }
-
-    /**
-     * Create and open the web server
-     */
-    public void createWebServer() {
-        webServer = new org.eclipse.jetty.server.Server(new QueuedThreadPool(4));
-
-        // Create the handler list
-        HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[]{statusHandler, reportHandler});
-
-        webServer.setHandler(handlers);
-
-        ServerConnector connector = new ServerConnector(webServer, 1, 1);
-        connector.setPort(listenPort);
-        webServer.addConnector(connector);
-
-        if (generateGraphs) {
-            Scheduler scheduler = new Scheduler();
-            scheduler.schedule("*/30 * * * *", new PluginGraphGenerator(this));
-            scheduler.schedule("45 * * * *", new PluginRanking(this));
-            scheduler.start();
-            logger.info("Graph & rank generator is active");
-        } else {
-            logger.info("Graph & rank generator is NOT active");
-        }
-
-        new Scheduler().schedule("*/5 * * * *", () -> {
-            System.gc();
-            System.runFinalization();
-            System.gc();
-        });
-
-        try {
-            webServer.start();
-            logger.info("Created web server on port " + listenPort);
-
-            webServer.join();
-        } catch (Exception e) {
-            logger.error("Failed to create web server");
-            e.printStackTrace();
-        }
-    }
-
-    /**
      * Get the database mcstats is connected to
      *
      * @return
@@ -377,16 +282,6 @@ public class MCStats {
     @Deprecated
     public JedisPool getRedisPool() {
         return redisPool;
-    }
-
-    /**
-     * Get the database queue
-     *
-     * @return
-     */
-    @Deprecated
-    public DatabaseQueue getDatabaseQueue() {
-        return databaseQueue;
     }
 
     /**
@@ -430,16 +325,6 @@ public class MCStats {
         }
 
         return result;
-    }
-
-    /**
-     * Get the MCStats instance
-     *
-     * @return
-     */
-    @Deprecated
-    public static MCStats getInstance() {
-        return instance;
     }
 
     public ServerBuildIdentifier getServerBuildIdentifier() {

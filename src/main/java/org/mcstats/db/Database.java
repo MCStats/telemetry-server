@@ -9,6 +9,13 @@ import java.util.List;
 public interface Database {
 
     /**
+     * Saves a savable later.
+     *
+     * @param savable
+     */
+    void saveLater(Savable savable);
+
+    /**
      * Create a bare plugin with the given name
      *
      * @param name

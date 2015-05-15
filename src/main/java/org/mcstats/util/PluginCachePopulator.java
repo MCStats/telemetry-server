@@ -4,7 +4,8 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-import org.mcstats.MCStats;
+import org.mcstats.db.Database;
+import org.mcstats.db.ModelCache;
 import org.mcstats.guice.GuiceModule;
 import org.mcstats.model.Plugin;
 
@@ -21,13 +22,12 @@ public class PluginCachePopulator {
         BasicConfigurator.configure();
 
         Injector injector = Guice.createInjector(new GuiceModule());
-        MCStats mcstats = injector.getInstance(MCStats.class);
+        Database database = injector.getInstance(Database.class);
+        ModelCache modelCache = injector.getInstance(ModelCache.class);
 
-        List<Plugin> plugins = mcstats.getDatabase().loadPlugins();
+        List<Plugin> plugins = database.loadPlugins();
 
-        for (Plugin plugin : plugins) {
-            mcstats.getModelCache().cachePlugin(plugin);
-        }
+        plugins.forEach(modelCache::cachePlugin);
 
         logger.info("Cached " + plugins.size() + " plugins");
 

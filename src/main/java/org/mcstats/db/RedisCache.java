@@ -1,6 +1,5 @@
 package org.mcstats.db;
 
-import org.mcstats.MCStats;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import redis.clients.jedis.Jedis;
@@ -20,12 +19,12 @@ public class RedisCache implements ModelCache {
     public static final String PLUGIN_GRAPHS_KEY = "plugin-graphs:%d";
     public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graph-index:%d:%s";
 
-    private final MCStats mcstats;
+    private final Database database;
     private final JedisPool pool;
 
     @Inject
-    public RedisCache(MCStats mcstats, JedisPool pool) {
-        this.mcstats = mcstats;
+    public RedisCache(Database database, JedisPool pool) {
+        this.database = database;
         this.pool = pool;
     }
 
@@ -122,7 +121,7 @@ public class RedisCache implements ModelCache {
         String key = String.format(PLUGIN_KEY, id);
 
         if (redis.exists(key)) {
-            Plugin plugin = new Plugin(mcstats);
+            Plugin plugin = new Plugin(database, this);
             // TODO pipeline
 
             plugin.setId(id);

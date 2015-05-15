@@ -11,9 +11,9 @@ public class Main {
         BasicConfigurator.configure();
 
         Injector injector = Guice.createInjector(new GuiceModule());
-        MCStats mcstats = injector.getInstance(MCStats.class);
+        Server server = injector.getInstance(Server.class);
 
-        mcstats.createWebServer();
+        server.start();
     }
 
 }

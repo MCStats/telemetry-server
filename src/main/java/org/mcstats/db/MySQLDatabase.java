@@ -2,7 +2,7 @@ package org.mcstats.db;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.log4j.Logger;
-import org.mcstats.MCStats;
+import org.mcstats.DatabaseQueue;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
@@ -25,9 +25,14 @@ public class MySQLDatabase implements Database {
     public static long QUERIES = 0;
 
     /**
-     * The mcstats object
+     * The model cache
      */
-    private final MCStats mcstats;
+    private final ModelCache modelCache;
+
+    /**
+     * Database queue for the database
+     */
+    private final DatabaseQueue databaseQueue;
 
     /**
      * The dataSource.getConnectionion() data source
@@ -35,7 +40,8 @@ public class MySQLDatabase implements Database {
     private BasicDataSource ds;
 
     @Inject
-    public MySQLDatabase(MCStats mcstats,
+    public MySQLDatabase(ModelCache modelCache,
+                         DatabaseQueue databaseQueue,
                          @Named("mysql.hostname") String hostname,
                          @Named("mysql.database") String database,
                          @Named("mysql.username") String username,
@@ -44,7 +50,8 @@ public class MySQLDatabase implements Database {
             throw new IllegalArgumentException("All arguments must not be null");
         }
 
-        this.mcstats = mcstats;
+        this.modelCache = modelCache;
+        this.databaseQueue = databaseQueue;
 
         ds = new BasicDataSource();
         ds.setDriverClassName("com.mysql.jdbc.Driver");
@@ -55,6 +62,11 @@ public class MySQLDatabase implements Database {
         ds.setMaxTotal(64);
         ds.setTestOnBorrow(true);
         ds.setValidationQuery("SELECT 1");
+    }
+
+    @Override
+    public void saveLater(Savable savable) {
+        databaseQueue.offer(savable);
     }
 
     public Plugin createPlugin(String name) {
@@ -140,7 +152,7 @@ public class MySQLDatabase implements Database {
             statement.executeUpdate();
             QUERIES++;
 
-            mcstats.getModelCache().cachePlugin(plugin);
+            modelCache.cachePlugin(plugin);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -305,7 +317,7 @@ public class MySQLDatabase implements Database {
      * @return
      */
     private Plugin resolvePlugin(ResultSet set) throws SQLException {
-        Plugin plugin = new Plugin(mcstats);
+        Plugin plugin = new Plugin(this, modelCache);
         plugin.setId(set.getInt("ID"));
         plugin.setParent(set.getInt("Parent"));
         plugin.setName(set.getString("Name"));

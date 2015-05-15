@@ -1,18 +1,14 @@
 package org.mcstats.model;
 
-import org.mcstats.MCStats;
+import org.mcstats.db.Database;
 import org.mcstats.db.ModelCache;
 import org.mcstats.db.Savable;
 
+import javax.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Plugin implements Savable {
-
-    /**
-     * The MCStats object
-     */
-    private final MCStats mcstats;
 
     /**
      * The plugin's id
@@ -89,8 +85,13 @@ public class Plugin implements Savable {
      */
     private Map<String, Graph> graphs = new ConcurrentHashMap<>();
 
-    public Plugin(MCStats mcstats) {
-        this.mcstats = mcstats;
+    private final Database database;
+    private final ModelCache modelCache;
+
+    @Inject
+    public Plugin(Database database, ModelCache modelCache) {
+        this.database = database;
+        this.modelCache = modelCache;
     }
 
     @Override
@@ -119,19 +120,17 @@ public class Plugin implements Savable {
             return graphs.get(name);
         }
 
-        ModelCache cache = mcstats.getModelCache();
-
-        Graph graph = cache.getPluginGraph(this, name);
+        Graph graph = modelCache.getPluginGraph(this, name);
 
         if (graph == null) {
-            graph = mcstats.getDatabase().loadGraph(this, name);
+            graph = database.loadGraph(this, name);
 
             if (graph == null) {
-                graph = mcstats.getDatabase().createGraph(this, name);
+                graph = database.createGraph(this, name);
             }
 
             if (graph != null) {
-                cache.cachePluginGraph(this, graph);
+                modelCache.cachePluginGraph(this, graph);
             }
         }
 
@@ -243,14 +242,14 @@ public class Plugin implements Savable {
         }
 
         if (modified) {
-            mcstats.getDatabaseQueue().offer(this);
+            database.saveLater(this);
             modified = false;
             queuedForSave = true;
         }
     }
 
     public void saveNow() {
-        mcstats.getDatabase().savePlugin(this);
+        database.savePlugin(this);
         modified = false;
         queuedForSave = false;
     }

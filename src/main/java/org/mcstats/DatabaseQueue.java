@@ -20,11 +20,6 @@ public class DatabaseQueue {
     private Logger logger = Logger.getLogger("DatabaseQueue");
 
     /**
-     * The mcstats object
-     */
-    private final MCStats mcstats;
-
-    /**
      * The queue of objects waiting to be saved to the database
      */
     private final Queue<Savable> queue = new ConcurrentLinkedQueue<>();
@@ -45,11 +40,9 @@ public class DatabaseQueue {
     private final int maxSize;
 
     @Inject
-    public DatabaseQueue(MCStats mcstats,
-                         @Named("queue.workers") int workerCount,
+    public DatabaseQueue(@Named("queue.workers") int workerCount,
                          @Named("queue.flushes") int flushes,
                          @Named("queue.maxSize") int maxSize) {
-        this.mcstats = mcstats;
         this.flushesPerRound = flushes;
         this.maxSize = maxSize;
 
