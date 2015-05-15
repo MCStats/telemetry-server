@@ -25,8 +25,6 @@ public class GuiceModule extends AbstractModule {
     protected void configure() {
         Names.bindProperties(binder(), loadProperties());
 
-        // bind(MCStats.class);
-
         bind(ModelCache.class).to(RedisCache.class);
         bind(Database.class).to(MySQLDatabase.class);
         bind(GraphStore.class).to(MongoDBGraphStore.class);
