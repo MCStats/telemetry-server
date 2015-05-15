@@ -99,8 +99,8 @@ public class ReportHandler extends AbstractHandler {
         this.redisPool = redisPool;
 
         accumulatorDelegator = new AccumulatorDelegator(mcstats);
-        modernDecoder = new ModernRequestDecoder(mcstats);
-        legacyDecoder = new LegacyRequestDecoder(mcstats);
+        modernDecoder = new ModernRequestDecoder();
+        legacyDecoder = new LegacyRequestDecoder();
 
         registerAccumulators();
 

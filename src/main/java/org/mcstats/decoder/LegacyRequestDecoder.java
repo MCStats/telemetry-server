@@ -1,7 +1,6 @@
 package org.mcstats.decoder;
 
 import org.eclipse.jetty.server.Request;
-import org.mcstats.MCStats;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
@@ -14,12 +13,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class LegacyRequestDecoder implements RequestDecoder {
-
-    private MCStats mcstats;
-
-    public LegacyRequestDecoder(MCStats mcstats) {
-        this.mcstats = mcstats;
-    }
 
     public DecodedRequest decode(Plugin plugin, Request request) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"));

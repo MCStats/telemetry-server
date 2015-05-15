@@ -3,7 +3,6 @@ package org.mcstats.decoder;
 import org.eclipse.jetty.server.Request;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.mcstats.MCStats;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
@@ -16,12 +15,6 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 public class ModernRequestDecoder implements RequestDecoder {
-
-    private MCStats mcstats;
-
-    public ModernRequestDecoder(MCStats mcstats) {
-        this.mcstats = mcstats;
-    }
 
     public DecodedRequest decode(Plugin plugin, Request request) throws IOException {
         String encoding = request.getHeader("Content-Encoding");
