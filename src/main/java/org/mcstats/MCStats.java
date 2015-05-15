@@ -7,7 +7,6 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.eclipse.jetty.webapp.WebAppContext;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -16,6 +15,7 @@ import org.mcstats.cron.PluginRanking;
 import org.mcstats.db.Database;
 import org.mcstats.db.ModelCache;
 import org.mcstats.handler.ReportHandler;
+import org.mcstats.handler.StatusHandler;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.ExponentialMovingAverage;
 import org.mcstats.util.ServerBuildIdentifier;
@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -95,7 +94,13 @@ public class MCStats {
      * The report handler for requests
      */
     @Inject // TODO identify for removal if it's getter-only
-    private ReportHandler handler;
+    private ReportHandler reportHandler;
+
+    /**
+     * The status handler
+     */
+    @Inject // TODO identify for removal
+    private StatusHandler statusHandler;
 
     /**
      * The server build identifier
@@ -126,19 +131,13 @@ public class MCStats {
      * Server config. TODO - will be moved to dedicated server class.
      */
     private final int listenPort;
-    private final String webappPath;
-    private final String webappContext;
     private final boolean generateGraphs;
 
     @Inject
     public MCStats(@Named("listen.port") int listenPort,
-                   @Named("webapp.path") String webappPath,
-                   @Named("webapp.context") String webappContext,
                    @Named("graphs.generate") boolean generateGraphs) {
         instance = this;
         this.listenPort = listenPort;
-        this.webappPath = webappPath;
-        this.webappContext = webappContext;
         this.generateGraphs = generateGraphs;
 
         // requests count when this.requests was last polled
@@ -222,12 +221,21 @@ public class MCStats {
     }
 
     /**
-     * Increment and return the amount of requests server on the server
+     * Increment and return the amount of requests served on the server
      *
      * @return
      */
     public long incrementAndGetRequests() {
         return requests.incrementAndGet();
+    }
+
+    /**
+     * Retusn the number of requests served on the server
+     *
+     * @return
+     */
+    public long getRequestsMade() {
+        return requests.get();
     }
 
     /**
@@ -314,14 +322,9 @@ public class MCStats {
     public void createWebServer() {
         webServer = new org.eclipse.jetty.server.Server(new QueuedThreadPool(4));
 
-        logger.debug("Loading webapp from " + webappPath + " at url " + webappContext);
-
-        URL warURL = getClass().getClassLoader().getResource(webappPath);
-        WebAppContext webAppContext = new WebAppContext(warURL.toExternalForm(), webappContext);
-
         // Create the handler list
         HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] { handler , webAppContext });
+        handlers.setHandlers(new Handler[]{statusHandler, reportHandler});
 
         webServer.setHandler(handlers);
 
@@ -402,17 +405,6 @@ public class MCStats {
      */
     public ExponentialMovingAverage getRequestProcessingTimeAverage() {
         return requestProcessingTimeAverage;
-    }
-
-    /**
-     * Gets the report handler.
-     * TODO only used for executor queue size right now. Something else?
-     *
-     * @return
-     */
-    @Deprecated
-    public ReportHandler getReportHandler() {
-        return handler;
     }
 
     /**
