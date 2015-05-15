@@ -11,7 +11,9 @@ import org.mcstats.handler.StatusHandler;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
+@Singleton
 public class Server {
 
     private static final Logger logger = Logger.getLogger(Server.class);
