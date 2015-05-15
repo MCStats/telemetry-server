@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 import org.mcstats.db.Database;
 import org.mcstats.db.ModelCache;
 import org.mcstats.guice.GuiceModule;
+import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 
 import java.util.List;
@@ -26,10 +27,35 @@ public class PluginCachePopulator {
         ModelCache modelCache = injector.getInstance(ModelCache.class);
 
         List<Plugin> plugins = database.loadPlugins();
+        int cached = 0;
 
-        plugins.forEach(modelCache::cachePlugin);
+        logger.info("Caching " + plugins.size() + " plugins");
 
-        logger.info("Cached " + plugins.size() + " plugins");
+        for (Plugin plugin : plugins) {
+            modelCache.cachePlugin(plugin);
+
+            for (Graph graph : database.loadGraphs(plugin)) {
+                modelCache.cachePluginGraph(plugin, graph);
+            }
+
+            cached ++;
+
+            if (cached % 10 == 0) {
+                System.out.print('.');
+
+                if (cached % 100 == 0) {
+                    System.out.print(cached);
+                }
+
+                if (cached % 1000 == 0) {
+                    System.out.println();
+                }
+            }
+        }
+
+        System.out.println();
+
+        logger.info("Cached all plugins");
 
         // TODO cache plugin graphs?
     }

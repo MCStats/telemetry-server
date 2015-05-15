@@ -17,6 +17,7 @@ public class RedisCache implements ModelCache {
     public static final String PLUGIN_NAME_INDEX_KEY = "plugin-index:%s";
 
     public static final String PLUGIN_GRAPHS_KEY = "plugin-graphs:%d";
+    public static final String PLUGIN_GRAPH_KEY = "plugin-graph:%d";
     public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graph-index:%d:%s";
 
     private final Database database;
@@ -104,6 +105,11 @@ public class RedisCache implements ModelCache {
             Pipeline pipeline = redis.pipelined();
 
             pipeline.sadd(String.format(PLUGIN_GRAPHS_KEY, plugin.getId()), Integer.toString(graph.getId()));
+
+            String key = String.format(PLUGIN_GRAPH_KEY, graph.getId());
+            pipeline.hset(key, "plugin", Integer.toString(plugin.getId()));
+            pipeline.hset(key, "name", graph.getName());
+
             pipeline.set(String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId(), graph.getName()), Integer.toString(graph.getId()));
             // TODO other data
 
