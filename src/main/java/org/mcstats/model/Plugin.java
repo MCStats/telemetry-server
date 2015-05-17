@@ -38,6 +38,7 @@ public class Plugin implements Savable {
     /**
      * The total amount of server startups the plugin has received
      */
+    @Deprecated
     private int globalHits;
 
     /**
@@ -183,10 +184,12 @@ public class Plugin implements Savable {
         modified = true;
     }
 
+    @Deprecated
     public int getGlobalHits() {
         return globalHits;
     }
 
+    @Deprecated
     public void setGlobalHits(int globalHits) {
         this.globalHits = globalHits;
         modified = true;

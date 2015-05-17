@@ -10,6 +10,7 @@ import org.mcstats.accumulator.CustomDataAccumulator;
 import org.mcstats.accumulator.MCStatsInfoAccumulator;
 import org.mcstats.accumulator.ServerInfoAccumulator;
 import org.mcstats.accumulator.VersionInfoAccumulator;
+import org.mcstats.db.ModelCache;
 import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.decoder.LegacyRequestDecoder;
 import org.mcstats.decoder.ModernRequestDecoder;
@@ -59,6 +60,11 @@ public class ReportHandler extends AbstractHandler {
     private final MCStats mcstats;
 
     /**
+     * The model cache
+     */
+    private final ModelCache modelCache;
+
+    /**
      * The redis pool
      */
     private final JedisPool redisPool;
@@ -94,8 +100,9 @@ public class ReportHandler extends AbstractHandler {
     private final String redisAddSumScriptSha;
 
     @Inject
-    public ReportHandler(MCStats mcstats, JedisPool redisPool) {
+    public ReportHandler(MCStats mcstats, ModelCache modelCache, JedisPool redisPool) {
         this.mcstats = mcstats;
+        this.modelCache = modelCache;
         this.redisPool = redisPool;
 
         accumulatorDelegator = new AccumulatorDelegator(mcstats);
@@ -176,6 +183,22 @@ public class ReportHandler extends AbstractHandler {
         finishRequest(decoded, responseType, "", baseRequest, response);
     }
 
+    /**
+     * Get the country code passed by a request.
+     *
+     * @param request
+     * @return
+     */
+    private String getCountryCode(HttpServletRequest request) {
+        String country = request.getHeader("GEOIP_COUNTRY_CODE") == null ? request.getHeader("HTTP_X_GEOIP") : request.getHeader("GEOIP_COUNTRY_CODE");
+
+        if (country == null) {
+            country = "ZZ";
+        }
+
+        return country;
+    }
+
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         long startTimeNano = System.nanoTime();
 
@@ -224,16 +247,13 @@ public class ReportHandler extends AbstractHandler {
             }
 
             if (decoded == null) {
-                finishRequest(decoded, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
+                finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
                 return;
             }
 
-            String geoipCountryCodeNonFinal = request.getHeader("GEOIP_COUNTRY_CODE") == null ? request.getHeader("HTTP_X_GEOIP") : request.getHeader("GEOIP_COUNTRY_CODE");
+            normalizeRequest(decoded);
 
-            if (geoipCountryCodeNonFinal == null) {
-                geoipCountryCodeNonFinal = "ZZ";
-            }
-            final String geoipCountryCode = geoipCountryCodeNonFinal;
+            String geoipCountryCode = getCountryCode(request);
 
             if (plugin.getId() == -1) {
                 finishRequest(decoded, ResponseType.ERROR, "Rejected.", baseRequest, response);
@@ -244,6 +264,7 @@ public class ReportHandler extends AbstractHandler {
 
             long lastSent = 0L;
 
+            // TODO redis?
             String serverCacheKey = decoded.uuid + "/" + plugin.getId();
 
             if (serverLastSendCache.containsKey(serverCacheKey)) {
@@ -264,156 +285,22 @@ public class ReportHandler extends AbstractHandler {
             }
 
             try {
-                Server server = new Server(decoded.uuid);
-
-                // TODO dao?
-                Map<String, String> serverData = redis.hgetAll("server:" + server.getUUID());
-
-                if (serverData != null && !serverData.isEmpty()) {
-                    server.setJavaName(serverData.get("java.name"));
-                    server.setJavaVersion(serverData.get("java.version"));
-                    server.setOSName(serverData.get("os.name"));
-                    server.setOSVersion(serverData.get("os.version"));
-                    server.setOSArch(serverData.get("os.arch"));
-
-                    server.setOnlineMode(Integer.parseInt(serverData.get("authMode")));
-
-                    server.setCountry(serverData.get("country"));
-                    server.setServerSoftware(serverData.get("serverSoftware"));
-                    server.setMinecraftVersion(serverData.get("minecraftVersion"));
-                    server.setPlayers(Integer.parseInt(serverData.get("players.online")));
-                    server.setCores(Integer.parseInt(serverData.get("cores")));
-                }
-
-                boolean isBlacklisted = redis.sismember("server-blacklist", decoded.uuid);
-
-                if ((server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) && !isBlacklisted) {
-                    redis.sadd("server-blacklist", decoded.uuid);
-                    return;
-                }
-
-                ServerPlugin serverPlugin = new ServerPlugin(server, plugin);
-
-                // TODO dao?
-                Map<String, String> serverPluginData = redis.hgetAll("server-plugin:" + server.getUUID() + ":" + plugin.getId());
-
-                if (serverPluginData != null && !serverPluginData.isEmpty()) {
-                    serverPlugin.setVersion(serverPluginData.get("version"));
-                }
-
-                if ((!serverPlugin.getVersion().equals(decoded.pluginVersion)) && !isBlacklisted) {
-                    serverPlugin.addVersionChange(serverPlugin.getVersion(), decoded.pluginVersion);
-                    serverPlugin.setVersion(decoded.pluginVersion);
-                    server.incrementViolations();
-                }
-
-                if (serverPlugin.getRevision() != decoded.revision) {
-                    serverPlugin.setRevision(decoded.revision);
-                }
-
-                if (!server.getServerVersion().equals(decoded.serverVersion)) {
-                    server.setServerVersion(decoded.serverVersion);
-                }
-
-                if ((server.getPlayers() != decoded.playersOnline) && (decoded.playersOnline >= 0)) {
-                    server.setPlayers(decoded.playersOnline);
-                }
+                Server server = loadAndNormalizeServer(decoded);
 
                 if (!geoipCountryCode.isEmpty() && !server.getCountry().equals(geoipCountryCode)) {
                     server.setCountry(geoipCountryCode);
                 }
 
-                String canonicalServerVersion = mcstats.getServerBuildIdentifier().getServerVersion(decoded.serverVersion);
-                String minecraftVersion = mcstats.getServerBuildIdentifier().getMinecraftVersion(decoded.serverVersion);
+                ServerPlugin serverPlugin = loadServerPlugin(server, plugin, decoded);
 
-                if (!server.getServerSoftware().equals(canonicalServerVersion)) {
-                    server.setServerSoftware(canonicalServerVersion);
-                }
-
-                if (!server.getMinecraftVersion().equals(minecraftVersion)) {
-                    server.setMinecraftVersion(minecraftVersion);
-                }
-
-                if (!decoded.isPing) {
-                    plugin.setGlobalHits(plugin.getGlobalHits() + 1);
-                }
-
-                if ((decoded.revision >= 4) && (!server.getCountry().equals("SG")) && ((geoipCountryCode == null) || (!geoipCountryCode.equals("SG")))) {
-                    serverPlugin.setCustomData(decoded.customData);
-                }
-
-                if (decoded.revision >= 6) {
-                    if ((decoded.osarch != null) && (decoded.osarch.equals("i386"))) {
-                        decoded.osarch = "x86";
-                    }
-
-                    if ((decoded.osarch != null) && (decoded.osarch.equals("amd64"))) {
-                        decoded.osarch = "x86_64";
-                    }
-
-                    if ((decoded.osname.startsWith("Windows")) && (decoded.osname.length() > 8)) {
-                        decoded.osversion = decoded.osname.substring(8);
-                        decoded.osname = "Windows";
-                    }
-
-                    if (decoded.osversion.equals("6.1")) {
-                        decoded.osversion = "7";
-                        decoded.osname = "Windows";
-                    }
-
-                    if (!decoded.osname.equals(server.getOSName())) {
-                        server.setOSName(decoded.osname);
-                    }
-
-                    if ((decoded.osarch != null) && (!decoded.osarch.equals(server.getOSArch()))) {
-                        server.setOSArch(decoded.osarch);
-                    }
-
-                    if (!decoded.osversion.equals(server.getOSVersion())) {
-                        server.setOSVersion(decoded.osversion);
-                    }
-
-                    if (server.getCores() != decoded.cores) {
-                        server.setCores(decoded.cores);
-                    }
-
-                    if (server.getOnlineMode() != decoded.authMode) {
-                        server.setOnlineMode(decoded.authMode);
-                    }
-
-                    if (!decoded.javaName.equals(server.getJavaName())) {
-                        server.setJavaName(decoded.javaName);
-                    }
-
-                    if (!decoded.javaVersion.equals(server.getJavaVersion())) {
-                        server.setJavaVersion(decoded.javaVersion);
-                    }
-                }
-
-                // TODO
-                serverData.put("country", geoipCountryCode);
-                serverData.put("serverSoftware", canonicalServerVersion);
-                serverData.put("minecraftVersion", minecraftVersion);
-                serverData.put("players.online", Integer.toString(decoded.playersOnline));
-                serverData.put("os.name", decoded.osname);
-                serverData.put("os.version", decoded.osversion);
-                serverData.put("os.arch", decoded.osarch);
-                serverData.put("java.name", decoded.javaName);
-                serverData.put("java.version", decoded.javaVersion);
-                serverData.put("cores", Integer.toString(decoded.cores));
-                serverData.put("authMode", Integer.toString(decoded.authMode));
-
-                serverPluginData.put("revision", Integer.toString(decoded.revision));
-                serverPluginData.put("version", decoded.pluginVersion);
+                server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
 
                 executor.execute(() -> {
                     try (Jedis executorRedis = redisPool.getResource()) {
                         Pipeline pipeline = executorRedis.pipelined();
 
-                        pipeline.sadd("servers", decoded.uuid);
-                        pipeline.sadd("server-plugins:" + decoded.uuid, Integer.toString(plugin.getId()));
-                        pipeline.hmset("server:" + decoded.uuid, serverData);
-                        pipeline.hmset("server-plugin:" + decoded.uuid + ":" + plugin.getId(), serverPluginData);
+                        modelCache.cacheServer(server);
+                        modelCache.cacheServerPlugin(serverPlugin);
 
                         // accumulate all graph data
                         // TODO break out to somewhere else?
@@ -452,7 +339,6 @@ public class ReportHandler extends AbstractHandler {
 
                 // serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
                 plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
-                server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -465,6 +351,124 @@ public class ReportHandler extends AbstractHandler {
             double takenMs = takenNano / 1_000_000d;
 
             mcstats.getRequestProcessingTimeAverage().update(takenMs);
+        }
+    }
+
+    /**
+     * Loads and normalizes a server
+     *
+     * @param decoded
+     * @return
+     */
+    private Server loadAndNormalizeServer(DecodedRequest decoded) {
+        Server server = modelCache.getServer(decoded.uuid);
+
+        if (server == null) {
+            server = new Server(decoded.uuid);
+        }
+
+        if (!server.getServerVersion().equals(decoded.serverVersion)) {
+            server.setServerVersion(decoded.serverVersion);
+        }
+
+        if ((server.getPlayers() != decoded.playersOnline) && (decoded.playersOnline >= 0)) {
+            server.setPlayers(decoded.playersOnline);
+        }
+
+        String canonicalServerVersion = mcstats.getServerBuildIdentifier().getServerVersion(decoded.serverVersion);
+        String minecraftVersion = mcstats.getServerBuildIdentifier().getMinecraftVersion(decoded.serverVersion);
+
+        if (!server.getServerSoftware().equals(canonicalServerVersion)) {
+            server.setServerSoftware(canonicalServerVersion);
+        }
+
+        if (!server.getMinecraftVersion().equals(minecraftVersion)) {
+            server.setMinecraftVersion(minecraftVersion);
+        }
+
+        if (decoded.revision >= 6) {
+            if (!decoded.osname.equals(server.getOSName())) {
+                server.setOSName(decoded.osname);
+            }
+
+            if ((decoded.osarch != null) && (!decoded.osarch.equals(server.getOSArch()))) {
+                server.setOSArch(decoded.osarch);
+            }
+
+            if (!decoded.osversion.equals(server.getOSVersion())) {
+                server.setOSVersion(decoded.osversion);
+            }
+
+            if (server.getCores() != decoded.cores) {
+                server.setCores(decoded.cores);
+            }
+
+            if (server.getOnlineMode() != decoded.authMode) {
+                server.setOnlineMode(decoded.authMode);
+            }
+
+            if (!decoded.javaName.equals(server.getJavaName())) {
+                server.setJavaName(decoded.javaName);
+            }
+
+            if (!decoded.javaVersion.equals(server.getJavaVersion())) {
+                server.setJavaVersion(decoded.javaVersion);
+            }
+        }
+
+        return server;
+    }
+
+    private ServerPlugin loadServerPlugin(Server server, Plugin plugin, DecodedRequest decoded) {
+        ServerPlugin serverPlugin = modelCache.getServerPlugin(server, plugin);
+
+        if (serverPlugin == null) {
+            serverPlugin = new ServerPlugin(server, plugin);
+        }
+
+        boolean isBlacklisted = server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED;
+
+        if (!serverPlugin.getVersion().equals(decoded.pluginVersion) && !isBlacklisted) {
+            serverPlugin.addVersionChange(serverPlugin.getVersion(), decoded.pluginVersion);
+            serverPlugin.setVersion(decoded.pluginVersion);
+            server.incrementViolations();
+        }
+
+        if (serverPlugin.getRevision() != decoded.revision) {
+            serverPlugin.setRevision(decoded.revision);
+        }
+
+        if (decoded.revision >= 4 && !server.getCountry().equals("SG")) {
+            serverPlugin.setCustomData(decoded.customData);
+        }
+
+        return serverPlugin;
+    }
+
+    /**
+     * Normalizes values in a request, e.g. amd64 -> x86_64.
+     *
+     * @param request
+     */
+    private void normalizeRequest(DecodedRequest request) {
+        if (request.revision >= 6) {
+            if ((request.osarch != null) && (request.osarch.equals("i386"))) {
+                request.osarch = "x86";
+            }
+
+            if ((request.osarch != null) && (request.osarch.equals("amd64"))) {
+                request.osarch = "x86_64";
+            }
+
+            if ((request.osname.startsWith("Windows")) && (request.osname.length() > 8)) {
+                request.osversion = request.osname.substring(8);
+                request.osname = "Windows";
+            }
+
+            if (request.osversion.equals("6.1")) {
+                request.osversion = "7";
+                request.osname = "Windows";
+            }
         }
     }
 

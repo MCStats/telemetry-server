@@ -2,12 +2,15 @@ package org.mcstats.db;
 
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
+import org.mcstats.model.Server;
+import org.mcstats.model.ServerPlugin;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.HashMap;
 import java.util.Map;
 
 @Singleton
@@ -20,6 +23,12 @@ public class RedisCache implements ModelCache {
     public static final String PLUGIN_GRAPHS_KEY = "plugin-graphs:%d";
     public static final String PLUGIN_GRAPH_KEY = "plugin-graph:%d";
     public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graph-index:%d:%s";
+
+    public static final String SERVERS_KEY = "servers";
+    public static final String SERVER_KEY = "server:%s";
+
+    public static final String SERVER_PLUGINS_KEY = "server-plugins:%s";
+    public static final String SERVER_PLUGIN_KEY = "server-plugin:%s:%d"; // server-uuid, plugin-id
 
     private final Database database;
     private final JedisPool pool;
@@ -59,6 +68,7 @@ public class RedisCache implements ModelCache {
 
             pipeline.sadd(PLUGINS_KEY, Integer.toString(plugin.getId()));
 
+            // TODO hmset
             pipeline.hset(key, "parent", Integer.toString(plugin.getParent()));
             pipeline.hset(key, "name", plugin.getName());
             pipeline.hset(key, "authors", plugin.getAuthors());
@@ -72,6 +82,107 @@ public class RedisCache implements ModelCache {
             pipeline.hset(key, "serverCount30", Integer.toString(plugin.getServerCount30()));
 
             pipeline.set(String.format(PLUGIN_NAME_INDEX_KEY, plugin.getName()), Integer.toString(plugin.getId()));
+
+            pipeline.sync();
+        }
+    }
+
+    @Override
+    public Server getServer(String uuid) {
+        String key = String.format(SERVER_KEY, uuid);
+
+        try (Jedis redis = pool.getResource()) {
+            if (redis.exists(key)) {
+                Map<String, String> data = redis.hgetAll(key);
+
+                Server server = new Server(uuid);
+
+                server.setJavaName(data.get("java.name"));
+                server.setJavaVersion(data.get("java.version"));
+                server.setOSName(data.get("os.name"));
+                server.setOSVersion(data.get("os.version"));
+                server.setOSArch(data.get("os.arch"));
+                server.setOnlineMode(Integer.parseInt(data.get("authMode")));
+                server.setCountry(data.get("country"));
+                server.setServerSoftware(data.get("serverSoftware"));
+                server.setMinecraftVersion(data.get("minecraftVersion"));
+                server.setPlayers(Integer.parseInt(data.get("players.online")));
+                server.setCores(Integer.parseInt(data.get("cores")));
+
+                server.setViolationCount(Integer.parseInt(data.get("violations")));
+                server.setLastSentData(Integer.parseInt(data.get("lastSent")));
+
+                return server;
+            } else {
+                return null;
+            }
+        }
+    }
+
+    @Override
+    public void cacheServer(Server server) {
+        String key = String.format(SERVER_KEY, server.getUUID());
+
+        Map<String, String> data = new HashMap<>();
+
+        data.put("country", server.getCountry());
+        data.put("serverSoftware", server.getServerVersion());
+        data.put("minecraftVersion", server.getMinecraftVersion());
+        data.put("players.online", Integer.toString(server.getPlayers()));
+        data.put("os.name", server.getOSName());
+        data.put("os.version", server.getOSVersion());
+        data.put("os.arch", server.getOSArch());
+        data.put("java.name", server.getJavaName());
+        data.put("java.version", server.getJavaVersion());
+        data.put("cores", Integer.toString(server.getCores()));
+        data.put("authMode", Integer.toString(server.getOnlineMode()));
+
+        data.put("violations", Integer.toString(server.getViolationCount()));
+        data.put("lastSent", Integer.toString(server.getLastSentData()));
+
+        try (Jedis redis = pool.getResource()) {
+            Pipeline pipeline = redis.pipelined();
+
+            pipeline.hmset(key, data);
+            pipeline.sadd(SERVERS_KEY, server.getUUID());
+
+            pipeline.sync();
+        }
+    }
+
+    @Override
+    public ServerPlugin getServerPlugin(Server server, Plugin plugin) {
+        String key = String.format(SERVER_PLUGIN_KEY, server.getUUID(), plugin.getId());
+
+        try (Jedis redis = pool.getResource()) {
+            if (redis.exists(key)) {
+                Map<String, String> data = redis.hgetAll(key);
+
+                ServerPlugin serverPlugin = new ServerPlugin(server, plugin);
+
+                serverPlugin.setVersion(data.get("version"));
+                serverPlugin.setRevision(Integer.parseInt(data.get("revision")));
+
+                return serverPlugin;
+            } else {
+                return null;
+            }
+        }
+    }
+
+    @Override
+    public void cacheServerPlugin(ServerPlugin serverPlugin) {
+        String key = String.format(SERVER_PLUGIN_KEY, serverPlugin.getServer().getUUID(), serverPlugin.getPlugin().getId());
+
+        Map<String, String> data = new HashMap<>();
+        data.put("version", serverPlugin.getVersion());
+        data.put("revision", Integer.toString(serverPlugin.getRevision()));
+
+        try (Jedis redis = pool.getResource()) {
+            Pipeline pipeline = redis.pipelined();
+
+            pipeline.hmset(key, data);
+            pipeline.sadd(String.format(SERVER_PLUGINS_KEY, serverPlugin.getServer().getUUID()), Integer.toString(serverPlugin.getPlugin().getId()));
 
             pipeline.sync();
         }
