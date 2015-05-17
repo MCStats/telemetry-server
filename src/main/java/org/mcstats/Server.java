@@ -36,7 +36,7 @@ public class Server {
      * Starts the server
      */
     public void start() {
-        webServer = new org.eclipse.jetty.server.Server(new QueuedThreadPool(4));
+        webServer = new org.eclipse.jetty.server.Server(new QueuedThreadPool(16));
 
         // Create the handler list
         HandlerList handlers = new HandlerList();
@@ -46,6 +46,7 @@ public class Server {
 
         ServerConnector connector = new ServerConnector(webServer, 1, 1);
         connector.setPort(listenPort);
+        connector.setAcceptQueueSize(2048);
         webServer.addConnector(connector);
 
         try {
