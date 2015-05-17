@@ -26,6 +26,7 @@ public class RedisCache implements ModelCache {
 
     public static final String SERVERS_KEY = "servers";
     public static final String SERVER_KEY = "server:%s";
+    public static final String SERVER_LAST_SENT_KEY = "server-last-sent:%s:%d";
 
     public static final String SERVER_PLUGINS_KEY = "server-plugins:%s";
     public static final String SERVER_PLUGIN_KEY = "server-plugin:%s:%d"; // server-uuid, plugin-id
@@ -183,6 +184,7 @@ public class RedisCache implements ModelCache {
 
             pipeline.hmset(key, data);
             pipeline.sadd(String.format(SERVER_PLUGINS_KEY, serverPlugin.getServer().getUUID()), Integer.toString(serverPlugin.getPlugin().getId()));
+            pipeline.set(String.format(SERVER_LAST_SENT_KEY, serverPlugin.getServer().getUUID(), serverPlugin.getPlugin().getId()), Integer.toString(serverPlugin.getServer().getLastSentData()));
 
             pipeline.sync();
         }

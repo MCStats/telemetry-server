@@ -12,6 +12,7 @@ import org.mcstats.accumulator.MCStatsInfoAccumulator;
 import org.mcstats.accumulator.ServerInfoAccumulator;
 import org.mcstats.accumulator.VersionInfoAccumulator;
 import org.mcstats.db.ModelCache;
+import org.mcstats.db.RedisCache;
 import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.decoder.LegacyRequestDecoder;
 import org.mcstats.decoder.ModernRequestDecoder;
@@ -91,7 +92,7 @@ public class ReportHandler extends AbstractHandler {
     /**
      * Executor for off-thread work
      */
-    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 16, 10, TimeUnit.MINUTES, new LinkedBlockingQueue<>());
+    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 32, 10, TimeUnit.MINUTES, new LinkedBlockingQueue<>());
 
     /**
      * SHA of the redis sum add script
@@ -218,56 +219,67 @@ public class ReportHandler extends AbstractHandler {
             return;
         }
 
-        int normalizedTime = normalizeTime();
-        String geoipCountryCode = getCountryCode(request);
-        String pluginName = URLUtils.decode(getPluginName(request));
-
-        if (pluginName == null) {
-            finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
-            return;
-        }
-
-        final Plugin plugin = mcstats.loadPlugin(pluginName);
-
-        if (plugin == null || plugin.getId() == -1) {
-            finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
-            return;
-        }
-
-        String userAgent = request.getHeader("User-Agent");
-        final DecodedRequest decoded;
-
-        if (userAgent.startsWith("MCStats/")) {
-            decoded = modernDecoder.decode(plugin, baseRequest);
-        } else {
-            decoded = legacyDecoder.decode(plugin, baseRequest);
-        }
-
-        if (decoded == null) {
-            finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
-            return;
-        }
-
-        normalizeRequest(decoded);
 
         try {
-            Server server = loadAndNormalizeServer(decoded);
+            int normalizedTime = normalizeTime();
+            String geoipCountryCode = getCountryCode(request);
+            String pluginName = URLUtils.decode(getPluginName(request));
 
-            if (!geoipCountryCode.isEmpty() && !server.getCountry().equals(geoipCountryCode)) {
-                server.setCountry(geoipCountryCode);
+            if (pluginName == null) {
+                finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
+                return;
             }
 
-            if (decoded.revision < 7 || server.getLastSentData() > normalizedTime) {
+            final Plugin plugin = mcstats.loadPlugin(pluginName);
+
+            if (plugin == null || plugin.getId() == -1) {
+                finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
+                return;
+            }
+
+            String userAgent = request.getHeader("User-Agent");
+            final DecodedRequest decoded;
+
+            if (userAgent.startsWith("MCStats/")) {
+                decoded = modernDecoder.decode(plugin, baseRequest);
+            } else {
+                decoded = legacyDecoder.decode(plugin, baseRequest);
+            }
+
+            if (decoded == null) {
+                finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
+                return;
+            }
+
+            normalizeRequest(decoded);
+            int lastSent = 0;
+            String lastSentKey = String.format(RedisCache.SERVER_LAST_SENT_KEY, decoded.uuid, plugin.getId());
+
+            try (Jedis redis = redisPool.getResource()) {
+                String lastSentValue = redis.get(lastSentKey);
+
+                if (lastSentValue != null) {
+                    lastSent = Integer.parseInt(lastSentValue);
+                }
+            }
+
+            if (decoded.revision < 7 || lastSent > normalizedTime) {
                 finishRequest(decoded, ResponseType.OK, baseRequest, response);
             } else {
                 finishRequest(decoded, ResponseType.OK_FIRST_REQUEST, baseRequest, response);
             }
 
-            ServerPlugin serverPlugin = loadServerPlugin(server, plugin, decoded);
-
-            server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
-
             executor.execute(() -> {
+                Server server = loadAndNormalizeServer(decoded);
+
+                if (!geoipCountryCode.isEmpty() && !server.getCountry().equals(geoipCountryCode)) {
+                    server.setCountry(geoipCountryCode);
+                }
+
+                ServerPlugin serverPlugin = loadServerPlugin(server, plugin, decoded);
+
+                server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
+
                 try (Jedis executorRedis = redisPool.getResource()) {
                     Pipeline pipeline = executorRedis.pipelined();
 
@@ -312,8 +324,6 @@ public class ReportHandler extends AbstractHandler {
             plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
         } catch (Exception e) {
             e.printStackTrace();
-
-            finishRequest(null, ResponseType.OK, baseRequest, response);
         } finally {
             long takenNano = System.nanoTime() - startTimeNano;
             double takenMs = takenNano / 1_000_000d;
