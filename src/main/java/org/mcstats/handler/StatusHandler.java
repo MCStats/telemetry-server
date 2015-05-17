@@ -5,6 +5,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.simple.JSONObject;
 import org.mcstats.DatabaseQueue;
 import org.mcstats.MCStats;
+import org.mcstats.Server;
 import org.mcstats.db.MySQLDatabase;
 
 import javax.inject.Inject;
@@ -17,13 +18,16 @@ import java.io.IOException;
 @Singleton
 public class StatusHandler extends AbstractHandler {
 
+    @Deprecated
     private final MCStats mcstats;
+    private final Server server;
     private final ReportHandler reportHandler;
     private final DatabaseQueue databaseQueue;
 
     @Inject
-    public StatusHandler(MCStats mcstats, ReportHandler reportHandler, DatabaseQueue databaseQueue) {
+    public StatusHandler(MCStats mcstats, Server server, ReportHandler reportHandler, DatabaseQueue databaseQueue) {
         this.mcstats = mcstats;
+        this.server = server;
         this.reportHandler = reportHandler;
         this.databaseQueue = databaseQueue;
     }
@@ -36,6 +40,14 @@ public class StatusHandler extends AbstractHandler {
 
         baseRequest.setHandled(true);
         JSONObject responseJson = new JSONObject();
+
+        {
+            JSONObject connections = new JSONObject();
+
+            connections.put("open", server.openConnections());
+
+            responseJson.put("connections", connections);
+        }
 
         {
             JSONObject requests = new JSONObject();
