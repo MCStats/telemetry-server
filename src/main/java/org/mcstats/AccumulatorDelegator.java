@@ -17,8 +17,6 @@ import java.util.Set;
  */
 public class AccumulatorDelegator {
 
-    private final MCStats mcstats;
-
     /**
      * All available accumulators
      */
@@ -30,7 +28,6 @@ public class AccumulatorDelegator {
     private final Plugin globalPlugin;
 
     public AccumulatorDelegator(MCStats mcstats) {
-        this.mcstats = mcstats;
         globalPlugin = mcstats.loadPlugin("All Servers");
     }
 
