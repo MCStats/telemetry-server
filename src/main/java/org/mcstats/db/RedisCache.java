@@ -93,9 +93,9 @@ public class RedisCache implements ModelCache {
         String key = String.format(SERVER_KEY, uuid);
 
         try (Jedis redis = pool.getResource()) {
-            if (redis.exists(key)) {
-                Map<String, String> data = redis.hgetAll(key);
+            Map<String, String> data = redis.hgetAll(key);
 
+            if (data != null) {
                 Server server = new Server(uuid);
 
                 server.setJavaName(data.get("java.name"));
@@ -156,9 +156,9 @@ public class RedisCache implements ModelCache {
         String key = String.format(SERVER_PLUGIN_KEY, server.getUUID(), plugin.getId());
 
         try (Jedis redis = pool.getResource()) {
-            if (redis.exists(key)) {
-                Map<String, String> data = redis.hgetAll(key);
+            Map<String, String> data = redis.hgetAll(key);
 
+            if (data != null) {
                 ServerPlugin serverPlugin = new ServerPlugin(server, plugin);
 
                 serverPlugin.setVersion(data.get("version"));
@@ -195,9 +195,10 @@ public class RedisCache implements ModelCache {
         String key = String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId(), name);
 
         try (Jedis redis = pool.getResource()) {
-            if (redis.exists(key)) {
-                int id = Integer.parseInt(redis.get(key));
-                return new Graph(plugin, id, name);
+            String id = redis.get(key);
+
+            if (id != null) {
+                return new Graph(plugin, Integer.parseInt(id), name);
             } else {
                 return null;
             }
@@ -240,9 +241,9 @@ public class RedisCache implements ModelCache {
     private Plugin internalGetPlugin(Jedis redis, int id) {
         String key = String.format(PLUGIN_KEY, id);
 
-        if (redis.exists(key)) {
-            Map<String, String> data = redis.hgetAll(key);
+        Map<String, String> data = redis.hgetAll(key);
 
+        if (data != null) {
             Plugin plugin = new Plugin(database, this);
 
             plugin.setId(id);
