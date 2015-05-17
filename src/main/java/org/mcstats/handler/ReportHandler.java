@@ -202,66 +202,59 @@ public class ReportHandler extends AbstractHandler {
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         long startTimeNano = System.nanoTime();
 
+        if (!request.getMethod().equals("POST")) {
+            return;
+        }
+
+        if (serverLastSendCache.size() > 200000) {
+            serverLastSendCache.clear();
+        }
+
+        request.setCharacterEncoding("UTF-8");
+        response.setHeader("Connection", "close");
+        baseRequest.setHandled(true);
+        response.setStatus(200);
+        response.setContentType("text/plain");
+        mcstats.incrementAndGetRequests();
+
+        if (SOFT_IGNORE_REQUESTS) {
+            finishRequest(null, ResponseType.OK, baseRequest, response);
+            return;
+        }
+
+        int normalizedTime = normalizeTime();
+        String geoipCountryCode = getCountryCode(request);
+        String pluginName = URLUtils.decode(getPluginName(request));
+
+        if (pluginName == null) {
+            finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
+            return;
+        }
+
+        final Plugin plugin = mcstats.loadPlugin(pluginName);
+
+        if (plugin == null || plugin.getId() == -1) {
+            finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
+            return;
+        }
+
+        String userAgent = request.getHeader("User-Agent");
+        final DecodedRequest decoded;
+
+        if (userAgent.startsWith("MCStats/")) {
+            decoded = modernDecoder.decode(plugin, baseRequest);
+        } else {
+            decoded = legacyDecoder.decode(plugin, baseRequest);
+        }
+
+        if (decoded == null) {
+            finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
+            return;
+        }
+
+        normalizeRequest(decoded);
+
         try (Jedis redis = redisPool.getResource()) {
-            if (!request.getMethod().equals("POST")) {
-                return;
-            }
-
-            if (serverLastSendCache.size() > 200000) {
-                serverLastSendCache.clear();
-            }
-
-            request.setCharacterEncoding("UTF-8");
-            response.setHeader("Connection", "close");
-            baseRequest.setHandled(true);
-            response.setStatus(200);
-            response.setContentType("text/plain");
-            mcstats.incrementAndGetRequests();
-
-            if (SOFT_IGNORE_REQUESTS) {
-                finishRequest(null, ResponseType.OK, baseRequest, response);
-                return;
-            }
-
-            String pluginName = URLUtils.decode(getPluginName(request));
-
-            if (pluginName == null) {
-                finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
-                return;
-            }
-
-            final Plugin plugin = mcstats.loadPlugin(pluginName);
-
-            if (plugin == null) {
-                finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
-                return;
-            }
-
-            String userAgent = request.getHeader("User-Agent");
-            final DecodedRequest decoded;
-
-            if (userAgent.startsWith("MCStats/")) {
-                decoded = modernDecoder.decode(plugin, baseRequest);
-            } else {
-                decoded = legacyDecoder.decode(plugin, baseRequest);
-            }
-
-            if (decoded == null) {
-                finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
-                return;
-            }
-
-            normalizeRequest(decoded);
-
-            String geoipCountryCode = getCountryCode(request);
-
-            if (plugin.getId() == -1) {
-                finishRequest(decoded, ResponseType.ERROR, "Rejected.", baseRequest, response);
-                return;
-            }
-
-            int normalizedTime = normalizeTime();
-
             long lastSent = 0L;
 
             // TODO redis?
@@ -279,10 +272,6 @@ public class ReportHandler extends AbstractHandler {
             }
 
             serverLastSendCache.put(serverCacheKey, (int) System.currentTimeMillis());
-
-            if (plugin.getId() == 4930) {
-                return;
-            }
 
             try {
                 Server server = loadAndNormalizeServer(decoded);
