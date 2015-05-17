@@ -13,11 +13,6 @@ public enum ResponseType {
     OK_FIRST_REQUEST,
 
     /**
-     * Tell the server to regenerate its uuid
-     */
-    OK_REGENERATE_GUID,
-
-    /**
      * An error occurred during the request
      */
     ERROR

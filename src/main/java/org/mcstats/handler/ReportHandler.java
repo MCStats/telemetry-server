@@ -134,24 +134,24 @@ public class ReportHandler extends AbstractHandler {
                     writer.write("0");
                 } else if (responseType == ResponseType.OK_FIRST_REQUEST) {
                     writer.write("1");
-                } else if (responseType == ResponseType.OK_REGENERATE_GUID) {
-                    writer.write("2");
                 } else if (responseType == ResponseType.ERROR) {
                     writer.write("7");
                 }
+
                 if (!message.isEmpty()) {
-                    writer.write((new StringBuilder()).append(",").append(message).toString());
+                    writer.write("," + message);
                 }
             } else {
-                if (responseType == ResponseType.OK || responseType == ResponseType.OK_REGENERATE_GUID) {
+                if (responseType == ResponseType.OK) {
                     writer.write("OK");
                 } else if (responseType == ResponseType.OK_FIRST_REQUEST) {
                     writer.write("OK This is your first update this hour.");
                 } else if (responseType == ResponseType.ERROR) {
                     writer.write("ERR");
                 }
+
                 if (!message.isEmpty()) {
-                    writer.write((new StringBuilder()).append(" ").append(message).toString());
+                    writer.write(" " + message);
                 }
             }
 
