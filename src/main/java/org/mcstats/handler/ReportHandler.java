@@ -1,5 +1,6 @@
 package org.mcstats.handler;
 
+import com.google.gson.Gson;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -33,8 +34,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +57,11 @@ public class ReportHandler extends AbstractHandler {
      * The MCStats object
      */
     private final MCStats mcstats;
+
+    /**
+     * Gson instance
+     */
+    private final Gson gson;
 
     /**
      * The model cache
@@ -95,8 +99,9 @@ public class ReportHandler extends AbstractHandler {
     private final String redisAddSumScriptSha;
 
     @Inject
-    public ReportHandler(MCStats mcstats, ModelCache modelCache, JedisPool redisPool) {
+    public ReportHandler(MCStats mcstats, Gson gson, ModelCache modelCache, JedisPool redisPool) {
         this.mcstats = mcstats;
+        this.gson = gson;
         this.modelCache = modelCache;
         this.redisPool = redisPool;
 

@@ -3,8 +3,6 @@ package org.mcstats.decoder;
 import org.eclipse.jetty.server.Request;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 
 import java.io.BufferedReader;
@@ -108,8 +106,9 @@ public class ModernRequestDecoder implements RequestDecoder {
      * @param post
      * @return
      */
-    private Map<Column, Long> extractCustomData(Plugin plugin, JSONObject post) {
-        Map<Column, Long> customData = new HashMap();
+    private Map<String, Map<String, Long>> extractCustomData(Plugin plugin, JSONObject post) {
+        Map<String, Map<String, Long>> customData = new HashMap<>();
+
         if (!post.containsKey("graphs")) {
             return customData;
         }
@@ -120,7 +119,13 @@ public class ModernRequestDecoder implements RequestDecoder {
             Map.Entry<String, JSONObject> entry = (Map.Entry<String, JSONObject>) o;
             String graphName = entry.getKey();
             JSONObject columns = entry.getValue();
-            Graph graph = new Graph(plugin, graphName);
+
+            Map<String, Long> graphData = customData.get(graphName);
+
+            if (graphData == null) {
+                graphData = new HashMap<>();
+                customData.put(graphName, graphData);
+            }
 
             for (Object o2 : columns.entrySet()) {
                 Map.Entry<String, Long> entryColumn = (Map.Entry<String, Long>) o2;
@@ -128,9 +133,7 @@ public class ModernRequestDecoder implements RequestDecoder {
                 String columnName = entryColumn.getKey();
                 long value = tryParseLong(entryColumn.getValue());
 
-                Column column = new Column(graph, columnName);
-
-                customData.put(column, value);
+                graphData.put(columnName, value);
             }
         }
 

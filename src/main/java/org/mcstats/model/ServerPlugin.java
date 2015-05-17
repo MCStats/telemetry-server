@@ -38,7 +38,7 @@ public class ServerPlugin {
     /**
      * The last custom data sent to the server
      */
-    private Map<Column, Long> customData = new ConcurrentHashMap<>();
+    private Map<String, Map<String, Long>> customData = new ConcurrentHashMap<>();
 
     /**
      * The version changes for this plugin
@@ -126,11 +126,11 @@ public class ServerPlugin {
         this.revision = revision;
     }
 
-    public Map<Column, Long> getCustomData() {
+    public Map<String, Map<String, Long>> getCustomData() {
         return customData;
     }
 
-    public void setCustomData(Map<Column, Long> customData) {
+    public void setCustomData(Map<String, Map<String, Long>> customData) {
         this.customData = customData;
     }
 

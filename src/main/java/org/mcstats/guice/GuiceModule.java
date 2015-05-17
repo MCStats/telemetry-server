@@ -1,5 +1,7 @@
 package org.mcstats.guice;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import com.google.inject.name.Names;
@@ -25,10 +27,22 @@ public class GuiceModule extends AbstractModule {
     protected void configure() {
         Names.bindProperties(binder(), loadProperties());
 
+        bind(Gson.class).toProvider(GsonProvider.class).in(Scopes.SINGLETON);
+
         bind(ModelCache.class).to(RedisCache.class);
         bind(Database.class).to(MySQLDatabase.class);
         bind(GraphStore.class).to(MongoDBGraphStore.class);
         bind(JedisPool.class).toProvider(JedisPoolProvider.class).in(Scopes.SINGLETON);
+    }
+
+    private static class GsonProvider implements Provider<Gson> {
+
+        @Override
+        public Gson get() {
+            GsonBuilder builder = new GsonBuilder();
+            return builder.create();
+        }
+
     }
 
     private static class JedisPoolProvider implements Provider<JedisPool> {

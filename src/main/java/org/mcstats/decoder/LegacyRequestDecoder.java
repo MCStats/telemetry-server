@@ -1,8 +1,6 @@
 package org.mcstats.decoder;
 
 import org.eclipse.jetty.server.Request;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.URLUtils;
 
@@ -82,7 +80,7 @@ public class LegacyRequestDecoder implements RequestDecoder {
         }
 
         if (decoded.revision >= 5) {
-            decoded.customData = extractCustomData(plugin, post);
+            decoded.customData = extractCustomData(post);
         } else {
             decoded.customData = extractCustomDataLegacy(plugin, post);
         }
@@ -91,7 +89,7 @@ public class LegacyRequestDecoder implements RequestDecoder {
     }
 
     private Map<String, String> processPostRequest(String content) {
-        Map store = new HashMap();
+        Map<String, String> store = new HashMap();
         String arr[] = content.split("&");
 
         for (String entry : arr) {
@@ -109,12 +107,11 @@ public class LegacyRequestDecoder implements RequestDecoder {
     /**
      * Extract the custom data from the post request
      *
-     * @param plugin
      * @param post
      * @return
      */
-    private Map<Column, Long> extractCustomData(Plugin plugin, Map<String, String> post) {
-        Map<Column, Long> customData = new HashMap<>();
+    private Map<String, Map<String, Long>> extractCustomData(Map<String, String> post) {
+        Map<String, Map<String, Long>> customData = new HashMap<>();
 
         for (Map.Entry<String, String> entry : post.entrySet()) {
             String postKey = entry.getKey();
@@ -137,10 +134,14 @@ public class LegacyRequestDecoder implements RequestDecoder {
                 String graphName = graphData[1];
                 String columnName = graphData[2];
 
-                Graph graph = new Graph(plugin, graphName);
-                Column column = new Column(graph, columnName);
+                Map<String, Long> customGraphData = customData.get(graphName);
 
-                customData.put(column, value);
+                if (customGraphData == null) {
+                    customGraphData = new HashMap<>();
+                    customData.put(graphName, customGraphData);
+                }
+
+                customGraphData.put(columnName, value);
             }
         }
 
@@ -154,9 +155,15 @@ public class LegacyRequestDecoder implements RequestDecoder {
      * @param post
      * @return
      */
-    private Map<Column, Long> extractCustomDataLegacy(Plugin plugin, Map<String, String> post) {
-        Map<Column, Long> customData = new HashMap<>();
-        Graph graph = new Graph(plugin, "Default");
+    private Map<String, Map<String, Long>> extractCustomDataLegacy(Plugin plugin, Map<String, String> post) {
+        Map<String, Map<String, Long>> customData = new HashMap<>();
+
+        Map<String, Long> customGraphData = customData.get("Default");
+
+        if (customGraphData == null) {
+            customGraphData = new HashMap<>();
+            customData.put("Default", customGraphData);
+        }
 
         for (Map.Entry<String, String> entry : post.entrySet()) {
             String postKey = entry.getKey();
@@ -176,9 +183,7 @@ public class LegacyRequestDecoder implements RequestDecoder {
             if (postKey.startsWith("Custom")) {
                 String columnName = postKey.substring(6).replaceAll("_", " ");
 
-                Column column = new Column(graph, columnName);
-
-                customData.put(column, value);
+                customGraphData.put(columnName, value);
             }
         }
 

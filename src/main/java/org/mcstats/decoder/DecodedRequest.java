@@ -1,7 +1,5 @@
 package org.mcstats.decoder;
 
-import org.mcstats.model.Column;
-
 import java.lang.reflect.Field;
 import java.util.Map;
 
@@ -73,9 +71,11 @@ public class DecodedRequest {
     public int authMode;
 
     /**
-     * Any custom data for the plugin this request is for
+     * Any custom data in this request.
+     *
+     * graphName => { columnName: value }
      */
-    public Map<Column, Long> customData;
+    public Map<String, Map<String, Long>> customData;
 
     @Override
     public String toString() {
