@@ -85,11 +85,6 @@ public class ReportHandler extends AbstractHandler {
     private final RequestDecoder legacyDecoder;
 
     /**
-     * Cache of the last sent times
-     */
-    private Map<String, Integer> serverLastSendCache = new ConcurrentHashMap<>();
-
-    /**
      * Executor for off-thread work
      */
     private final ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 16, 10, TimeUnit.MINUTES, new LinkedBlockingQueue<>());
@@ -206,10 +201,6 @@ public class ReportHandler extends AbstractHandler {
             return;
         }
 
-        if (serverLastSendCache.size() > 200000) {
-            serverLastSendCache.clear();
-        }
-
         request.setCharacterEncoding("UTF-8");
         response.setHeader("Connection", "close");
         baseRequest.setHandled(true);
@@ -254,83 +245,66 @@ public class ReportHandler extends AbstractHandler {
 
         normalizeRequest(decoded);
 
-        try (Jedis redis = redisPool.getResource()) {
-            long lastSent = 0L;
+        try {
+            Server server = loadAndNormalizeServer(decoded);
 
-            // TODO redis?
-            String serverCacheKey = decoded.uuid + "/" + plugin.getId();
-
-            if (serverLastSendCache.containsKey(serverCacheKey)) {
-                lastSent = serverLastSendCache.get(serverCacheKey);
+            if (!geoipCountryCode.isEmpty() && !server.getCountry().equals(geoipCountryCode)) {
+                server.setCountry(geoipCountryCode);
             }
 
-            if (((plugin.getId() != 1) || (decoded.revision != 7)) ||
-                    (lastSent > normalizedTime)) {
+            if (decoded.revision < 7 || server.getLastSentData() > normalizedTime) {
                 finishRequest(decoded, ResponseType.OK, baseRequest, response);
             } else {
                 finishRequest(decoded, ResponseType.OK_FIRST_REQUEST, baseRequest, response);
             }
 
-            serverLastSendCache.put(serverCacheKey, (int) System.currentTimeMillis());
+            ServerPlugin serverPlugin = loadServerPlugin(server, plugin, decoded);
 
-            try {
-                Server server = loadAndNormalizeServer(decoded);
+            server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
 
-                if (!geoipCountryCode.isEmpty() && !server.getCountry().equals(geoipCountryCode)) {
-                    server.setCountry(geoipCountryCode);
-                }
+            executor.execute(() -> {
+                try (Jedis executorRedis = redisPool.getResource()) {
+                    Pipeline pipeline = executorRedis.pipelined();
 
-                ServerPlugin serverPlugin = loadServerPlugin(server, plugin, decoded);
+                    modelCache.cacheServer(server);
+                    modelCache.cacheServerPlugin(serverPlugin);
 
-                server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
+                    // accumulate all graph data
+                    // TODO break out to somewhere else?
+                    List<Tuple<Column, Long>> accumulatedData = accumulatorDelegator.accumulate(decoded, serverPlugin);
 
-                executor.execute(() -> {
-                    try (Jedis executorRedis = redisPool.getResource()) {
-                        Pipeline pipeline = executorRedis.pipelined();
+                    for (Tuple<Column, Long> data : accumulatedData) {
+                        // N.B.: This column & graph are virtual, so are later
+                        // forcibly loaded from the database to rev up caches
+                        // and db state.
+                        Column column = data.first();
+                        Graph graph = column.getGraph();
+                        long value = data.second();
 
-                        modelCache.cacheServer(server);
-                        modelCache.cacheServerPlugin(serverPlugin);
-
-                        // accumulate all graph data
-                        // TODO break out to somewhere else?
-                        List<Tuple<Column, Long>> accumulatedData = accumulatorDelegator.accumulate(decoded, serverPlugin);
-
-                        for (Tuple<Column, Long> data : accumulatedData) {
-                            // N.B.: This column & graph are virtual, so are later
-                            // forcibly loaded from the database to rev up caches
-                            // and db state.
-                            Column column = data.first();
-                            Graph graph = column.getGraph();
-                            long value = data.second();
-
-                            if (graph.getName() == null || column.getName() == null) {
-                                continue;
-                            }
-
-                            if (!graph.isFromDatabase()) {
-                                graph = plugin.getGraph(graph.getName());
-                            }
-
-                            String redisDataKey = String.format("plugin-data:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
-                            String redisDataSumKey = String.format("plugin-data-sum:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
-
-                            // metadata
-                            pipeline.sadd("graphs:" + graph.getPlugin().getId(), graph.getName());
-                            pipeline.sadd("columns:" + graph.getPlugin().getId() + ":" + graph.getName(), column.getName());
-
-                            // data
-                            pipeline.evalsha(redisAddSumScriptSha, 2, redisDataKey, redisDataSumKey, Long.toString(value), server.getUUID());
+                        if (graph.getName() == null || column.getName() == null) {
+                            continue;
                         }
 
-                        pipeline.sync();
-                    }
-                });
+                        if (!graph.isFromDatabase()) {
+                            graph = plugin.getGraph(graph.getName());
+                        }
 
-                // serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
-                plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+                        String redisDataKey = String.format("plugin-data:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
+                        String redisDataSumKey = String.format("plugin-data-sum:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
+
+                        // metadata
+                        pipeline.sadd("graphs:" + graph.getPlugin().getId(), graph.getName());
+                        pipeline.sadd("columns:" + graph.getPlugin().getId() + ":" + graph.getName(), column.getName());
+
+                        // data
+                        pipeline.evalsha(redisAddSumScriptSha, 2, redisDataKey, redisDataSumKey, Long.toString(value), server.getUUID());
+                    }
+
+                    pipeline.sync();
+                }
+            });
+
+            plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
         } catch (Exception e) {
             e.printStackTrace();
 
@@ -349,6 +323,7 @@ public class ReportHandler extends AbstractHandler {
      * @param decoded
      * @return
      */
+
     private Server loadAndNormalizeServer(DecodedRequest decoded) {
         Server server = modelCache.getServer(decoded.uuid);
 
