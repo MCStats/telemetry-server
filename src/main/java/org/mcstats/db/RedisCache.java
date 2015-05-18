@@ -62,27 +62,10 @@ public class RedisCache implements ModelCache {
 
     @Override
     public void cachePlugin(Plugin plugin) {
-        String key = String.format(PLUGIN_KEY, plugin.getId());
-
         try (Jedis redis = pool.getResource()) {
             Pipeline pipeline = redis.pipelined();
 
-            pipeline.sadd(PLUGINS_KEY, Integer.toString(plugin.getId()));
-
-            // TODO hmset
-            pipeline.hset(key, "parent", Integer.toString(plugin.getParent()));
-            pipeline.hset(key, "name", plugin.getName());
-            pipeline.hset(key, "authors", plugin.getAuthors());
-            pipeline.hset(key, "hidden", Integer.toString(plugin.getHidden()));
-            pipeline.hset(key, "globalHits", Integer.toString(plugin.getGlobalHits()));
-            pipeline.hset(key, "rank", Integer.toString(plugin.getRank()));
-            pipeline.hset(key, "lastRank", Integer.toString(plugin.getLastRank()));
-            pipeline.hset(key, "lastRankChange", Integer.toString(plugin.getLastRankChange()));
-            pipeline.hset(key, "created", Integer.toString(plugin.getCreated()));
-            pipeline.hset(key, "lastUpdated", Integer.toString(plugin.getLastUpdated()));
-            pipeline.hset(key, "serverCount30", Integer.toString(plugin.getServerCount30()));
-
-            pipeline.set(String.format(PLUGIN_NAME_INDEX_KEY, plugin.getName()), Integer.toString(plugin.getId()));
+            cachePlugin(plugin, pipeline);
 
             pipeline.sync();
         }
@@ -122,30 +105,10 @@ public class RedisCache implements ModelCache {
 
     @Override
     public void cacheServer(Server server) {
-        String key = String.format(SERVER_KEY, server.getUUID());
-
-        Map<String, String> data = new HashMap<>();
-
-        data.put("country", server.getCountry());
-        data.put("serverSoftware", server.getServerVersion());
-        data.put("minecraftVersion", server.getMinecraftVersion());
-        data.put("players.online", Integer.toString(server.getPlayers()));
-        data.put("os.name", server.getOSName());
-        data.put("os.version", server.getOSVersion());
-        data.put("os.arch", server.getOSArch());
-        data.put("java.name", server.getJavaName());
-        data.put("java.version", server.getJavaVersion());
-        data.put("cores", Integer.toString(server.getCores()));
-        data.put("authMode", Integer.toString(server.getOnlineMode()));
-
-        data.put("violations", Integer.toString(server.getViolationCount()));
-        data.put("lastSent", Integer.toString(server.getLastSentData()));
-
         try (Jedis redis = pool.getResource()) {
             Pipeline pipeline = redis.pipelined();
 
-            pipeline.hmset(key, data);
-            pipeline.sadd(SERVERS_KEY, server.getUUID());
+            cacheServer(server, pipeline);
 
             pipeline.sync();
         }
@@ -173,18 +136,10 @@ public class RedisCache implements ModelCache {
 
     @Override
     public void cacheServerPlugin(ServerPlugin serverPlugin) {
-        String key = String.format(SERVER_PLUGIN_KEY, serverPlugin.getServer().getUUID(), serverPlugin.getPlugin().getId());
-
-        Map<String, String> data = new HashMap<>();
-        data.put("version", serverPlugin.getVersion());
-        data.put("revision", Integer.toString(serverPlugin.getRevision()));
-
         try (Jedis redis = pool.getResource()) {
             Pipeline pipeline = redis.pipelined();
 
-            pipeline.hmset(key, data);
-            pipeline.sadd(String.format(SERVER_PLUGINS_KEY, serverPlugin.getServer().getUUID()), Integer.toString(serverPlugin.getPlugin().getId()));
-            pipeline.set(String.format(SERVER_LAST_SENT_KEY, serverPlugin.getServer().getUUID(), serverPlugin.getPlugin().getId()), Integer.toString(serverPlugin.getServer().getLastSentData()));
+            cacheServerPlugin(serverPlugin, pipeline);
 
             pipeline.sync();
         }
@@ -219,17 +174,105 @@ public class RedisCache implements ModelCache {
         try (Jedis redis = pool.getResource()) {
             Pipeline pipeline = redis.pipelined();
 
-            pipeline.sadd(String.format(PLUGIN_GRAPHS_KEY, plugin.getId()), Integer.toString(graph.getId()));
-
-            String key = String.format(PLUGIN_GRAPH_KEY, graph.getId());
-            pipeline.hset(key, "plugin", Integer.toString(plugin.getId()));
-            pipeline.hset(key, "name", graph.getName());
-
-            pipeline.set(String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId(), graph.getName()), Integer.toString(graph.getId()));
-            // TODO other data
+            cachePluginGraph(plugin, graph, pipeline);
 
             pipeline.sync();
         }
+    }
+
+    /**
+     * Caches a plugin the the given pipeline
+     * @param plugin
+     * @param pipeline
+     */
+    public void cachePlugin(Plugin plugin, Pipeline pipeline) {
+        String key = String.format(PLUGIN_KEY, plugin.getId());
+
+        pipeline.sadd(PLUGINS_KEY, Integer.toString(plugin.getId()));
+
+        // TODO hmset
+        pipeline.hset(key, "parent", Integer.toString(plugin.getParent()));
+        pipeline.hset(key, "name", plugin.getName());
+        pipeline.hset(key, "authors", plugin.getAuthors());
+        pipeline.hset(key, "hidden", Integer.toString(plugin.getHidden()));
+        pipeline.hset(key, "globalHits", Integer.toString(plugin.getGlobalHits()));
+        pipeline.hset(key, "rank", Integer.toString(plugin.getRank()));
+        pipeline.hset(key, "lastRank", Integer.toString(plugin.getLastRank()));
+        pipeline.hset(key, "lastRankChange", Integer.toString(plugin.getLastRankChange()));
+        pipeline.hset(key, "created", Integer.toString(plugin.getCreated()));
+        pipeline.hset(key, "lastUpdated", Integer.toString(plugin.getLastUpdated()));
+        pipeline.hset(key, "serverCount30", Integer.toString(plugin.getServerCount30()));
+
+        pipeline.set(String.format(PLUGIN_NAME_INDEX_KEY, plugin.getName()), Integer.toString(plugin.getId()));
+    }
+
+    /**
+     * Caches a server with the given pipeline
+     *
+     * @param server
+     * @param pipeline
+     */
+    public void cacheServer(Server server, Pipeline pipeline) {
+        String key = String.format(SERVER_KEY, server.getUUID());
+
+        Map<String, String> data = new HashMap<>();
+
+        data.put("country", server.getCountry());
+        data.put("serverSoftware", server.getServerVersion());
+        data.put("minecraftVersion", server.getMinecraftVersion());
+        data.put("players.online", Integer.toString(server.getPlayers()));
+        data.put("os.name", server.getOSName());
+        data.put("os.version", server.getOSVersion());
+        data.put("os.arch", server.getOSArch());
+        data.put("java.name", server.getJavaName());
+        data.put("java.version", server.getJavaVersion());
+        data.put("cores", Integer.toString(server.getCores()));
+        data.put("authMode", Integer.toString(server.getOnlineMode()));
+
+        data.put("violations", Integer.toString(server.getViolationCount()));
+        data.put("lastSent", Integer.toString(server.getLastSentData()));
+
+        pipeline.hmset(key, data);
+        pipeline.sadd(SERVERS_KEY, server.getUUID());
+    }
+
+    /**
+     * Caches a server plugin with the given pipeline
+     * @param serverPlugin
+     * @param pipeline
+     */
+    public void cacheServerPlugin(ServerPlugin serverPlugin, Pipeline pipeline) {
+        String key = String.format(SERVER_PLUGIN_KEY, serverPlugin.getServer().getUUID(), serverPlugin.getPlugin().getId());
+
+        Map<String, String> data = new HashMap<>();
+        data.put("version", serverPlugin.getVersion());
+        data.put("revision", Integer.toString(serverPlugin.getRevision()));
+
+        pipeline.hmset(key, data);
+        pipeline.sadd(String.format(SERVER_PLUGINS_KEY, serverPlugin.getServer().getUUID()), Integer.toString(serverPlugin.getPlugin().getId()));
+        pipeline.set(String.format(SERVER_LAST_SENT_KEY, serverPlugin.getServer().getUUID(), serverPlugin.getPlugin().getId()), Integer.toString(serverPlugin.getServer().getLastSentData()));
+    }
+
+    /**
+     * Caches a plugin's graph with the given pipeline
+     *
+     * @param plugin
+     * @param graph
+     * @param pipeline
+     */
+    public void cachePluginGraph(Plugin plugin, Graph graph, Pipeline pipeline) {
+        if (!graph.isFromDatabase()) {
+            throw new UnsupportedOperationException("Graph to be cached cannot be virtual.");
+        }
+
+        pipeline.sadd(String.format(PLUGIN_GRAPHS_KEY, plugin.getId()), Integer.toString(graph.getId()));
+
+        String key = String.format(PLUGIN_GRAPH_KEY, graph.getId());
+        pipeline.hset(key, "plugin", Integer.toString(plugin.getId()));
+        pipeline.hset(key, "name", graph.getName());
+
+        pipeline.set(String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId(), graph.getName()), Integer.toString(graph.getId()));
+        // TODO other data
     }
 
     /**

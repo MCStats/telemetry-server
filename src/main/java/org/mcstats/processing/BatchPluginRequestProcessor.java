@@ -9,6 +9,7 @@ import org.mcstats.accumulator.MCStatsInfoAccumulator;
 import org.mcstats.accumulator.ServerInfoAccumulator;
 import org.mcstats.accumulator.VersionInfoAccumulator;
 import org.mcstats.db.ModelCache;
+import org.mcstats.db.RedisCache;
 import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
@@ -21,7 +22,9 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 
 import javax.inject.Singleton;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,7 +40,7 @@ public class BatchPluginRequestProcessor {
      */
     private static final int MAX_VIOLATIONS_ALLOWED = 7;
 
-    public static final int NUM_THREADS = 4;
+    public static final int NUM_THREADS = 16;
 
     /**
      * The pool used to service requests
@@ -60,14 +63,14 @@ public class BatchPluginRequestProcessor {
     private boolean running = true;
 
     private final MCStats mcstats;
-    private final ModelCache modelCache;
+    private final RedisCache modelCache;
     private final JedisPool redisPool;
     private final AccumulatorDelegator accumulatorDelegator;
 
     @Inject
     public BatchPluginRequestProcessor(MCStats mcstats, ModelCache modelCache, JedisPool redisPool, AccumulatorDelegator accumulatorDelegator) {
         this.mcstats = mcstats;
-        this.modelCache = modelCache; // TODO inject directly?
+        this.modelCache = (RedisCache) modelCache; // TODO inject directly?
         this.redisPool = redisPool;
         this.accumulatorDelegator = accumulatorDelegator;
         this.redisAddSumScriptSha = mcstats.loadRedisScript("/scripts/redis/zadd-sum.lua");
@@ -120,6 +123,10 @@ public class BatchPluginRequestProcessor {
                     int remaining = 1000;
                     int processed = 0;
 
+                    // ephemeral cache to save many redis RTTs because AccumulatorDelegator#accumulate returns in a crappy format
+                    // TODO if above is fixed, this can be removed ...
+                    Map<Plugin, Map<String, Graph>> pluginGraphCache = new HashMap<>();
+
                     while (!queue.isEmpty() && --remaining >= 0) {
                         DecodedRequest request = queue.poll();
 
@@ -130,8 +137,8 @@ public class BatchPluginRequestProcessor {
                         server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
 
                         {
-                            modelCache.cacheServer(server);
-                            modelCache.cacheServerPlugin(serverPlugin);
+                            modelCache.cacheServer(server, pipeline);
+                            modelCache.cacheServerPlugin(serverPlugin, pipeline);
 
                             // accumulate all graph data
                             // TODO break out to somewhere else?
@@ -149,8 +156,20 @@ public class BatchPluginRequestProcessor {
                                     continue;
                                 }
 
-                                if (!graph.isFromDatabase()) {
+                                // N.B.: accumulator might return values for the "All Servers" plugin, so
+                                // the plugin from Graph itself must be used.
+                                Map<String, Graph> graphCache = pluginGraphCache.get(graph.getPlugin());
+
+                                if (graphCache == null) {
+                                    graphCache = new HashMap<>();
+                                    pluginGraphCache.put(graph.getPlugin(), graphCache);
+                                }
+
+                                if (graphCache.containsKey(graph.getName())) {
+                                    graph = graphCache.get(graph.getName());
+                                } else {
                                     graph = plugin.getGraph(graph.getName());
+                                    graphCache.put(graph.getName(), graph);
                                 }
 
                                 String redisDataKey = String.format("plugin-data:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
