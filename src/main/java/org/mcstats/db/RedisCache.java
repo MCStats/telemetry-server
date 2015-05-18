@@ -42,11 +42,13 @@ public class RedisCache implements ModelCache {
 
     @Override
     public Plugin getPlugin(String name) {
-        try (Jedis redis = pool.getResource()) {
-            String key = String.format(PLUGIN_NAME_INDEX_KEY, name);
+        String key = String.format(PLUGIN_NAME_INDEX_KEY, name);
 
-            if (redis.exists(key)) {
-                return internalGetPlugin(redis, Integer.parseInt(redis.get(key)));
+        try (Jedis redis = pool.getResource()) {
+            String id = redis.get(key);
+
+            if (id != null) {
+                return internalGetPlugin(redis, Integer.parseInt(id));
             } else {
                 return null;
             }
