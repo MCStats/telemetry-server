@@ -36,7 +36,7 @@ public class Server {
      * Starts the server
      */
     public void start() {
-        webServer = new org.eclipse.jetty.server.Server(new QueuedThreadPool(16));
+        webServer = new org.eclipse.jetty.server.Server(new QueuedThreadPool(64));
 
         // Create the handler list
         HandlerList handlers = new HandlerList();

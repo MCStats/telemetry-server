@@ -59,7 +59,7 @@ public class GuiceModule extends AbstractModule {
         @Override
         public JedisPool get() {
             GenericObjectPoolConfig config = new GenericObjectPoolConfig();
-            config.setMaxTotal(64); // TODO config ?
+            config.setMaxTotal(128); // TODO config ?
 
             return new JedisPool(config, hostname, port);
         }
