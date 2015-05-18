@@ -9,8 +9,10 @@ import org.mcstats.util.Tuple;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -33,8 +35,8 @@ public class AccumulatorDelegator {
         globalPlugin = mcstats.loadPlugin("All Servers");
     }
 
-    public List<Tuple<Column, Long>> accumulate(DecodedRequest request, ServerPlugin serverPlugin) {
-        List<Tuple<Column, Long>> result = new ArrayList<>();
+    public Map<Plugin, Map<String, Map<String, Long>>> accumulate(DecodedRequest request, ServerPlugin serverPlugin) {
+        Map<Plugin, Map<String, Map<String, Long>>> result = new HashMap<>();
 
         for (Accumulator accumulator : accumulators) {
             AccumulatorContext context = new AccumulatorContext(request, serverPlugin);
@@ -43,16 +45,10 @@ public class AccumulatorDelegator {
             accumulator.accumulate(context);
 
             context.getResult().forEach((graphName, data) -> data.forEach((columnName, value) -> {
-                Graph graph = new Graph(serverPlugin.getPlugin(), graphName);
-                Column column = new Column(graph, columnName);
-
-                result.add(new Tuple<>(column, value));
+                insertToAccumulation(result, serverPlugin.getPlugin(), graphName, columnName, value);
 
                 if (accumulator.isGlobal()) {
-                    Graph globalGraph = new Graph(globalPlugin, graphName);
-                    Column globalColumn = new Column(globalGraph, columnName);
-
-                    result.add(new Tuple<>(globalColumn, value));
+                    insertToAccumulation(result, globalPlugin, graphName, columnName, value);
                 }
             }));
         }
@@ -67,6 +63,37 @@ public class AccumulatorDelegator {
      */
     public void add(Accumulator accumulator) {
         accumulators.add(accumulator);
+    }
+
+    /**
+     * Inserts a value into the given accumulation result
+     *
+     * @param result
+     * @param plugin
+     * @param graphName
+     * @param columnName
+     * @param value
+     */
+    private void insertToAccumulation(Map<Plugin, Map<String, Map<String, Long>>> result, Plugin plugin, String graphName, String columnName, long value) {
+        if (graphName == null || columnName == null) {
+            return;
+        }
+
+        Map<String, Map<String, Long>> data = result.get(plugin);
+
+        if (data == null) {
+            data = new HashMap<>();
+            result.put(plugin, data);
+        }
+
+        Map<String, Long> graphData = data.get(graphName);
+
+        if (graphData == null) {
+            graphData = new HashMap<>();
+            data.put(graphName, graphData);
+        }
+
+        graphData.put(columnName, value);
     }
 
 }

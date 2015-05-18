@@ -123,16 +123,11 @@ public class BatchPluginRequestProcessor {
                     int remaining = 1000;
                     int processed = 0;
 
-                    // ephemeral cache to save many redis RTTs because AccumulatorDelegator#accumulate returns in a crappy format
-                    // TODO if above is fixed, this can be removed ...
-                    Map<Plugin, Map<String, Graph>> pluginGraphCache = new HashMap<>();
-
                     while (!queue.isEmpty() && --remaining >= 0) {
                         DecodedRequest request = queue.poll();
 
-                        Plugin plugin = request.plugin;
                         Server server = loadAndNormalizeServer(request);
-                        ServerPlugin serverPlugin = loadServerPlugin(server, plugin, request);
+                        ServerPlugin serverPlugin = loadServerPlugin(server, request.plugin, request);
 
                         server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
 
@@ -142,46 +137,25 @@ public class BatchPluginRequestProcessor {
 
                             // accumulate all graph data
                             // TODO break out to somewhere else?
-                            List<Tuple<Column, Long>> accumulatedData = accumulatorDelegator.accumulate(request, serverPlugin);
+                            Map<Plugin, Map<String, Map<String, Long>>> accumulatedData = accumulatorDelegator.accumulate(request, serverPlugin);
 
-                            for (Tuple<Column, Long> data : accumulatedData) {
-                                // N.B.: This column & graph are virtual, so are later
-                                // forcibly loaded from the database to rev up caches
-                                // and db state.
-                                Column column = data.first();
-                                Graph graph = column.getGraph();
-                                long value = data.second();
+                            accumulatedData.forEach((plugin, data) -> data.forEach((graphName, graphData) -> {
+                                Graph graph = plugin.getGraph(graphName);
+                                // TODO ensure column is created
+                                // TODO use IDs for below once graph & column is guaranteed to be created
 
-                                if (graph.getName() == null || column.getName() == null) {
-                                    continue;
-                                }
+                                graphData.forEach((columnName, value) -> {
+                                    String redisDataKey = "plugin-data:" + plugin.getId() + ":" + graph.getName() + ":" + columnName;
+                                    String redisDataSumKey = "plugin-data-sum:" + plugin.getId() + ":" + graph.getName() + ":" + columnName;
 
-                                // N.B.: accumulator might return values for the "All Servers" plugin, so
-                                // the plugin from Graph itself must be used.
-                                Map<String, Graph> graphCache = pluginGraphCache.get(graph.getPlugin());
+                                    // metadata
+                                    pipeline.sadd("graphs:" + plugin.getId(), graph.getName());
+                                    pipeline.sadd("columns:" + plugin.getId() + ":" + graph.getName(), columnName);
 
-                                if (graphCache == null) {
-                                    graphCache = new HashMap<>();
-                                    pluginGraphCache.put(graph.getPlugin(), graphCache);
-                                }
-
-                                if (graphCache.containsKey(graph.getName())) {
-                                    graph = graphCache.get(graph.getName());
-                                } else {
-                                    graph = plugin.getGraph(graph.getName());
-                                    graphCache.put(graph.getName(), graph);
-                                }
-
-                                String redisDataKey = String.format("plugin-data:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
-                                String redisDataSumKey = String.format("plugin-data-sum:%d:%s:%s", graph.getPlugin().getId(), graph.getName(), column.getName());
-
-                                // metadata
-                                pipeline.sadd("graphs:" + graph.getPlugin().getId(), graph.getName());
-                                pipeline.sadd("columns:" + graph.getPlugin().getId() + ":" + graph.getName(), column.getName());
-
-                                // data
-                                pipeline.evalsha(redisAddSumScriptSha, 2, redisDataKey, redisDataSumKey, Long.toString(value), server.getUUID());
-                            }
+                                    // data
+                                    pipeline.evalsha(redisAddSumScriptSha, 2, redisDataKey, redisDataSumKey, Long.toString(value), server.getUUID());
+                                });
+                            }));
                         }
 
                         processed ++;
