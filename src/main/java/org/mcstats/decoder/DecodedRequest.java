@@ -1,9 +1,16 @@
 package org.mcstats.decoder;
 
+import org.mcstats.model.Plugin;
+
 import java.lang.reflect.Field;
 import java.util.Map;
 
 public class DecodedRequest {
+
+    /**
+     * The plugin the request is for.
+     */
+    public Plugin plugin;
 
     /**
      * Revision number of the client
@@ -19,6 +26,11 @@ public class DecodedRequest {
      * The uuid in the request
      */
     public String uuid;
+
+    /**
+     * The country the server is from
+     */
+    public String country;
 
     /**
      * The version of the server software

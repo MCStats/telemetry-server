@@ -7,6 +7,7 @@ import org.mcstats.model.Plugin;
 import org.mcstats.model.ServerPlugin;
 import org.mcstats.util.Tuple;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +28,7 @@ public class AccumulatorDelegator {
      */
     private final Plugin globalPlugin;
 
+    @Inject
     public AccumulatorDelegator(MCStats mcstats) {
         globalPlugin = mcstats.loadPlugin("All Servers");
     }
