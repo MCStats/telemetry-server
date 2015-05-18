@@ -40,20 +40,19 @@ public class AccumulatorDelegator {
             // TODO return the list via abstract class instead maybe?
             accumulator.accumulate(context);
 
-            List<Tuple<Column, Long>> accumulated = context.getResult();
+            context.getResult().forEach((graphName, data) -> data.forEach((columnName, value) -> {
+                Graph graph = new Graph(serverPlugin.getPlugin(), graphName);
+                Column column = new Column(graph, columnName);
 
-            result.addAll(accumulated);
+                result.add(new Tuple<>(column, value));
 
-            // if global is allowed: copy them
-            if (accumulator.isGlobal()) {
-                accumulated.forEach(t -> {
-                    // NewColumn globalColumn =
-                    Graph globalGraph = new Graph(globalPlugin, t.first().getGraph().getName());
-                    Column globalColumn = new Column(globalGraph, t.first().getName());
+                if (accumulator.isGlobal()) {
+                    Graph globalGraph = new Graph(globalPlugin, graphName);
+                    Column globalColumn = new Column(globalGraph, columnName);
 
-                    result.add(new Tuple<>(globalColumn, t.second()));
-                });
-            }
+                    result.add(new Tuple<>(globalColumn, value));
+                }
+            }));
         }
 
         return result;

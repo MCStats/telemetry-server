@@ -1,13 +1,11 @@
 package org.mcstats;
 
 import org.mcstats.decoder.DecodedRequest;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
 import org.mcstats.model.ServerPlugin;
-import org.mcstats.util.Tuple;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Context given to accumulators
@@ -27,7 +25,7 @@ public class AccumulatorContext {
     /**
      * The accumulated result
      */
-    private final List<Tuple<Column, Long>> result = new ArrayList<>();
+    private final Map<String, Map<String, Long>> result = new HashMap<>();
 
     public AccumulatorContext(DecodedRequest request, ServerPlugin serverPlugin) {
         this.request = request;
@@ -42,10 +40,14 @@ public class AccumulatorContext {
      * @param value
      */
     public void addData(String graphName, String columnName, long value) {
-        Graph graph = new Graph(serverPlugin.getPlugin(), graphName);
-        Column column = new Column(graph, columnName);
+        Map<String, Long> data = result.get(graphName);
 
-        result.add(new Tuple<>(column, value));
+        if (data == null) {
+            data = new HashMap<>();
+            result.put(graphName, data);
+        }
+
+        data.put(columnName, value);
     }
 
     /**
@@ -68,8 +70,8 @@ public class AccumulatorContext {
         return serverPlugin;
     }
 
-    public List<Tuple<Column, Long>> getResult() {
-        return result;
+    public Map<String, Map<String, Long>> getResult() {
+        return Collections.unmodifiableMap(result);
     }
 
 }
