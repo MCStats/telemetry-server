@@ -83,20 +83,24 @@ public class RedisCache implements ModelCache {
             if (data != null) {
                 Server server = new Server(uuid);
 
-                server.setJavaName(data.get("java.name"));
-                server.setJavaVersion(data.get("java.version"));
-                server.setOSName(data.get("os.name"));
-                server.setOSVersion(data.get("os.version"));
-                server.setOSArch(data.get("os.arch"));
-                server.setOnlineMode(Integer.parseInt(data.get("authMode")));
-                server.setCountry(data.get("country"));
-                server.setServerSoftware(data.get("serverSoftware"));
-                server.setMinecraftVersion(data.get("minecraftVersion"));
-                server.setPlayers(Integer.parseInt(data.get("players.online")));
-                server.setCores(Integer.parseInt(data.get("cores")));
+                try {
+                    server.setJavaName(data.get("java.name"));
+                    server.setJavaVersion(data.get("java.version"));
+                    server.setOSName(data.get("os.name"));
+                    server.setOSVersion(data.get("os.version"));
+                    server.setOSArch(data.get("os.arch"));
+                    server.setOnlineMode(Integer.parseInt(data.get("authMode")));
+                    server.setCountry(data.get("country"));
+                    server.setServerSoftware(data.get("serverSoftware"));
+                    server.setMinecraftVersion(data.get("minecraftVersion"));
+                    server.setPlayers(Integer.parseInt(data.get("players.online")));
+                    server.setCores(Integer.parseInt(data.get("cores")));
 
-                server.setViolationCount(Integer.parseInt(data.get("violations")));
-                server.setLastSentData(Integer.parseInt(data.get("lastSent")));
+                    server.setViolationCount(Integer.parseInt(data.get("violations")));
+                    server.setLastSentData(Integer.parseInt(data.get("lastSent")));
+                } catch (Exception e) { // Ignores formatting errors and the like
+                    return null;
+                }
 
                 return server;
             } else {
@@ -126,8 +130,12 @@ public class RedisCache implements ModelCache {
             if (data != null) {
                 ServerPlugin serverPlugin = new ServerPlugin(server, plugin);
 
-                serverPlugin.setVersion(data.get("version"));
-                serverPlugin.setRevision(Integer.parseInt(data.get("revision")));
+                try {
+                    serverPlugin.setVersion(data.get("version"));
+                    serverPlugin.setRevision(Integer.parseInt(data.get("revision")));
+                } catch (Exception e) { // Ignores formatting errors and the like
+                    return null;
+                }
 
                 return serverPlugin;
             } else {

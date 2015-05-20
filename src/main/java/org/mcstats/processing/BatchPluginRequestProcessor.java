@@ -1,5 +1,6 @@
 package org.mcstats.processing;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 import org.mcstats.AccumulatorDelegator;
@@ -11,19 +12,14 @@ import org.mcstats.accumulator.VersionInfoAccumulator;
 import org.mcstats.db.ModelCache;
 import org.mcstats.db.RedisCache;
 import org.mcstats.decoder.DecodedRequest;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
-import org.mcstats.util.Tuple;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 
 import javax.inject.Singleton;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
@@ -45,7 +41,7 @@ public class BatchPluginRequestProcessor {
     /**
      * The pool used to service requests
      */
-    private final ExecutorService servicePool = Executors.newFixedThreadPool(NUM_THREADS);
+    private final ExecutorService servicePool = Executors.newFixedThreadPool(NUM_THREADS, new ThreadFactoryBuilder().setNameFormat(BatchPluginRequestProcessor.class.getSimpleName() + "-%d").build());
 
     /**
      * The queue used for requests
@@ -140,17 +136,13 @@ public class BatchPluginRequestProcessor {
                             Map<Plugin, Map<String, Map<String, Long>>> accumulatedData = accumulatorDelegator.accumulate(request, serverPlugin);
 
                             accumulatedData.forEach((plugin, data) -> data.forEach((graphName, graphData) -> {
-                                Graph graph = plugin.getGraph(graphName);
-                                // TODO ensure column is created
-                                // TODO use IDs for below once graph & column is guaranteed to be created
-
                                 graphData.forEach((columnName, value) -> {
-                                    String redisDataKey = "plugin-data:" + plugin.getId() + ":" + graph.getName() + ":" + columnName;
-                                    String redisDataSumKey = "plugin-data-sum:" + plugin.getId() + ":" + graph.getName() + ":" + columnName;
+                                    String redisDataKey = "plugin-data:" + plugin.getId() + ":" + graphName + ":" + columnName;
+                                    String redisDataSumKey = "plugin-data-sum:" + plugin.getId() + ":" + graphName + ":" + columnName;
 
                                     // metadata
-                                    pipeline.sadd("graphs:" + plugin.getId(), graph.getName());
-                                    pipeline.sadd("columns:" + plugin.getId() + ":" + graph.getName(), columnName);
+                                    pipeline.sadd("graphs:" + plugin.getId(), graphName);
+                                    pipeline.sadd("columns:" + plugin.getId() + ":" + graphName, columnName);
 
                                     // data
                                     pipeline.evalsha(redisAddSumScriptSha, 2, redisDataKey, redisDataSumKey, Long.toString(value), server.getUUID());

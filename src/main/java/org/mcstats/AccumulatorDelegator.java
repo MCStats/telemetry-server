@@ -1,17 +1,12 @@
 package org.mcstats;
 
 import org.mcstats.decoder.DecodedRequest;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.ServerPlugin;
-import org.mcstats.util.Tuple;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
