@@ -18,13 +18,10 @@ import redis.clients.jedis.JedisPool;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -140,17 +137,17 @@ public class MCStats {
     public String loadRedisScript(String resource) {
         String script = "";
 
-        try {
-            Path path = Paths.get(getClass().getResource(resource).toURI());
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(resource)))) {
+            String line;
 
-            for (String line : Files.readAllLines(path)) {
+            while ((line = reader.readLine()) != null) {
                 line = line.replaceAll("--.*", "").trim();
 
                 if (!line.isEmpty()) {
                     script += line + " ";
                 }
             }
-        } catch (IOException | URISyntaxException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             return null;
         }

@@ -6,7 +6,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.util.ByteArrayISO8859Writer;
 import org.mcstats.MCStats;
-import org.mcstats.db.ModelCache;
 import org.mcstats.db.RedisCache;
 import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.decoder.LegacyRequestDecoder;
@@ -24,9 +23,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class ReportHandler extends AbstractHandler {
