@@ -49,11 +49,6 @@ public class ReportHandler extends AbstractHandler {
     private final Gson gson;
 
     /**
-     * The model cache
-     */
-    private final ModelCache modelCache;
-
-    /**
      * The redis pool
      */
     private final JedisPool redisPool;
@@ -73,16 +68,10 @@ public class ReportHandler extends AbstractHandler {
      */
     private final RequestDecoder legacyDecoder;
 
-    /**
-     * Executor for off-thread work
-     */
-    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 32, 10, TimeUnit.MINUTES, new LinkedBlockingQueue<>());
-
     @Inject
-    public ReportHandler(MCStats mcstats, Gson gson, ModelCache modelCache, JedisPool redisPool, BatchPluginRequestProcessor requestProcessor) {
+    public ReportHandler(MCStats mcstats, Gson gson, JedisPool redisPool, BatchPluginRequestProcessor requestProcessor) {
         this.mcstats = mcstats;
         this.gson = gson;
-        this.modelCache = modelCache;
         this.redisPool = redisPool;
         this.requestProcessor = requestProcessor;
 
