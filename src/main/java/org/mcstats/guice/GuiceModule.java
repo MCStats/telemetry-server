@@ -69,7 +69,7 @@ public class GuiceModule extends AbstractModule {
     private Properties loadProperties() {
         Properties properties = new Properties();
 
-        try (FileReader reader = new FileReader("mcstats.properties")) {
+        try (FileReader reader = new FileReader("config/mcstats.properties")) {
             properties.load(reader);
         } catch (IOException e) {
             e.printStackTrace();
