@@ -199,7 +199,7 @@ public class ReportHandler extends AbstractHandler {
                 return;
             }
 
-            decoded.plugin = plugin;
+            decoded.plugin = plugin.getId();
             decoded.country = getCountryCode(request);
             normalizeRequest(decoded);
 

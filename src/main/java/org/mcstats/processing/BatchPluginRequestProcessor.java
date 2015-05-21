@@ -1,6 +1,7 @@
 package org.mcstats.processing;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.gson.Gson;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 import org.mcstats.AccumulatorDelegator;
@@ -12,14 +13,13 @@ import org.mcstats.accumulator.VersionInfoAccumulator;
 import org.mcstats.db.ModelCache;
 import org.mcstats.db.RedisCache;
 import org.mcstats.decoder.DecodedRequest;
-import org.mcstats.model.Plugin;
-import org.mcstats.model.Server;
-import org.mcstats.model.ServerPlugin;
+import org.mcstats.handler.ReportHandler;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 
 import javax.inject.Singleton;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
@@ -59,13 +59,15 @@ public class BatchPluginRequestProcessor {
     private boolean running = true;
 
     private final MCStats mcstats;
+    private final Gson gson;
     private final RedisCache modelCache;
     private final JedisPool redisPool;
     private final AccumulatorDelegator accumulatorDelegator;
 
     @Inject
-    public BatchPluginRequestProcessor(MCStats mcstats, ModelCache modelCache, JedisPool redisPool, AccumulatorDelegator accumulatorDelegator) {
+    public BatchPluginRequestProcessor(MCStats mcstats, Gson gson, ModelCache modelCache, JedisPool redisPool, AccumulatorDelegator accumulatorDelegator) {
         this.mcstats = mcstats;
+        this.gson = gson;
         this.modelCache = (RedisCache) modelCache; // TODO inject directly?
         this.redisPool = redisPool;
         this.accumulatorDelegator = accumulatorDelegator;
@@ -111,6 +113,9 @@ public class BatchPluginRequestProcessor {
     private final class Worker implements Runnable {
         @Override
         public void run() {
+            // data for each bucket. It's cleared before each pass
+            final Map<String, String> bucketData = new HashMap<>();
+
             while (running) {
                 try (Jedis redis = redisPool.getResource()) {
                     Pipeline pipeline = redis.pipelined();
@@ -119,39 +124,29 @@ public class BatchPluginRequestProcessor {
                     int remaining = 1000;
                     int processed = 0;
 
+                    // Bucket: time segment data is generated for
+                    int bucket = ReportHandler.normalizeTime();
+                    bucketData.clear();
+
                     while (!queue.isEmpty() && --remaining >= 0) {
                         DecodedRequest request = queue.poll();
 
-                        Server server = loadAndNormalizeServer(request);
-                        ServerPlugin serverPlugin = loadServerPlugin(server, request.plugin, request);
-
-                        server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
-
-                        {
-                            modelCache.cacheServer(server, pipeline);
-                            modelCache.cacheServerPlugin(serverPlugin, pipeline);
-
-                            // accumulate all graph data
-                            // TODO break out to somewhere else?
-                            Map<Plugin, Map<String, Map<String, Long>>> accumulatedData = accumulatorDelegator.accumulate(request, serverPlugin);
-
-                            accumulatedData.forEach((plugin, data) -> data.forEach((graphName, graphData) -> {
-                                graphData.forEach((columnName, value) -> {
-                                    String redisDataKey = "plugin-data:" + plugin.getId() + ":" + graphName + ":" + columnName;
-                                    String redisDataSumKey = "plugin-data-sum:" + plugin.getId() + ":" + graphName + ":" + columnName;
-
-                                    // metadata
-                                    pipeline.sadd("graphs:" + plugin.getId(), graphName);
-                                    pipeline.sadd("columns:" + plugin.getId() + ":" + graphName, columnName);
-
-                                    // data
-                                    pipeline.evalsha(redisAddSumScriptSha, 2, redisDataKey, redisDataSumKey, Long.toString(value), server.getUUID());
-                                });
-                            }));
+                        if (request == null) {
+                            continue;
                         }
+
+                        // Plugin versions added to a set so that they can be calculated
+                        // without requiring early accumulation or storing the entire
+                        // ServerPlugin in redis
+                        final String pluginVersionKey = "plugin-version-bucket:" + bucket + ":" + request.uuid + ":" + request.plugin;
+                        pipeline.sadd(pluginVersionKey, request.pluginVersion);
+
+                        bucketData.put(request.uuid, gson.toJson(request));
 
                         processed ++;
                     }
+
+                    pipeline.hmset("plugin-data-bucket:" + bucket, bucketData);
 
                     if (processed > 0) {
                         logger.debug("Processed " + processed + " requests");
@@ -166,109 +161,6 @@ public class BatchPluginRequestProcessor {
 
             }
         }
-    }
-
-    /**
-     * Loads and normalizes a server
-     *
-     * @param decoded
-     * @return
-     */
-    private Server loadAndNormalizeServer(DecodedRequest decoded) {
-        Server server = modelCache.getServer(decoded.uuid);
-
-        if (server == null) {
-            server = new Server(decoded.uuid);
-        }
-
-        if (!server.getCountry().equals(decoded.country)) {
-            server.setCountry(decoded.country);
-        }
-
-        if (!server.getServerVersion().equals(decoded.serverVersion)) {
-            server.setServerVersion(decoded.serverVersion);
-        }
-
-        if ((server.getPlayers() != decoded.playersOnline) && (decoded.playersOnline >= 0)) {
-            server.setPlayers(decoded.playersOnline);
-        }
-
-        String canonicalServerVersion = mcstats.getServerBuildIdentifier().getServerVersion(decoded.serverVersion);
-        String minecraftVersion = mcstats.getServerBuildIdentifier().getMinecraftVersion(decoded.serverVersion);
-
-        if (!server.getServerSoftware().equals(canonicalServerVersion)) {
-            server.setServerSoftware(canonicalServerVersion);
-        }
-
-        if (!server.getMinecraftVersion().equals(minecraftVersion)) {
-            server.setMinecraftVersion(minecraftVersion);
-        }
-
-        if (decoded.revision >= 6) {
-            if (!decoded.osname.equals(server.getOSName())) {
-                server.setOSName(decoded.osname);
-            }
-
-            if ((decoded.osarch != null) && (!decoded.osarch.equals(server.getOSArch()))) {
-                server.setOSArch(decoded.osarch);
-            }
-
-            if (!decoded.osversion.equals(server.getOSVersion())) {
-                server.setOSVersion(decoded.osversion);
-            }
-
-            if (server.getCores() != decoded.cores) {
-                server.setCores(decoded.cores);
-            }
-
-            if (server.getOnlineMode() != decoded.authMode) {
-                server.setOnlineMode(decoded.authMode);
-            }
-
-            if (!decoded.javaName.equals(server.getJavaName())) {
-                server.setJavaName(decoded.javaName);
-            }
-
-            if (!decoded.javaVersion.equals(server.getJavaVersion())) {
-                server.setJavaVersion(decoded.javaVersion);
-            }
-        }
-
-        return server;
-    }
-
-    /**
-     * Loads and normalizes a server plugin
-     *
-     * @param server
-     * @param plugin
-     * @param decoded
-     * @return
-     */
-    private ServerPlugin loadServerPlugin(Server server, Plugin plugin, DecodedRequest decoded) {
-        ServerPlugin serverPlugin = modelCache.getServerPlugin(server, plugin);
-
-        if (serverPlugin == null) {
-            serverPlugin = new ServerPlugin(server, plugin);
-        }
-
-        boolean isBlacklisted = server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED;
-
-        if (!serverPlugin.getVersion().equals(decoded.pluginVersion) && !isBlacklisted) {
-            serverPlugin.addVersionChange(serverPlugin.getVersion(), decoded.pluginVersion);
-            serverPlugin.setVersion(decoded.pluginVersion);
-            server.incrementViolations();
-        }
-
-        if (serverPlugin.getRevision() != decoded.revision) {
-            serverPlugin.setRevision(decoded.revision);
-        }
-
-        if (decoded.revision >= 4 && !server.getCountry().equals("SG")) {
-            serverPlugin.setCustomData(decoded.customData);
-        }
-
-        return serverPlugin;
     }
 
 }
