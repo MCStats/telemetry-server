@@ -5,9 +5,8 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -17,7 +16,7 @@ public class ServerBuildIdentifier {
     /**
      * The file definitions are stored in
      */
-    private static final String DEFINITIONS_FILE = "server-definitions.txt";
+    private static final String DEFINITIONS_RESOURCE = "/server-definitions.txt";
 
     /**
      * The default server when none is matched
@@ -93,30 +92,27 @@ public class ServerBuildIdentifier {
      * @throws IOException
      */
     public void loadDefinitions() throws IOException {
-        File file = new File(DEFINITIONS_FILE);
-
         // clear out the old definitons
         clear();
 
         // read the file
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(DEFINITIONS_RESOURCE)))) {
+            String line;
 
-        while ((line = reader.readLine()) != null) {
-            line = line.trim();
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
 
-            if (line.isEmpty() || line.startsWith("#")) {
-                continue;
-            }
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
 
-            String[] def = line.split("\\s+");
+                String[] def = line.split("\\s+");
 
-            if (def.length == 2) {
-                definitions.put(def[0], def[1]);
+                if (def.length == 2) {
+                    definitions.put(def[0], def[1]);
+                }
             }
         }
-
-        reader.close();
     }
 
     /**
