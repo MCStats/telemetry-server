@@ -92,7 +92,7 @@ public class ServerBuildIdentifier {
      * @throws IOException
      */
     public void loadDefinitions() throws IOException {
-        // clear out the old definitons
+        // clear out the old definitions
         clear();
 
         // read the file
