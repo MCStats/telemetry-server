@@ -19,8 +19,6 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 
 import javax.inject.Singleton;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -79,7 +77,7 @@ public class BatchPluginRequestProcessor {
         accumulatorDelegator.add(new VersionInfoAccumulator());
         accumulatorDelegator.add(new CustomDataAccumulator());
 
-        for (int i = 0; i < NUM_THREADS; i ++) {
+        for (int i = 0; i < NUM_THREADS; i++) {
             servicePool.execute(new Worker());
         }
     }
@@ -113,9 +111,6 @@ public class BatchPluginRequestProcessor {
     private final class Worker implements Runnable {
         @Override
         public void run() {
-            // data for each bucket. It's cleared before each pass
-            final Map<String, String> bucketData = new HashMap<>();
-
             while (running) {
                 try (Jedis redis = redisPool.getResource()) {
                     Pipeline pipeline = redis.pipelined();
@@ -126,7 +121,6 @@ public class BatchPluginRequestProcessor {
 
                     // Bucket: time segment data is generated for
                     int bucket = ReportHandler.normalizeTime();
-                    bucketData.clear();
 
                     while (!queue.isEmpty() && --remaining >= 0) {
                         DecodedRequest request = queue.poll();
@@ -141,12 +135,11 @@ public class BatchPluginRequestProcessor {
                         final String pluginVersionKey = "plugin-version-bucket:" + bucket + ":" + request.uuid + ":" + request.plugin;
                         pipeline.sadd(pluginVersionKey, request.pluginVersion);
 
-                        bucketData.put(request.uuid, gson.toJson(request));
+                        final String pluginBucketKey = "plugin-data-bucket:" + bucket + ":" + request.plugin;
+                        pipeline.hset(pluginBucketKey, request.uuid, gson.toJson(request));
 
-                        processed ++;
+                        processed++;
                     }
-
-                    pipeline.hmset("plugin-data-bucket:" + bucket, bucketData);
 
                     if (processed > 0) {
                         logger.debug("Processed " + processed + " requests");
