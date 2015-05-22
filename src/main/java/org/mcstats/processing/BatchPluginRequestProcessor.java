@@ -111,13 +111,13 @@ public class BatchPluginRequestProcessor {
                         }
 
                         // Plugin versions added to a set to minimize overhead of calculated version changes
-                        final String pluginVersionKey = "plugin-version-bucket:" + bucket + ":" + request.uuid + ":" + request.plugin;
+                        final String pluginVersionKey = "plugin-versions:" + bucket + ":" + request.uuid + ":" + request.plugin;
                         pipeline.sadd(pluginVersionKey, request.pluginVersion);
 
-                        final String pluginsKey = "plugins-bucket:" + bucket;
+                        final String pluginsKey = "plugins:" + bucket;
                         pipeline.sadd(pluginsKey, Integer.toString(request.plugin));
 
-                        final String pluginBucketKey = "plugin-data-bucket:" + bucket + ":" + request.plugin;
+                        final String pluginBucketKey = "plugin-data:" + bucket + ":" + request.plugin;
                         pipeline.hset(pluginBucketKey, request.uuid, gson.toJson(request));
 
                         processed++;

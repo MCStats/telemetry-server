@@ -58,7 +58,7 @@ public class PluginDataAccumulator implements Runnable {
                 logger.debug("Accumulating data for plugin: " + pluginId);
 
                 // server data
-                final Map<String, String> serverData = redis.hgetAll("plugin-data-bucket:" + bucket + ":" + pluginId);
+                final Map<String, String> serverData = redis.hgetAll("plugin-data:" + bucket + ":" + pluginId);
 
                 // versions for all servers
                 final Map<String, Set<String>> serverVersions = getPluginVersions(redis, bucket, pluginId, serverData.keySet());
@@ -107,7 +107,7 @@ public class PluginDataAccumulator implements Runnable {
      */
     private Set<String> getPlugins(int bucket) {
         try (Jedis redis = redisPool.getResource()) {
-            Set<String> result = redis.smembers("plugins-bucket:" + bucket);
+            Set<String> result = redis.smembers("plugins:" + bucket);
 
             if (result != null) {
                 return result;
@@ -137,7 +137,7 @@ public class PluginDataAccumulator implements Runnable {
             Pipeline pipeline = redis.pipelined();
 
             for (String serverId : serverIds) {
-                final String versionKey = "plugin-version-bucket:" + bucket + ":" + serverId + ":" + pluginId;
+                final String versionKey = "plugin-versions:" + bucket + ":" + serverId + ":" + pluginId;
 
                 versionResponses.put(serverId, pipeline.smembers(versionKey));
             }
