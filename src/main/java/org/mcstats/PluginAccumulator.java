@@ -23,7 +23,7 @@ public class PluginAccumulator {
     /**
      * ID of the global plugin (for global stats)
      */
-    private static final int GLOBAL_PLUGIN_ID = -1;
+    public static final int GLOBAL_PLUGIN_ID = -1;
 
     /**
      * All available accumulators

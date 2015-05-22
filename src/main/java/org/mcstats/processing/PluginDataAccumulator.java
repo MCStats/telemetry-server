@@ -5,7 +5,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-import org.mcstats.MCStats;
 import org.mcstats.PluginAccumulator;
 import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.guice.GuiceModule;
@@ -28,17 +27,11 @@ public class PluginDataAccumulator implements Runnable {
     private final JedisPool redisPool;
     private final PluginAccumulator accumulator;
 
-    /**
-     * SHA of the redis sum add script. TODO better way of storing the SHAs rather than locally?
-     */
-    private final String redisAddSumScriptSha;
-
     @Inject
-    public PluginDataAccumulator(MCStats mcstats, Gson gson, JedisPool redisPool, PluginAccumulator accumulator) {
+    public PluginDataAccumulator(Gson gson, JedisPool redisPool, PluginAccumulator accumulator) {
         this.gson = gson;
         this.redisPool = redisPool;
         this.accumulator = accumulator;
-        this.redisAddSumScriptSha = mcstats.loadRedisScript("/scripts/redis/zadd-sum.lua");
     }
 
     @Override
@@ -52,18 +45,21 @@ public class PluginDataAccumulator implements Runnable {
 
         long start = System.currentTimeMillis();
 
+        // cauldron for global stats (i.e. all servers)
+        final GraphCauldron globalCauldron = new GraphCauldron();
+
         // TODO this should be safely parallelized
         pluginIds.parallelStream().mapToInt(Integer::parseInt).forEach(pluginId -> {
             try (Jedis redis = redisPool.getResource()) {
                 logger.debug("Accumulating data for plugin: " + pluginId);
+
+                final GraphCauldron pluginCauldron = new GraphCauldron();
 
                 // server data
                 final Map<String, String> serverData = redis.hgetAll("plugin-data:" + bucket + ":" + pluginId);
 
                 // versions for all servers
                 final Map<String, Set<String>> serverVersions = getPluginVersions(redis, bucket, pluginId, serverData.keySet());
-
-                Pipeline pipeline = redis.pipelined();
 
                 serverData.forEach((serverId, data) -> {
                     DecodedRequest request = gson.fromJson(data, DecodedRequest.class);
@@ -77,23 +73,21 @@ public class PluginDataAccumulator implements Runnable {
                     Map<Integer, Map<String, Map<String, Long>>> accumulatedData = accumulator.accumulate(request, versions);
 
                     accumulatedData.forEach((accumPluginId, accumPluginData) -> accumPluginData.forEach((graphName, graphData) -> {
-                        graphData.forEach((columnName, value) -> {
-                            final String redisDataKey = "plugin-accumulated:" + bucket + ":" + accumPluginId + ":" + graphName + ":" + columnName;
-                            final String redisDataSumKey = "plugin-accumulated-sum:" + bucket + ":" + accumPluginId + ":" + graphName + ":" + columnName;
-
-                            // metadata
-                            pipeline.sadd("plugin-accumulated-graphs: " + bucket + ":" + accumPluginId, graphName);
-                            pipeline.sadd("plugin-accumulated-columns:" + bucket + ":" + accumPluginId + ":" + graphName, columnName);
-
-                            // data
-                            pipeline.evalsha(redisAddSumScriptSha, 2, redisDataKey, redisDataSumKey, Long.toString(value), serverId);
-                        });
+                        if (accumPluginId == PluginAccumulator.GLOBAL_PLUGIN_ID) {
+                            globalCauldron.mix(accumPluginData);
+                        } else if (accumPluginId == pluginId) {
+                            pluginCauldron.mix(accumPluginData);
+                        } else {
+                            throw new UnsupportedOperationException("Accumulated data for unexpected plugin: " + accumPluginId + " was expecting: " + pluginId + " or global");
+                        }
                     }));
                 });
 
-                pipeline.sync();
+                System.out.println(pluginId + " -> " + gson.toJson(pluginCauldron.getData()));
             }
         });
+
+        System.out.println("global -> " + gson.toJson(globalCauldron.getData()));
 
         long taken = System.currentTimeMillis() - start;
         logger.debug("Accumulated " + pluginIds.size() + " plugins in " + taken + " ms");
