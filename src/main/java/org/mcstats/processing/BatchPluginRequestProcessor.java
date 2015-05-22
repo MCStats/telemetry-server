@@ -56,26 +56,14 @@ public class BatchPluginRequestProcessor {
      */
     private boolean running = true;
 
-    private final MCStats mcstats;
     private final Gson gson;
-    private final RedisCache modelCache;
     private final JedisPool redisPool;
-    private final AccumulatorDelegator accumulatorDelegator;
 
     @Inject
-    public BatchPluginRequestProcessor(MCStats mcstats, Gson gson, ModelCache modelCache, JedisPool redisPool, AccumulatorDelegator accumulatorDelegator) {
-        this.mcstats = mcstats;
+    public BatchPluginRequestProcessor(MCStats mcstats, Gson gson, JedisPool redisPool) {
         this.gson = gson;
-        this.modelCache = (RedisCache) modelCache; // TODO inject directly?
         this.redisPool = redisPool;
-        this.accumulatorDelegator = accumulatorDelegator;
         this.redisAddSumScriptSha = mcstats.loadRedisScript("/scripts/redis/zadd-sum.lua");
-
-        // TODO add from somewhere else
-        accumulatorDelegator.add(new ServerInfoAccumulator(mcstats));
-        accumulatorDelegator.add(new MCStatsInfoAccumulator());
-        accumulatorDelegator.add(new VersionInfoAccumulator());
-        accumulatorDelegator.add(new CustomDataAccumulator());
 
         for (int i = 0; i < NUM_THREADS; i++) {
             servicePool.execute(new Worker());
