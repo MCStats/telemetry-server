@@ -8,6 +8,7 @@ import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.util.ServerBuildIdentifier;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -16,6 +17,7 @@ import java.util.Set;
 /**
  * A registry of accumulators that are available. Allows accumulating as well.
  */
+@Singleton
 public class PluginAccumulator {
 
     /**
