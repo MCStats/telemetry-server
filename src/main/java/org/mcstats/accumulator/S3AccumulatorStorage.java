@@ -106,7 +106,7 @@ public class S3AccumulatorStorage {
         try {
             String data = IOUtils.toString(new GZIPInputStream(object.getObjectContent()));
 
-            Type type = new TypeToken<Map<String, Map<String, Long>>>(){}.getType();
+            Type type = new TypeToken<Map<Integer, Map<String, Map<String, Long>>>>(){}.getType();
             return gson.fromJson(data, type);
         } catch (IOException e) {
             e.printStackTrace();
