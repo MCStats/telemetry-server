@@ -50,7 +50,10 @@ public class PluginDataAccumulator implements Runnable {
 
         // cauldron for global stats (i.e. all servers)
         final Map<Integer, Map<String, Map<String, Long>>> allData = new HashMap<>();
-        final GraphCauldron globalCauldron = new GraphCauldron();
+
+        // global data. Does not use a cauldron here to prevent servers being counted twice.
+        // key = server-uuid
+        final Map<String, Map<String, Map<String, Long>>> globalData = new HashMap<>();
 
         // TODO this should be safely parallelized
         pluginIds.parallelStream().mapToInt(Integer::parseInt).forEach(pluginId -> {
@@ -78,7 +81,7 @@ public class PluginDataAccumulator implements Runnable {
 
                     accumulatedData.forEach((accumPluginId, accumPluginData) -> accumPluginData.forEach((graphName, graphData) -> {
                         if (accumPluginId == PluginAccumulator.GLOBAL_PLUGIN_ID) {
-                            globalCauldron.mix(accumPluginData);
+                            globalData.put(serverId, accumPluginData);
                         } else if (accumPluginId == pluginId) {
                             pluginCauldron.mix(accumPluginData);
                         } else {
@@ -91,8 +94,12 @@ public class PluginDataAccumulator implements Runnable {
             }
         });
 
+        // Build the global cauldron from globalData and add it to the data
+        final GraphCauldron globalCauldron = new GraphCauldron();
+        globalData.forEach((serverId, data) -> globalCauldron.mix(data));
         allData.put(PluginAccumulator.GLOBAL_PLUGIN_ID, globalCauldron.getData());
 
+        // Send to S3
         accumulatorStorage.putPluginData(bucket, allData);
 
         long taken = System.currentTimeMillis() - start;
