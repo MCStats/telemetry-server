@@ -6,6 +6,7 @@ import com.google.inject.Injector;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.mcstats.PluginAccumulator;
+import org.mcstats.accumulator.S3AccumulatorStorage;
 import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.guice.GuiceModule;
 import redis.clients.jedis.Jedis;
@@ -26,12 +27,14 @@ public class PluginDataAccumulator implements Runnable {
     private final Gson gson;
     private final JedisPool redisPool;
     private final PluginAccumulator accumulator;
+    private final S3AccumulatorStorage accumulatorStorage;
 
     @Inject
-    public PluginDataAccumulator(Gson gson, JedisPool redisPool, PluginAccumulator accumulator) {
+    public PluginDataAccumulator(Gson gson, JedisPool redisPool, PluginAccumulator accumulator, S3AccumulatorStorage accumulatorStorage) {
         this.gson = gson;
         this.redisPool = redisPool;
         this.accumulator = accumulator;
+        this.accumulatorStorage = accumulatorStorage;
     }
 
     @Override
@@ -46,6 +49,7 @@ public class PluginDataAccumulator implements Runnable {
         long start = System.currentTimeMillis();
 
         // cauldron for global stats (i.e. all servers)
+        final Map<Integer, Map<String, Map<String, Long>>> allData = new HashMap<>();
         final GraphCauldron globalCauldron = new GraphCauldron();
 
         // TODO this should be safely parallelized
@@ -83,11 +87,13 @@ public class PluginDataAccumulator implements Runnable {
                     }));
                 });
 
-                System.out.println(pluginId + " -> " + gson.toJson(pluginCauldron.getData()));
+                allData.put(pluginId, pluginCauldron.getData());
             }
         });
 
-        System.out.println("global -> " + gson.toJson(globalCauldron.getData()));
+        allData.put(PluginAccumulator.GLOBAL_PLUGIN_ID, globalCauldron.getData());
+
+        accumulatorStorage.putPluginData(bucket, allData);
 
         long taken = System.currentTimeMillis() - start;
         logger.debug("Accumulated " + pluginIds.size() + " plugins in " + taken + " ms");
