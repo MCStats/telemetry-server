@@ -129,9 +129,7 @@ public class BatchPluginRequestProcessor {
                             continue;
                         }
 
-                        // Plugin versions added to a set so that they can be calculated
-                        // without requiring early accumulation or storing the entire
-                        // ServerPlugin in redis
+                        // Plugin versions added to a set to minimize overhead of calculated version changes
                         final String pluginVersionKey = "plugin-version-bucket:" + bucket + ":" + request.uuid + ":" + request.plugin;
                         pipeline.sadd(pluginVersionKey, request.pluginVersion);
 
