@@ -87,6 +87,70 @@ public class DecodedRequest {
      */
     public Map<String, Map<String, Long>> customData;
 
+    public int getPlugin() {
+        return plugin;
+    }
+
+    public int getRevision() {
+        return revision;
+    }
+
+    public boolean isPing() {
+        return isPing;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public String getServerVersion() {
+        return serverVersion;
+    }
+
+    public String getPluginVersion() {
+        return pluginVersion;
+    }
+
+    public int getPlayersOnline() {
+        return playersOnline;
+    }
+
+    public String getOSName() {
+        return osname;
+    }
+
+    public String getOSVersion() {
+        return osversion;
+    }
+
+    public String getOSArch() {
+        return osarch;
+    }
+
+    public String getJavaName() {
+        return javaName;
+    }
+
+    public String getJavaVersion() {
+        return javaVersion;
+    }
+
+    public int getCores() {
+        return cores;
+    }
+
+    public int getAuthMode() {
+        return authMode;
+    }
+
+    public Map<String, Map<String, Long>> getCustomData() {
+        return customData;
+    }
+
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();

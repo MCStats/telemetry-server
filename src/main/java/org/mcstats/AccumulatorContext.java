@@ -1,11 +1,11 @@
 package org.mcstats;
 
 import org.mcstats.decoder.DecodedRequest;
-import org.mcstats.model.ServerPlugin;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Context given to accumulators
@@ -15,21 +15,21 @@ public class AccumulatorContext {
     /**
      * The request
      */
-    private DecodedRequest request;
+    private final DecodedRequest request;
 
     /**
-     * The plugin for the request
+     * Set of version changes
      */
-    private ServerPlugin serverPlugin;
+    private final Set<String> versionChanges;
 
     /**
      * The accumulated result
      */
     private final Map<String, Map<String, Long>> result = new HashMap<>();
 
-    public AccumulatorContext(DecodedRequest request, ServerPlugin serverPlugin) {
+    public AccumulatorContext(DecodedRequest request, Set<String> versionChanges) {
         this.request = request;
-        this.serverPlugin = serverPlugin;
+        this.versionChanges = versionChanges;
     }
 
     /**
@@ -66,8 +66,8 @@ public class AccumulatorContext {
         return request;
     }
 
-    public ServerPlugin getServerPlugin() {
-        return serverPlugin;
+    public Set<String> getVersionChanges() {
+        return versionChanges;
     }
 
     public Map<String, Map<String, Long>> getResult() {

@@ -9,7 +9,7 @@ public class CustomDataAccumulator implements Accumulator {
 
     @Override
     public void accumulate(AccumulatorContext context) {
-        Map<String, Map<String, Long>> data = context.getServerPlugin().getCustomData();
+        Map<String, Map<String, Long>> data = context.getRequest().getCustomData();
 
         data.forEach((graphName, columns) -> columns.forEach((columnName, value) -> context.addData(graphName, columnName, value)));
     }

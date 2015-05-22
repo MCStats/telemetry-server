@@ -1,8 +1,13 @@
 package org.mcstats;
 
+import org.mcstats.accumulator.CustomDataAccumulator;
+import org.mcstats.accumulator.MCStatsInfoAccumulator;
+import org.mcstats.accumulator.ServerInfoAccumulator;
+import org.mcstats.accumulator.VersionInfoAccumulator;
 import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.ServerPlugin;
+import org.mcstats.util.ServerBuildIdentifier;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -13,7 +18,7 @@ import java.util.Set;
 /**
  * A registry of accumulators that are available. Allows accumulating as well.
  */
-public class AccumulatorDelegator {
+public class PluginAccumulator {
 
     /**
      * All available accumulators
@@ -26,15 +31,21 @@ public class AccumulatorDelegator {
     private final Plugin globalPlugin;
 
     @Inject
-    public AccumulatorDelegator(MCStats mcstats) {
+    public PluginAccumulator(MCStats mcstats, ServerBuildIdentifier serverBuildIdentifier) {
         globalPlugin = mcstats.loadPlugin("All Servers");
+
+        // TODO add these dynamically?
+        add(new MCStatsInfoAccumulator());
+        add(new ServerInfoAccumulator(mcstats, serverBuildIdentifier));
+        add(new VersionInfoAccumulator());
+        add(new CustomDataAccumulator());
     }
 
-    public Map<Plugin, Map<String, Map<String, Long>>> accumulate(DecodedRequest request, ServerPlugin serverPlugin) {
+    public Map<Plugin, Map<String, Map<String, Long>>> accumulate(DecodedRequest request, ServerPlugin serverPlugin, Set<String> versionChanges) {
         Map<Plugin, Map<String, Map<String, Long>>> result = new HashMap<>();
 
         for (Accumulator accumulator : accumulators) {
-            AccumulatorContext context = new AccumulatorContext(request, serverPlugin);
+            AccumulatorContext context = new AccumulatorContext(request, versionChanges);
 
             // TODO return the list via abstract class instead maybe?
             accumulator.accumulate(context);
