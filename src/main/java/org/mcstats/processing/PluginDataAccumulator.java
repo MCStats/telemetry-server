@@ -102,6 +102,10 @@ public class PluginDataAccumulator implements Runnable {
         // Send to S3
         accumulatorStorage.putPluginData(bucket, allData);
 
+        try (Jedis redis = redisPool.getResource()) {
+            redis.sadd("plugin-buckets-ungenerated", Integer.toString(bucket));
+        }
+
         long taken = System.currentTimeMillis() - start;
         logger.debug("Accumulated " + pluginIds.size() + " plugins in " + taken + " ms");
     }
