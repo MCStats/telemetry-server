@@ -87,7 +87,7 @@ public class DecodedRequest {
      */
     public Map<String, Map<String, Long>> customData;
 
-    public int getPlugin() {
+    public int getPluginId() {
         return plugin;
     }
 

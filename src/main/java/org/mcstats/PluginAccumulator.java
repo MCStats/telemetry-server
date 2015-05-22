@@ -5,8 +5,6 @@ import org.mcstats.accumulator.MCStatsInfoAccumulator;
 import org.mcstats.accumulator.ServerInfoAccumulator;
 import org.mcstats.accumulator.VersionInfoAccumulator;
 import org.mcstats.decoder.DecodedRequest;
-import org.mcstats.model.Plugin;
-import org.mcstats.model.ServerPlugin;
 import org.mcstats.util.ServerBuildIdentifier;
 
 import javax.inject.Inject;
@@ -21,19 +19,17 @@ import java.util.Set;
 public class PluginAccumulator {
 
     /**
+     * ID of the global plugin (for global stats)
+     */
+    private static final int GLOBAL_PLUGIN_ID = -1;
+
+    /**
      * All available accumulators
      */
     private final Set<Accumulator> accumulators = new HashSet<>();
 
-    /**
-     * The plugin used for All Servers
-     */
-    private final Plugin globalPlugin;
-
     @Inject
     public PluginAccumulator(MCStats mcstats, ServerBuildIdentifier serverBuildIdentifier) {
-        globalPlugin = mcstats.loadPlugin("All Servers");
-
         // TODO add these dynamically?
         add(new MCStatsInfoAccumulator());
         add(new ServerInfoAccumulator(mcstats, serverBuildIdentifier));
@@ -41,8 +37,8 @@ public class PluginAccumulator {
         add(new CustomDataAccumulator());
     }
 
-    public Map<Plugin, Map<String, Map<String, Long>>> accumulate(DecodedRequest request, ServerPlugin serverPlugin, Set<String> versionChanges) {
-        Map<Plugin, Map<String, Map<String, Long>>> result = new HashMap<>();
+    public Map<Integer, Map<String, Map<String, Long>>> accumulate(DecodedRequest request, Set<String> versionChanges) {
+        Map<Integer, Map<String, Map<String, Long>>> result = new HashMap<>();
 
         for (Accumulator accumulator : accumulators) {
             AccumulatorContext context = new AccumulatorContext(request, versionChanges);
@@ -51,10 +47,10 @@ public class PluginAccumulator {
             accumulator.accumulate(context);
 
             context.getResult().forEach((graphName, data) -> data.forEach((columnName, value) -> {
-                insertToAccumulation(result, serverPlugin.getPlugin(), graphName, columnName, value);
+                insertToAccumulation(result, request.getPluginId(), graphName, columnName, value);
 
                 if (accumulator.isGlobal()) {
-                    insertToAccumulation(result, globalPlugin, graphName, columnName, value);
+                    insertToAccumulation(result, GLOBAL_PLUGIN_ID, graphName, columnName, value);
                 }
             }));
         }
@@ -75,21 +71,21 @@ public class PluginAccumulator {
      * Inserts a value into the given accumulation result
      *
      * @param result
-     * @param plugin
+     * @param pluginId
      * @param graphName
      * @param columnName
      * @param value
      */
-    private void insertToAccumulation(Map<Plugin, Map<String, Map<String, Long>>> result, Plugin plugin, String graphName, String columnName, long value) {
+    private void insertToAccumulation(Map<Integer, Map<String, Map<String, Long>>> result, int pluginId, String graphName, String columnName, long value) {
         if (graphName == null || columnName == null) {
             return;
         }
 
-        Map<String, Map<String, Long>> data = result.get(plugin);
+        Map<String, Map<String, Long>> data = result.get(pluginId);
 
         if (data == null) {
             data = new HashMap<>();
-            result.put(plugin, data);
+            result.put(pluginId, data);
         }
 
         Map<String, Long> graphData = data.get(graphName);
