@@ -46,7 +46,7 @@ public class PluginDataAccumulator implements Runnable {
         // TODO calculate the bucket id
         // redis set of unaggregated buckets?
         // That *should* allow aggregation of past buckets if needed (e.g. aggregator stops for a couple hours).
-        final int bucket = 1432301400;
+        final int bucket = 1432308600;
 
         final Set<String> pluginIds = getPlugins(bucket);
 
