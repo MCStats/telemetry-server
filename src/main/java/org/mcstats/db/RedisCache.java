@@ -3,7 +3,6 @@ package org.mcstats.db;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
-import org.mcstats.model.ServerPlugin;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
@@ -121,41 +120,6 @@ public class RedisCache implements ModelCache {
     }
 
     @Override
-    public ServerPlugin getServerPlugin(Server server, Plugin plugin) {
-        String key = String.format(SERVER_PLUGIN_KEY, server.getUUID(), plugin.getId());
-
-        try (Jedis redis = pool.getResource()) {
-            Map<String, String> data = redis.hgetAll(key);
-
-            if (data != null) {
-                ServerPlugin serverPlugin = new ServerPlugin(server, plugin);
-
-                try {
-                    serverPlugin.setVersion(data.get("version"));
-                    serverPlugin.setRevision(Integer.parseInt(data.get("revision")));
-                } catch (Exception e) { // Ignores formatting errors and the like
-                    return null;
-                }
-
-                return serverPlugin;
-            } else {
-                return null;
-            }
-        }
-    }
-
-    @Override
-    public void cacheServerPlugin(ServerPlugin serverPlugin) {
-        try (Jedis redis = pool.getResource()) {
-            Pipeline pipeline = redis.pipelined();
-
-            cacheServerPlugin(serverPlugin, pipeline);
-
-            pipeline.sync();
-        }
-    }
-
-    @Override
     public Graph getPluginGraph(Plugin plugin, String name) {
         String key = String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId(), name);
 
@@ -244,23 +208,6 @@ public class RedisCache implements ModelCache {
 
         pipeline.hmset(key, data);
         pipeline.sadd(SERVERS_KEY, server.getUUID());
-    }
-
-    /**
-     * Caches a server plugin with the given pipeline
-     * @param serverPlugin
-     * @param pipeline
-     */
-    public void cacheServerPlugin(ServerPlugin serverPlugin, Pipeline pipeline) {
-        String key = String.format(SERVER_PLUGIN_KEY, serverPlugin.getServer().getUUID(), serverPlugin.getPlugin().getId());
-
-        Map<String, String> data = new HashMap<>();
-        data.put("version", serverPlugin.getVersion());
-        data.put("revision", Integer.toString(serverPlugin.getRevision()));
-
-        pipeline.hmset(key, data);
-        pipeline.sadd(String.format(SERVER_PLUGINS_KEY, serverPlugin.getServer().getUUID()), Integer.toString(serverPlugin.getPlugin().getId()));
-        pipeline.set(String.format(SERVER_LAST_SENT_KEY, serverPlugin.getServer().getUUID(), serverPlugin.getPlugin().getId()), Integer.toString(serverPlugin.getServer().getLastSentData()));
     }
 
     /**
