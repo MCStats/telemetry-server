@@ -32,9 +32,6 @@ public class RedisCache implements ModelCache {
     public static final String SERVER_KEY = "server:%s";
     public static final String SERVER_LAST_SENT_KEY = "server-last-sent:%s:%d";
 
-    public static final String SERVER_PLUGINS_KEY = "server-plugins:%s";
-    public static final String SERVER_PLUGIN_KEY = "server-plugin:%s:%d"; // server-uuid, plugin-id
-
     private final Database database;
     private final JedisPool pool;
 
