@@ -40,7 +40,7 @@ public class S3AccumulatorStorage {
 
     @Inject
     public S3AccumulatorStorage(Gson gson,
-                                @Named("s3.bucket-accumulator") String bucket,
+                                @Named("accumulator.s3-bucket") String bucket,
                                 @Named("aws.access-key") String accessKey,
                                 @Named("aws.secret-key") String secretKey) {
         this.gson = gson;
