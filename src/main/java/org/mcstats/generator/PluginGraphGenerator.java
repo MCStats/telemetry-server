@@ -12,6 +12,7 @@ import redis.clients.jedis.JedisPool;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,11 +49,12 @@ public class PluginGraphGenerator {
             Map<String, Map<String, Long>> pluginData = data.get(pluginId);
 
             final Plugin plugin = mcstats.loadPlugin(pluginId);
-            List<Tuple<Column, Long>> generatedData = new ArrayList<>();
+            Map<Graph, List<Tuple<Column, Long>>> generatedGraphs = new HashMap<>();
 
             logger.debug("Generating data for plugin: " + plugin.getId());
 
             pluginData.forEach((graphName, graphData) -> {
+                List<Tuple<Column, Long>> generatedData = new ArrayList<>();
                 Graph graph = plugin.getGraph(graphName);
 
                 graphData.forEach((columnName, value) -> {
@@ -62,11 +64,10 @@ public class PluginGraphGenerator {
                     generatedData.add(new Tuple<>(column, value));
                 });
 
-                // ...
+                generatedGraphs.put(graph, generatedData);
             });
 
-            // TODO add a batchInsert variant that can insert data for multiple graphs at the same time
-            // instead of doing a batchInsert for each one (upwards of 50k+ graphs!)
+            // graphStore.insert(generatedGraphs, epoch);
         });
 
         long taken = System.currentTimeMillis() - start;
