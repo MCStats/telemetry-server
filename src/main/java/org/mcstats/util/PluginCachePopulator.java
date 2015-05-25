@@ -36,6 +36,7 @@ public class PluginCachePopulator {
 
             for (Graph graph : database.loadGraphs(plugin)) {
                 modelCache.cachePluginGraph(plugin, graph);
+                modelCache.cachePluginGraphColumns(graph, database.loadColumns(graph));
             }
 
             cached ++;

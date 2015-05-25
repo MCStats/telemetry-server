@@ -1,5 +1,6 @@
 package org.mcstats.db;
 
+import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
@@ -9,7 +10,9 @@ import redis.clients.jedis.Pipeline;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Singleton
@@ -22,6 +25,8 @@ public class RedisCache implements ModelCache {
     public static final String PLUGIN_GRAPHS_KEY = "plugin-graphs:%d";
     public static final String PLUGIN_GRAPH_KEY = "plugin-graph:%d";
     public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graph-index:%d:%s";
+
+    public static final String PLUGIN_GRAPH_COLUMNS_KEY = "plugin-graph-columns:%d"; // hash: id -> name
 
     public static final String SERVERS_KEY = "servers";
     public static final String SERVER_KEY = "server:%s";
@@ -149,6 +154,42 @@ public class RedisCache implements ModelCache {
             Pipeline pipeline = redis.pipelined();
 
             cachePluginGraph(plugin, graph, pipeline);
+
+            pipeline.sync();
+        }
+    }
+
+    @Override
+    public List<Column> getPluginGraphColumns(Graph graph) {
+        List<Column> columns = new ArrayList<>();
+
+        String key = String.format(PLUGIN_GRAPH_COLUMNS_KEY, graph.getId());
+
+        try (Jedis redis = pool.getResource()) {
+            Map<String, String> data = redis.hgetAll(key);
+
+            data.forEach((columnId, columnName) -> {
+                Column column = new Column(graph, columnName);
+                column.initFromDatabase(Integer.parseInt(columnId));
+
+                columns.add(column);
+            });
+        }
+
+        return columns;
+    }
+
+    @Override
+    public void cachePluginGraphColumns(Graph graph, List<Column> columns) {
+        String key = String.format(PLUGIN_GRAPH_COLUMNS_KEY, graph.getId());
+
+        Map<String, String> data = new HashMap<>();
+        columns.forEach(column -> data.put(Integer.toString(column.getId()), column.getName()));
+
+        try (Jedis redis = pool.getResource()) {
+            Pipeline pipeline = redis.pipelined();
+
+            pipeline.hmset(key, data);
 
             pipeline.sync();
         }

@@ -1,8 +1,11 @@
 package org.mcstats.db;
 
+import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
+
+import java.util.List;
 
 public interface ModelCache {
 
@@ -69,5 +72,21 @@ public interface ModelCache {
      * @param graph
      */
     void cachePluginGraph(Plugin plugin, Graph graph);
+
+    /**
+     * Gets all columns for the given graph
+     *
+     * @param graph
+     * @return
+     */
+    List<Column> getPluginGraphColumns(Graph graph);
+
+    /**
+     * Caches all the given graph columns
+     *
+     * @param graph
+     * @param columns
+     */
+    void cachePluginGraphColumns(Graph graph, List<Column> columns);
 
 }

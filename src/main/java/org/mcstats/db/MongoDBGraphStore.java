@@ -10,7 +10,6 @@ import org.mcstats.generator.GeneratedData;
 import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
-import org.mcstats.model.Plugin;
 import org.mcstats.util.Tuple;
 
 import javax.inject.Inject;
