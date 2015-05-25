@@ -1,4 +1,4 @@
-package org.mcstats.worker;
+package org.mcstats.aws.sqs;
 
 import com.google.gson.Gson;
 import org.mcstats.aws.sqs.SimpleSQSClient;

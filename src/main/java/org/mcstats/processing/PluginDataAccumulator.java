@@ -5,7 +5,7 @@ import org.apache.log4j.Logger;
 import org.mcstats.PluginAccumulator;
 import org.mcstats.aws.s3.AccumulatorStorage;
 import org.mcstats.decoder.DecodedRequest;
-import org.mcstats.worker.SQSWorkQueueClient;
+import org.mcstats.aws.sqs.SQSWorkQueueClient;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;

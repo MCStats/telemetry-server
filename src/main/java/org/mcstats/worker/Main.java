@@ -5,6 +5,7 @@ import com.google.inject.Injector;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.mcstats.aws.sqs.SQSWorker;
 import org.mcstats.guice.GuiceModule;
 
 public class Main {

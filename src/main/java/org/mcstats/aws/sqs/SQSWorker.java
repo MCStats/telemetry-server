@@ -1,11 +1,9 @@
-package org.mcstats.worker;
+package org.mcstats.aws.sqs;
 
 import com.amazonaws.services.sqs.model.Message;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.mcstats.aws.sqs.SQSQueueSubscriber;
-import org.mcstats.aws.sqs.SimpleSQSClient;
 import org.mcstats.generator.PluginGraphGenerator;
 import org.mcstats.processing.PluginDataAccumulator;
 
