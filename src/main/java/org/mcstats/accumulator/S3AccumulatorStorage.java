@@ -41,8 +41,8 @@ public class S3AccumulatorStorage {
     @Inject
     public S3AccumulatorStorage(Gson gson,
                                 @Named("s3.bucket-accumulator") String bucket,
-                                @Named("s3.access-key") String accessKey,
-                                @Named("s3.secret-key") String secretKey) {
+                                @Named("aws.access-key") String accessKey,
+                                @Named("aws.secret-key") String secretKey) {
         this.gson = gson;
         this.bucket = bucket;
         s3 = new AmazonS3Client(new BasicAWSCredentials(accessKey, secretKey));
