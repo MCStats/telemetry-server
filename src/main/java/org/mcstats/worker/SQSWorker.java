@@ -1,14 +1,13 @@
 package org.mcstats.worker;
 
 import com.amazonaws.services.sqs.model.Message;
-import com.google.gson.Gson;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.mcstats.generator.PluginGraphGenerator;
-import org.mcstats.processing.PluginDataAccumulator;
 import org.mcstats.aws.sqs.SQSQueueSubscriber;
 import org.mcstats.aws.sqs.SimpleSQSClient;
+import org.mcstats.generator.PluginGraphGenerator;
+import org.mcstats.processing.PluginDataAccumulator;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -29,7 +28,6 @@ public class SQSWorker {
     public SQSWorker(SimpleSQSClient sqs,
                      PluginDataAccumulator pluginDataAccumulator,
                      PluginGraphGenerator pluginGraphGenerator,
-                     Gson gson,
                      @Named("sqs.work-queue") String workQueueName) {
         this.pluginDataAccumulator = pluginDataAccumulator;
         this.pluginGraphGenerator = pluginGraphGenerator;

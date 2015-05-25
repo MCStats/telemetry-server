@@ -46,6 +46,16 @@ public class SimpleSQSClient {
     }
 
     /**
+     * Sends a message to the given queue
+     *
+     * @param queueUrl
+     * @param messageBody
+     */
+    public void sendMessage(String queueUrl, String messageBody) {
+        sqs.sendMessage(queueUrl, messageBody);
+    }
+
+    /**
      * Deletes a message from the given queue
      *
      * @param queueUrl

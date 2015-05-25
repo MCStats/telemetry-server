@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import org.mcstats.PluginAccumulator;
 import org.mcstats.aws.s3.AccumulatorStorage;
 import org.mcstats.decoder.DecodedRequest;
+import org.mcstats.worker.SQSWorkQueueClient;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
@@ -23,13 +24,15 @@ public class PluginDataAccumulator {
     private final Gson gson;
     private final JedisPool redisPool;
     private final PluginAccumulator accumulator;
+    private final SQSWorkQueueClient sqsWorkQueueClient;
     private final AccumulatorStorage accumulatorStorage;
 
     @Inject
-    public PluginDataAccumulator(Gson gson, JedisPool redisPool, PluginAccumulator accumulator, AccumulatorStorage accumulatorStorage) {
+    public PluginDataAccumulator(Gson gson, JedisPool redisPool, PluginAccumulator accumulator, SQSWorkQueueClient sqsWorkQueueClient, AccumulatorStorage accumulatorStorage) {
         this.gson = gson;
         this.redisPool = redisPool;
         this.accumulator = accumulator;
+        this.sqsWorkQueueClient = sqsWorkQueueClient;
         this.accumulatorStorage = accumulatorStorage;
     }
 
@@ -92,7 +95,7 @@ public class PluginDataAccumulator {
         // Send to S3
         accumulatorStorage.putPluginData(bucket, allData);
 
-        // TODO sqs
+        sqsWorkQueueClient.generateBucket(bucket);
 
         long taken = System.currentTimeMillis() - start;
         logger.debug("Accumulated " + pluginIds.size() + " plugins in " + taken + " ms");
