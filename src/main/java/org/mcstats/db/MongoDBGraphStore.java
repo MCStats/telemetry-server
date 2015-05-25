@@ -16,7 +16,9 @@ import org.mcstats.util.Tuple;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import static com.mongodb.client.model.Filters.eq;
@@ -69,50 +71,30 @@ public class MongoDBGraphStore implements GraphStore {
         collStatistic.updateMany(eq("_id", 1), new Document("$set", new Document("max.epoch", ReportHandler.normalizeTime())));
     }
 
-    public void insert(Column column, int epoch, int sum, int count, int avg, int max, int min) {
-        Graph graph = column.getGraph();
-        Plugin plugin = column.getGraph().getPlugin();
-
-        // logger.info(String.format("insert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
-
-        Document toset = new Document().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
-        Document data = new Document();
-        Document col = new Document();
-
-        if (sum != 0) {
-            col.append("sum", sum);
-        }
-
-        if (count != 0) {
-            col.append("count", count);
-        }
-
-        /*
-        if (avg != 0) {
-            col.append("avg", avg);
-        }
-
-        if (max != 0) {
-            col.append("max", max);
-        }
-
-        if (min != 0) {
-            col.append("min", min);
-        }
-        */
-
-        data.append(Integer.toString(column.getId()), col);
-        toset.append("data", data);
-
-        graphDataCollection.insertOne(toset);
+    @Override
+    public void insert(Graph graph, List<Tuple<Column, GeneratedData>> data, int epoch) {
+        graphDataCollection.insertOne(createInsertDocument(graph, data, epoch));
     }
 
-    public void batchInsert(Graph graph, List<Tuple<Column, GeneratedData>> batchData, int epoch) {
-        Plugin plugin = graph.getPlugin();
+    @Override
+    public void insert(Map<Graph, List<Tuple<Column, GeneratedData>>> graphData, int epoch) {
+        List<Document> documentsToInsert = new ArrayList<>();
 
-        // logger.info(String.format("batchInsert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
+        graphData.forEach((graph, data) -> documentsToInsert.add(createInsertDocument(graph, data, epoch)));
 
-        Document toset = new Document().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
+        graphDataCollection.insertMany(documentsToInsert);
+    }
+
+    /**
+     * Creates the document to insert for the given data
+     *
+     * @param graph
+     * @param batchData
+     * @param epoch
+     * @return
+     */
+    private Document createInsertDocument(Graph graph, List<Tuple<Column, GeneratedData>> batchData, int epoch) {
+        Document document = new Document().append("epoch", epoch).append("plugin", graph.getPlugin().getId()).append("graph", graph.getId());
         Document data = new Document();
 
         for (Tuple<Column, GeneratedData> tuple : batchData) {
@@ -122,9 +104,6 @@ public class MongoDBGraphStore implements GraphStore {
 
             int sum = gdata.getSum();
             int count = gdata.getCount();
-            int avg = gdata.getAverage();
-            int max = gdata.getMax();
-            int min = gdata.getMin();
 
             if (sum != 0) {
                 col.append("sum", sum);
@@ -134,25 +113,11 @@ public class MongoDBGraphStore implements GraphStore {
                 col.append("count", count);
             }
 
-            /*
-            if (avg != 0) {
-                col.append("avg", avg);
-            }
-
-            if (max != 0) {
-                col.append("max", max);
-            }
-
-            if (min != 0) {
-                col.append("min", min);
-            }
-            */
-
             data.append(Integer.toString(column.getId()), col);
         }
 
-        toset.append("data", data);
-
-        graphDataCollection.insertOne(toset);
+        document.append("data", data);
+        return document;
     }
+
 }
