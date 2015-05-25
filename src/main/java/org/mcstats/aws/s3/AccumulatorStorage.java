@@ -1,4 +1,4 @@
-package org.mcstats.accumulator;
+package org.mcstats.aws.s3;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
@@ -28,21 +28,21 @@ import java.util.zip.GZIPOutputStream;
 /**
  * Storage for accumulator on S3
  */
-public class S3AccumulatorStorage {
+public class AccumulatorStorage {
 
     private static final String PLUGIN_DATA_KEY = "plugins/%d.json.gz"; // bucket
 
-    private static final Logger logger = Logger.getLogger(S3AccumulatorStorage.class);
+    private static final Logger logger = Logger.getLogger(AccumulatorStorage.class);
 
     private final Gson gson;
     private final AmazonS3 s3;
     private final String bucket;
 
     @Inject
-    public S3AccumulatorStorage(Gson gson,
-                                @Named("accumulator.s3-bucket") String bucket,
-                                @Named("aws.access-key") String accessKey,
-                                @Named("aws.secret-key") String secretKey) {
+    public AccumulatorStorage(Gson gson,
+                              @Named("accumulator.s3-bucket") String bucket,
+                              @Named("aws.access-key") String accessKey,
+                              @Named("aws.secret-key") String secretKey) {
         this.gson = gson;
         this.bucket = bucket;
         s3 = new AmazonS3Client(new BasicAWSCredentials(accessKey, secretKey));
@@ -75,7 +75,7 @@ public class S3AccumulatorStorage {
 
         InputStream dataInputStream = new ByteArrayInputStream(byteOutputStream.toByteArray());
 
-        logger.debug("Putting object to s3://" + this.bucket + "/" + key);
+        logger.info("Putting object to s3://" + this.bucket + "/" + key);
 
         s3.putObject(new PutObjectRequest(this.bucket, key, dataInputStream, metadata));
     }
@@ -89,7 +89,7 @@ public class S3AccumulatorStorage {
     public Map<Integer, Map<String, Map<String, Long>>> getPluginData(int bucket) {
         final String key = String.format(PLUGIN_DATA_KEY, bucket);
 
-        logger.debug("Getting object from s3://" + this.bucket + "/" + key);
+        logger.info("Getting object from s3://" + this.bucket + "/" + key);
 
         final S3Object object;
 

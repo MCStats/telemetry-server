@@ -1,12 +1,9 @@
 package org.mcstats;
 
-import it.sauronsoftware.cron4j.Scheduler;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.mcstats.cron.PluginGraphGenerator;
-import org.mcstats.cron.PluginRanking;
 import org.mcstats.db.Database;
 import org.mcstats.db.ModelCache;
 import org.mcstats.model.Plugin;
@@ -16,7 +13,6 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -87,8 +83,7 @@ public class MCStats {
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     @Inject
-    public MCStats(@Named("graphs.generate") boolean generateGraphs,
-                   Database database, ModelCache modelCache, JedisPool redisPool) {
+    public MCStats(Database database, ModelCache modelCache, JedisPool redisPool) {
         this.database = database;
         this.modelCache = modelCache;
         this.redisPool = redisPool;
@@ -100,22 +95,6 @@ public class MCStats {
             requestsAverage.update(requests.get() - requestsAtLastPoll.get());
             requestsAtLastPoll.set(requests.get());
         }, 1, 1, TimeUnit.SECONDS);
-
-        if (generateGraphs) {
-            Scheduler scheduler = new Scheduler();
-            scheduler.schedule("*/30 * * * *", new PluginGraphGenerator(this));
-            scheduler.schedule("45 * * * *", new PluginRanking(this));
-            scheduler.start();
-            logger.info("Graph & rank generator is active");
-        } else {
-            logger.info("Graph & rank generator is NOT active");
-        }
-
-        new Scheduler().schedule("*/5 * * * *", () -> {
-            System.gc();
-            System.runFinalization();
-            System.gc();
-        });
 
         init();
     }

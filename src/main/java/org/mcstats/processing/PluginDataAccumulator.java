@@ -1,14 +1,10 @@
 package org.mcstats.processing;
 
 import com.google.gson.Gson;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.mcstats.PluginAccumulator;
-import org.mcstats.accumulator.S3AccumulatorStorage;
+import org.mcstats.aws.s3.AccumulatorStorage;
 import org.mcstats.decoder.DecodedRequest;
-import org.mcstats.guice.GuiceModule;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
@@ -20,30 +16,24 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class PluginDataAccumulator implements Runnable {
+public class PluginDataAccumulator {
 
     private static final Logger logger = Logger.getLogger(PluginDataAccumulator.class);
 
     private final Gson gson;
     private final JedisPool redisPool;
     private final PluginAccumulator accumulator;
-    private final S3AccumulatorStorage accumulatorStorage;
+    private final AccumulatorStorage accumulatorStorage;
 
     @Inject
-    public PluginDataAccumulator(Gson gson, JedisPool redisPool, PluginAccumulator accumulator, S3AccumulatorStorage accumulatorStorage) {
+    public PluginDataAccumulator(Gson gson, JedisPool redisPool, PluginAccumulator accumulator, AccumulatorStorage accumulatorStorage) {
         this.gson = gson;
         this.redisPool = redisPool;
         this.accumulator = accumulator;
         this.accumulatorStorage = accumulatorStorage;
     }
 
-    @Override
-    public void run() {
-        // TODO calculate the bucket id
-        // redis set of unaggregated buckets?
-        // That *should* allow aggregation of past buckets if needed (e.g. aggregator stops for a couple hours).
-        final int bucket = 1432308600;
-
+    public void accumulate(int bucket) {
         final Set<String> pluginIds = getPlugins(bucket);
 
         long start = System.currentTimeMillis();
@@ -102,9 +92,7 @@ public class PluginDataAccumulator implements Runnable {
         // Send to S3
         accumulatorStorage.putPluginData(bucket, allData);
 
-        try (Jedis redis = redisPool.getResource()) {
-            redis.sadd("plugin-buckets-ungenerated", Integer.toString(bucket));
-        }
+        // TODO sqs
 
         long taken = System.currentTimeMillis() - start;
         logger.debug("Accumulated " + pluginIds.size() + " plugins in " + taken + " ms");
@@ -167,15 +155,6 @@ public class PluginDataAccumulator implements Runnable {
         });
 
         return result;
-    }
-
-    public static void main(String[] args) {
-        BasicConfigurator.configure();
-
-        Injector injector = Guice.createInjector(new GuiceModule());
-        PluginDataAccumulator accumulator = injector.getInstance(PluginDataAccumulator.class);
-
-        accumulator.run();
     }
 
 }
