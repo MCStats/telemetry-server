@@ -33,6 +33,11 @@ public class Graph {
         isFromDatabase = true;
     }
 
+    @Override
+    public String toString() {
+        return String.format("Graph(id=%d, name=%s)", id, name);
+    }
+
     public Plugin getPlugin() {
         return plugin;
     }

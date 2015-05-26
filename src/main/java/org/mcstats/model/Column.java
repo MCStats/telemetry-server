@@ -27,6 +27,11 @@ public class Column {
         this.name = name;
     }
 
+    @Override
+    public String toString() {
+        return String.format("Column(graph=%s, id=%d, name=%s)", graph.toString(), id, name);
+    }
+
     public Graph getGraph() {
         return graph;
     }
