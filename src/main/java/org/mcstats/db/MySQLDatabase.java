@@ -225,7 +225,7 @@ public class MySQLDatabase implements Database {
             statement.executeUpdate();
             QUERIES++;
         } catch (SQLException e) {
-                logger.info("Failed to create column " + name + " for graph: " + graph.getId());
+            logger.info("Failed to create column " + name + " for graph: " + graph.getId());
         }
 
         return loadColumn(graph, name);
