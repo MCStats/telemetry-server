@@ -1,11 +1,11 @@
 package org.mcstats.handler;
 
-import com.google.gson.Gson;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.util.ByteArrayISO8859Writer;
 import org.mcstats.MCStats;
+import org.mcstats.db.ModelCache;
 import org.mcstats.db.RedisCache;
 import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.decoder.LegacyRequestDecoder;
@@ -40,9 +40,9 @@ public class ReportHandler extends AbstractHandler {
     private final MCStats mcstats;
 
     /**
-     * Gson instance
+     * The model cache
      */
-    private final Gson gson;
+    private final ModelCache modelCache;
 
     /**
      * The redis pool
@@ -65,9 +65,9 @@ public class ReportHandler extends AbstractHandler {
     private final RequestDecoder legacyDecoder;
 
     @Inject
-    public ReportHandler(MCStats mcstats, Gson gson, JedisPool redisPool, BatchPluginRequestProcessor requestProcessor) {
+    public ReportHandler(MCStats mcstats, ModelCache modelCache, JedisPool redisPool, BatchPluginRequestProcessor requestProcessor) {
         this.mcstats = mcstats;
-        this.gson = gson;
+        this.modelCache = modelCache;
         this.redisPool = redisPool;
         this.requestProcessor = requestProcessor;
 
@@ -178,9 +178,17 @@ public class ReportHandler extends AbstractHandler {
                 return;
             }
 
-            final Plugin plugin = mcstats.loadPlugin(pluginName);
+            int pluginId = modelCache.getPluginId(pluginName);
 
-            if (plugin == null || plugin.getId() == -1) {
+            if (pluginId == Integer.MIN_VALUE) {
+                Plugin plugin = mcstats.loadPlugin(pluginName);
+
+                if (plugin != null) {
+                    pluginId = plugin.getId();
+                }
+            }
+
+            if (pluginId < 0) {
                 finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
                 return;
             }
@@ -199,7 +207,7 @@ public class ReportHandler extends AbstractHandler {
                 return;
             }
 
-            decoded.plugin = plugin.getId();
+            decoded.plugin = pluginId;
             decoded.country = getCountryCode(request);
             normalizeRequest(decoded);
 
@@ -207,7 +215,7 @@ public class ReportHandler extends AbstractHandler {
             String lastSentKey = String.format(RedisCache.SERVER_LAST_SENT_KEY, decoded.uuid);
 
             try (Jedis redis = redisPool.getResource()) {
-                String lastSentValue = redis.hget(lastSentKey, Integer.toString(plugin.getId()));
+                String lastSentValue = redis.hget(lastSentKey, Integer.toString(pluginId));
 
                 if (lastSentValue != null) {
                     lastSent = Integer.parseInt(lastSentValue);
@@ -220,7 +228,6 @@ public class ReportHandler extends AbstractHandler {
                 finishRequest(decoded, ResponseType.OK_FIRST_REQUEST, baseRequest, response);
             }
 
-            plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
             requestProcessor.submit(decoded);
         } catch (Exception e) {
             e.printStackTrace();

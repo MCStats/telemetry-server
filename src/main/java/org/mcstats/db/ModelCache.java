@@ -9,6 +9,14 @@ import java.util.List;
 public interface ModelCache {
 
     /**
+     * Gets the plugin id for the given plugin
+     *
+     * @param name
+     * @return
+     */
+    int getPluginId(String name);
+
+    /**
      * Loads a plugin from the cache with the given name
      *
      * @param name

@@ -3,7 +3,6 @@ package org.mcstats.decoder;
 import org.eclipse.jetty.server.Request;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.mcstats.model.Plugin;
 
 import java.io.BufferedReader;
 import java.io.IOException;

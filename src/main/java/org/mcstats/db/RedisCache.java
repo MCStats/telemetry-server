@@ -61,6 +61,16 @@ public class RedisCache implements ModelCache {
     }
 
     @Override
+    public int getPluginId(String name) {
+        try {
+            return pluginNameToId.get(name);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+            return Integer.MIN_VALUE;
+        }
+    }
+
+    @Override
     public Plugin getPlugin(String name) {
         int id;
 
