@@ -33,21 +33,6 @@ public interface ModelCache {
     void cachePlugin(Plugin plugin);
 
     /**
-     * Loads a server (plugin-variant)
-     *
-     * @param uuid
-     * @return
-     */
-    Server getServer(String uuid);
-
-    /**
-     * Caches the given server
-     *
-     * @param server
-     */
-    void cacheServer(Server server);
-
-    /**
      * Loads a graph from the cache
      *
      * @param plugin

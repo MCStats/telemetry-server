@@ -26,8 +26,6 @@ public class RedisCache implements ModelCache {
     public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graphs-index:%d"; // hash: name -> id
     public static final String PLUGIN_GRAPH_COLUMNS_KEY = "plugin-graph-columns:%d"; // hash: id -> name
 
-    public static final String SERVERS_KEY = "servers";
-    public static final String SERVER_KEY = "server:%s";
     public static final String SERVER_LAST_SENT_KEY = "server-last-sent:%s:%d";
 
     private final Database database;
@@ -67,53 +65,6 @@ public class RedisCache implements ModelCache {
             Pipeline pipeline = redis.pipelined();
 
             cachePlugin(plugin, pipeline);
-
-            pipeline.sync();
-        }
-    }
-
-    @Override
-    public Server getServer(String uuid) {
-        String key = String.format(SERVER_KEY, uuid);
-
-        try (Jedis redis = pool.getResource()) {
-            Map<String, String> data = redis.hgetAll(key);
-
-            if (data != null) {
-                Server server = new Server(uuid);
-
-                try {
-                    server.setJavaName(data.get("java.name"));
-                    server.setJavaVersion(data.get("java.version"));
-                    server.setOSName(data.get("os.name"));
-                    server.setOSVersion(data.get("os.version"));
-                    server.setOSArch(data.get("os.arch"));
-                    server.setOnlineMode(Integer.parseInt(data.get("authMode")));
-                    server.setCountry(data.get("country"));
-                    server.setServerSoftware(data.get("serverSoftware"));
-                    server.setMinecraftVersion(data.get("minecraftVersion"));
-                    server.setPlayers(Integer.parseInt(data.get("players.online")));
-                    server.setCores(Integer.parseInt(data.get("cores")));
-
-                    server.setViolationCount(Integer.parseInt(data.get("violations")));
-                    server.setLastSentData(Integer.parseInt(data.get("lastSent")));
-                } catch (Exception e) { // Ignores formatting errors and the like
-                    return null;
-                }
-
-                return server;
-            } else {
-                return null;
-            }
-        }
-    }
-
-    @Override
-    public void cacheServer(Server server) {
-        try (Jedis redis = pool.getResource()) {
-            Pipeline pipeline = redis.pipelined();
-
-            cacheServer(server, pipeline);
 
             pipeline.sync();
         }
@@ -224,36 +175,6 @@ public class RedisCache implements ModelCache {
         pipeline.hset(key, "serverCount30", Integer.toString(plugin.getServerCount30()));
 
         pipeline.set(String.format(PLUGIN_NAME_INDEX_KEY, plugin.getName()), Integer.toString(plugin.getId()));
-    }
-
-    /**
-     * Caches a server with the given pipeline
-     *
-     * @param server
-     * @param pipeline
-     */
-    public void cacheServer(Server server, Pipeline pipeline) {
-        String key = String.format(SERVER_KEY, server.getUUID());
-
-        Map<String, String> data = new HashMap<>();
-
-        data.put("country", server.getCountry());
-        data.put("serverSoftware", server.getServerVersion());
-        data.put("minecraftVersion", server.getMinecraftVersion());
-        data.put("players.online", Integer.toString(server.getPlayers()));
-        data.put("os.name", server.getOSName());
-        data.put("os.version", server.getOSVersion());
-        data.put("os.arch", server.getOSArch());
-        data.put("java.name", server.getJavaName());
-        data.put("java.version", server.getJavaVersion());
-        data.put("cores", Integer.toString(server.getCores()));
-        data.put("authMode", Integer.toString(server.getOnlineMode()));
-
-        data.put("violations", Integer.toString(server.getViolationCount()));
-        data.put("lastSent", Integer.toString(server.getLastSentData()));
-
-        pipeline.hmset(key, data);
-        pipeline.sadd(SERVERS_KEY, server.getUUID());
     }
 
     /**
