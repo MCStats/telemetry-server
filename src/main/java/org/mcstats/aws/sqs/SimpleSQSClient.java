@@ -14,6 +14,7 @@ import java.util.List;
 public class SimpleSQSClient {
 
     private static final int RECEIVE_WAIT_TIME_SECONDS = 20;
+    private static final int VISIBILITY_TIMEOUT_SECONDS = 120;
 
     private static final Logger logger = Logger.getLogger(SimpleSQSClient.class);
 
@@ -26,6 +27,11 @@ public class SimpleSQSClient {
      * Receive wait time set on queues
      */
     private int receiveWaitTime = RECEIVE_WAIT_TIME_SECONDS;
+
+    /**
+     * Visibility timeout on queues
+     */
+    private int visibilityTimeout = VISIBILITY_TIMEOUT_SECONDS;
 
     @Inject
     public SimpleSQSClient(@Named("aws.access-key") String accessKey,
@@ -41,6 +47,7 @@ public class SimpleSQSClient {
     public String createQueue(String queueName) {
         CreateQueueRequest request = new CreateQueueRequest(queueName);
         request.addAttributesEntry("ReceiveMessageWaitTimeSeconds", Integer.toString(receiveWaitTime));
+        request.addAttributesEntry("VisibilityTimeout", Integer.toString(visibilityTimeout));
 
         return sqs.createQueue(request).getQueueUrl();
     }
@@ -81,6 +88,14 @@ public class SimpleSQSClient {
 
     public void setReceiveWaitTime(int receiveWaitTime) {
         this.receiveWaitTime = receiveWaitTime;
+    }
+
+    public int getVisibilityTimeout() {
+        return visibilityTimeout;
+    }
+
+    public void setVisibilityTimeout(int visibilityTimeout) {
+        this.visibilityTimeout = visibilityTimeout;
     }
 
 }
