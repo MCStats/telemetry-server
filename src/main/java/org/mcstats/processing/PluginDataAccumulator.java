@@ -98,7 +98,7 @@ public class PluginDataAccumulator {
         sqsWorkQueueClient.generateBucket(bucket);
 
         long taken = System.currentTimeMillis() - start;
-        logger.debug("Accumulated " + pluginIds.size() + " plugins in " + taken + " ms");
+        logger.info("Accumulated " + pluginIds.size() + " plugins in " + taken + " ms");
     }
 
     /**
