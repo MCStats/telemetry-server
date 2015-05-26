@@ -1,5 +1,8 @@
 package org.mcstats.db;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
@@ -13,22 +16,45 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 @Singleton
 public class RedisCache implements ModelCache {
 
     public static final String PLUGINS_KEY = "plugins";
     public static final String PLUGIN_KEY = "plugin:%d"; // hash: data
-    public static final String PLUGIN_NAME_INDEX_KEY = "plugin-index:%s";
+    public static final String PLUGIN_NAME_INDEX_KEY = "plugin-index:%s"; // key: name.toLowerCase() -> id
 
     public static final String PLUGIN_GRAPH_KEY = "plugin-graphs:%d"; // hash: id -> name
-    public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graphs-index:%d"; // hash: name -> id
+    public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graphs-index:%d"; // hash: name.toLowerCase() -> id
     public static final String PLUGIN_GRAPH_COLUMNS_KEY = "plugin-graph-columns:%d"; // hash: id -> name
 
     public static final String SERVER_LAST_SENT_KEY = "server-last-sent:%s"; // hash: plugin-id -> last-sent
 
     private final Database database;
     private final JedisPool pool;
+
+    /**
+     * A cache mapping plugin names to ids.
+     */
+    private LoadingCache<String, Integer> pluginNameToId = CacheBuilder.newBuilder()
+            .maximumSize(10000)
+            .build(new CacheLoader<String, Integer>() {
+                @Override
+                public Integer load(String pluginName) throws Exception {
+                    String key = String.format(PLUGIN_NAME_INDEX_KEY, pluginName.toLowerCase());
+
+                    try (Jedis redis = pool.getResource()) {
+                        String id = redis.get(key);
+
+                        if (id != null) {
+                            return Integer.parseInt(id);
+                        } else {
+                            throw new Exception("Plugin not found: " + pluginName);
+                        }
+                    }
+                }
+            });
 
     @Inject
     public RedisCache(Database database, JedisPool pool) {
@@ -38,16 +64,17 @@ public class RedisCache implements ModelCache {
 
     @Override
     public Plugin getPlugin(String name) {
-        String key = String.format(PLUGIN_NAME_INDEX_KEY, name);
+        int id;
+
+        try {
+            id = pluginNameToId.get(name);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+            return null;
+        }
 
         try (Jedis redis = pool.getResource()) {
-            String id = redis.get(key);
-
-            if (id != null) {
-                return internalGetPlugin(redis, Integer.parseInt(id));
-            } else {
-                return null;
-            }
+            return internalGetPlugin(redis, id);
         }
     }
 
@@ -74,7 +101,7 @@ public class RedisCache implements ModelCache {
         String key = String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId());
 
         try (Jedis redis = pool.getResource()) {
-            String id = redis.hget(key, name);
+            String id = redis.hget(key, name.toLowerCase());
 
             if (id != null) {
                 return new Graph(plugin, Integer.parseInt(id), name);
@@ -152,6 +179,7 @@ public class RedisCache implements ModelCache {
 
     /**
      * Caches a plugin the the given pipeline
+     *
      * @param plugin
      * @param pipeline
      */
@@ -173,7 +201,7 @@ public class RedisCache implements ModelCache {
         pipeline.hset(key, "lastUpdated", Integer.toString(plugin.getLastUpdated()));
         pipeline.hset(key, "serverCount30", Integer.toString(plugin.getServerCount30()));
 
-        pipeline.set(String.format(PLUGIN_NAME_INDEX_KEY, plugin.getName()), Integer.toString(plugin.getId()));
+        pipeline.set(String.format(PLUGIN_NAME_INDEX_KEY, plugin.getName().toLowerCase()), Integer.toString(plugin.getId()));
     }
 
     /**
@@ -189,7 +217,7 @@ public class RedisCache implements ModelCache {
         }
 
         pipeline.hset(String.format(PLUGIN_GRAPH_KEY, plugin.getId()), Integer.toString(graph.getId()), graph.getName());
-        pipeline.hset(String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId()), graph.getName(), Integer.toString(graph.getId()));
+        pipeline.hset(String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId()), graph.getName().toLowerCase(), Integer.toString(graph.getId()));
     }
 
     /**
