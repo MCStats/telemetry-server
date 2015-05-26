@@ -189,9 +189,9 @@ public class ReportHandler extends AbstractHandler {
             final DecodedRequest decoded;
 
             if (userAgent.startsWith("MCStats/")) {
-                decoded = modernDecoder.decode(plugin, baseRequest);
+                decoded = modernDecoder.decode(baseRequest);
             } else {
-                decoded = legacyDecoder.decode(plugin, baseRequest);
+                decoded = legacyDecoder.decode(baseRequest);
             }
 
             if (decoded == null) {

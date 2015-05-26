@@ -14,7 +14,7 @@ import java.util.zip.GZIPInputStream;
 
 public class ModernRequestDecoder implements RequestDecoder {
 
-    public DecodedRequest decode(Plugin plugin, Request request) throws IOException {
+    public DecodedRequest decode(Request request) throws IOException {
         String encoding = request.getHeader("Content-Encoding");
         String content = "";
 
@@ -95,18 +95,17 @@ public class ModernRequestDecoder implements RequestDecoder {
             }
         }
 
-        decoded.customData = extractCustomData(plugin, post);
+        decoded.customData = extractCustomData(post);
         return decoded;
     }
 
     /**
      * Extract custom data from a json post
      *
-     * @param plugin
      * @param post
      * @return
      */
-    private Map<String, Map<String, Long>> extractCustomData(Plugin plugin, JSONObject post) {
+    private Map<String, Map<String, Long>> extractCustomData(JSONObject post) {
         Map<String, Map<String, Long>> customData = new HashMap<>();
 
         if (!post.containsKey("graphs")) {

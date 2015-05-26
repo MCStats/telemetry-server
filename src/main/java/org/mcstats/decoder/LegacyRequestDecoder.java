@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class LegacyRequestDecoder implements RequestDecoder {
 
-    public DecodedRequest decode(Plugin plugin, Request request) throws IOException {
+    public DecodedRequest decode(Request request) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"));
         String content = "";
 
@@ -82,14 +82,14 @@ public class LegacyRequestDecoder implements RequestDecoder {
         if (decoded.revision >= 5) {
             decoded.customData = extractCustomData(post);
         } else {
-            decoded.customData = extractCustomDataLegacy(plugin, post);
+            decoded.customData = extractCustomDataLegacy(post);
         }
 
         return decoded;
     }
 
     private Map<String, String> processPostRequest(String content) {
-        Map<String, String> store = new HashMap();
+        Map<String, String> store = new HashMap<>();
         String arr[] = content.split("&");
 
         for (String entry : arr) {
@@ -155,7 +155,7 @@ public class LegacyRequestDecoder implements RequestDecoder {
      * @param post
      * @return
      */
-    private Map<String, Map<String, Long>> extractCustomDataLegacy(Plugin plugin, Map<String, String> post) {
+    private Map<String, Map<String, Long>> extractCustomDataLegacy(Map<String, String> post) {
         Map<String, Map<String, Long>> customData = new HashMap<>();
 
         Map<String, Long> customGraphData = customData.get("Default");
