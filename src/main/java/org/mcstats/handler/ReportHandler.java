@@ -27,13 +27,6 @@ import java.io.IOException;
 @Singleton
 public class ReportHandler extends AbstractHandler {
 
-    private Logger logger = Logger.getLogger("ReportHandler");
-
-    /**
-     * If requests should be soft ignored temporarily
-     */
-    public static boolean SOFT_IGNORE_REQUESTS = false;
-
     /**
      * The MCStats object
      */
@@ -163,11 +156,6 @@ public class ReportHandler extends AbstractHandler {
         response.setStatus(200);
         response.setContentType("text/plain");
         mcstats.incrementAndGetRequests();
-
-        if (SOFT_IGNORE_REQUESTS) {
-            finishRequest(null, ResponseType.OK, baseRequest, response);
-            return;
-        }
 
         try {
             int normalizedTime = normalizeTime();
