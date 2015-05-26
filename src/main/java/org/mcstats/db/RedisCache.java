@@ -19,13 +19,11 @@ import java.util.Map;
 public class RedisCache implements ModelCache {
 
     public static final String PLUGINS_KEY = "plugins";
-    public static final String PLUGIN_KEY = "plugin:%d";
+    public static final String PLUGIN_KEY = "plugin:%d"; // hash: data
     public static final String PLUGIN_NAME_INDEX_KEY = "plugin-index:%s";
 
-    public static final String PLUGIN_GRAPHS_KEY = "plugin-graphs:%d";
-    public static final String PLUGIN_GRAPH_KEY = "plugin-graph:%d";
-    public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graph-index:%d:%s";
-
+    public static final String PLUGIN_GRAPH_KEY = "plugin-graphs:%d"; // hash: id -> name
+    public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graphs-index:%d"; // hash: name -> id
     public static final String PLUGIN_GRAPH_COLUMNS_KEY = "plugin-graph-columns:%d"; // hash: id -> name
 
     public static final String SERVERS_KEY = "servers";
@@ -123,10 +121,10 @@ public class RedisCache implements ModelCache {
 
     @Override
     public Graph getPluginGraph(Plugin plugin, String name) {
-        String key = String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId(), name);
+        String key = String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId());
 
         try (Jedis redis = pool.getResource()) {
-            String id = redis.get(key);
+            String id = redis.hget(key, name);
 
             if (id != null) {
                 return new Graph(plugin, Integer.parseInt(id), name);
@@ -138,7 +136,17 @@ public class RedisCache implements ModelCache {
 
     @Override
     public Graph getPluginGraph(Plugin plugin, int id) {
-        throw new UnsupportedOperationException("Not implemented");
+        String key = String.format(PLUGIN_GRAPH_KEY, plugin.getId());
+
+        try (Jedis redis = pool.getResource()) {
+            String name = redis.hget(key, Integer.toString(id));
+
+            if (name != null) {
+                return new Graph(plugin, id, name);
+            } else {
+                return null;
+            }
+        }
     }
 
     @Override
@@ -260,14 +268,8 @@ public class RedisCache implements ModelCache {
             throw new UnsupportedOperationException("Graph to be cached cannot be virtual.");
         }
 
-        pipeline.sadd(String.format(PLUGIN_GRAPHS_KEY, plugin.getId()), Integer.toString(graph.getId()));
-
-        String key = String.format(PLUGIN_GRAPH_KEY, graph.getId());
-        pipeline.hset(key, "plugin", Integer.toString(plugin.getId()));
-        pipeline.hset(key, "name", graph.getName());
-
-        pipeline.set(String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId(), graph.getName()), Integer.toString(graph.getId()));
-        // TODO other data
+        pipeline.hset(String.format(PLUGIN_GRAPH_KEY, plugin.getId()), Integer.toString(graph.getId()), graph.getName());
+        pipeline.hset(String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId()), graph.getName(), Integer.toString(graph.getId()));
     }
 
     /**
