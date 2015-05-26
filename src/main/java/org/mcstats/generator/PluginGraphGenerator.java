@@ -19,11 +19,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class PluginGraphGenerator {
 
@@ -115,17 +114,23 @@ public class PluginGraphGenerator {
      *
      * Map: Column-Name => Column
      *
+     * Note: The returned map will be one which has case-insensitive keys, so it should
+     * not be copied so that this can be exploited.
+     *
      * @param graph
      * @param columnsToFetch
      * @return
      */
     private Map<String, Column> loadAllColumns(Graph graph, Set<String> columnsToFetch) {
+        Map<String, Column> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
         List<Column> columns = modelCache.getPluginGraphColumns(graph);
         Set<String> missingColumns = getMissingColumns(columns, columnsToFetch);
 
         if (missingColumns.size() == 0) {
             // All columns were already cached
-            return columns.stream().collect(Collectors.toMap(Column::getName, Function.identity()));
+            columns.forEach(column -> result.put(column.getName(), column));
+            return result;
         }
 
         columns = database.loadColumns(graph);
@@ -142,7 +147,8 @@ public class PluginGraphGenerator {
         }
 
         modelCache.cachePluginGraphColumns(graph, columns);
-        return columns.stream().collect(Collectors.toMap(Column::getName, Function.identity()));
+        columns.forEach(column -> result.put(column.getName(), column));
+        return result;
     }
 
     /**
