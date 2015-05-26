@@ -123,7 +123,7 @@ public class BatchPluginRequestProcessor {
                         processed++;
                     }
 
-                    if (processed > 0) {
+                    if (processed > 100) {
                         logger.debug("Processed " + processed + " requests");
                     }
 
