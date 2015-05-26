@@ -21,9 +21,9 @@ import java.util.concurrent.ExecutionException;
 @Singleton
 public class RedisCache implements ModelCache {
 
-    public static final String PLUGINS_KEY = "plugins";
+    public static final String PLUGINS_KEY = "plugins"; // set: id
+    public static final String PLUGINS_INDEX_KEY = "plugins-index"; // key: name.toLowerCase() -> id
     public static final String PLUGIN_KEY = "plugin:%d"; // hash: data
-    public static final String PLUGIN_NAME_INDEX_KEY = "plugin-index:%s"; // key: name.toLowerCase() -> id
 
     public static final String PLUGIN_GRAPH_KEY = "plugin-graphs:%d"; // hash: id -> name
     public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graphs-index:%d"; // hash: name.toLowerCase() -> id
@@ -42,10 +42,8 @@ public class RedisCache implements ModelCache {
             .build(new CacheLoader<String, Integer>() {
                 @Override
                 public Integer load(String pluginName) throws Exception {
-                    String key = String.format(PLUGIN_NAME_INDEX_KEY, pluginName.toLowerCase());
-
                     try (Jedis redis = pool.getResource()) {
-                        String id = redis.get(key);
+                        String id = redis.hget(PLUGINS_INDEX_KEY, pluginName.toLowerCase());
 
                         if (id != null) {
                             return Integer.parseInt(id);
@@ -186,8 +184,6 @@ public class RedisCache implements ModelCache {
     public void cachePlugin(Plugin plugin, Pipeline pipeline) {
         String key = String.format(PLUGIN_KEY, plugin.getId());
 
-        pipeline.sadd(PLUGINS_KEY, Integer.toString(plugin.getId()));
-
         // TODO hmset
         pipeline.hset(key, "parent", Integer.toString(plugin.getParent()));
         pipeline.hset(key, "name", plugin.getName());
@@ -201,7 +197,8 @@ public class RedisCache implements ModelCache {
         pipeline.hset(key, "lastUpdated", Integer.toString(plugin.getLastUpdated()));
         pipeline.hset(key, "serverCount30", Integer.toString(plugin.getServerCount30()));
 
-        pipeline.set(String.format(PLUGIN_NAME_INDEX_KEY, plugin.getName().toLowerCase()), Integer.toString(plugin.getId()));
+        pipeline.sadd(PLUGINS_KEY, Integer.toString(plugin.getId()));
+        pipeline.hset(PLUGINS_INDEX_KEY, plugin.getName().toLowerCase(), Integer.toString(plugin.getId()));
     }
 
     /**
