@@ -204,10 +204,10 @@ public class ReportHandler extends AbstractHandler {
             normalizeRequest(decoded);
 
             int lastSent = 0;
-            String lastSentKey = String.format(RedisCache.SERVER_LAST_SENT_KEY, decoded.uuid, plugin.getId());
+            String lastSentKey = String.format(RedisCache.SERVER_LAST_SENT_KEY, decoded.uuid);
 
             try (Jedis redis = redisPool.getResource()) {
-                String lastSentValue = redis.get(lastSentKey);
+                String lastSentValue = redis.hget(lastSentKey, Integer.toString(plugin.getId()));
 
                 if (lastSentValue != null) {
                     lastSent = Integer.parseInt(lastSentValue);

@@ -3,7 +3,6 @@ package org.mcstats.db;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.Server;
 
 import java.util.List;
 

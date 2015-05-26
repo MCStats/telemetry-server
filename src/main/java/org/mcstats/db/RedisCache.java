@@ -3,7 +3,6 @@ package org.mcstats.db;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.Server;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
@@ -26,7 +25,7 @@ public class RedisCache implements ModelCache {
     public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graphs-index:%d"; // hash: name -> id
     public static final String PLUGIN_GRAPH_COLUMNS_KEY = "plugin-graph-columns:%d"; // hash: id -> name
 
-    public static final String SERVER_LAST_SENT_KEY = "server-last-sent:%s:%d";
+    public static final String SERVER_LAST_SENT_KEY = "server-last-sent:%s"; // hash: plugin-id -> last-sent
 
     private final Database database;
     private final JedisPool pool;

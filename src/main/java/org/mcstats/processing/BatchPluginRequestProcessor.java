@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 import org.mcstats.MCStats;
+import org.mcstats.db.RedisCache;
 import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.handler.ReportHandler;
 import redis.clients.jedis.Jedis;
@@ -119,6 +120,9 @@ public class BatchPluginRequestProcessor {
 
                         final String pluginBucketKey = "plugin-data:" + bucket + ":" + request.plugin;
                         pipeline.hset(pluginBucketKey, request.uuid, gson.toJson(request));
+
+                        final String lastSentKey = String.format(RedisCache.SERVER_LAST_SENT_KEY, request.uuid);
+                        redis.hset(lastSentKey, Integer.toString(request.plugin), Long.toString(System.currentTimeMillis() / 1000L));
 
                         processed++;
                     }
