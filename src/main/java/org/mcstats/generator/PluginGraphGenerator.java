@@ -14,15 +14,16 @@ import org.mcstats.util.Tuple;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class PluginGraphGenerator {
 
@@ -159,11 +160,10 @@ public class PluginGraphGenerator {
      * @return
      */
     private Set<String> getMissingColumns(List<Column> knownColumns, Set<String> columnsToFetch) {
-        Set<String> result = new HashSet<>(columnsToFetch);
+        Set<String> result = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
-        // remove all of the known columns from the result
-        // note: casing might be different which is why this loops over all
-        knownColumns.forEach(c1 -> result.removeIf(c2 -> c2.equalsIgnoreCase(c1.getName())));
+        result.addAll(columnsToFetch);
+        result.removeAll(knownColumns.stream().map(Column::getName).collect(Collectors.toSet()));
 
         return result;
     };
