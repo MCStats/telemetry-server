@@ -11,11 +11,17 @@ import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Populates the cache with plugin data
  */
 public class PluginCachePopulator {
+
+    private static final int NUM_THREADS = 16;
 
     private static final Logger logger = Logger.getLogger(PluginCachePopulator.class);
 
@@ -27,11 +33,13 @@ public class PluginCachePopulator {
         ModelCache modelCache = injector.getInstance(ModelCache.class);
 
         List<Plugin> plugins = database.loadPlugins();
-        int cached = 0;
+        AtomicInteger numPluginsCached = new AtomicInteger(0);
 
         logger.info("Caching " + plugins.size() + " plugins");
 
-        for (Plugin plugin : plugins) {
+        ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);
+
+        plugins.forEach(plugin -> executor.submit(() -> {
             modelCache.cachePlugin(plugin);
 
             for (Graph graph : database.loadGraphs(plugin)) {
@@ -39,26 +47,36 @@ public class PluginCachePopulator {
                 modelCache.cachePluginGraphColumns(graph, database.loadColumns(graph));
             }
 
-            cached ++;
+            int pluginsCached = numPluginsCached.incrementAndGet();
 
-            if (cached % 10 == 0) {
+            if (pluginsCached % 10 == 0) {
                 System.out.print('.');
 
-                if (cached % 100 == 0) {
-                    System.out.print(cached);
+                if (pluginsCached % 100 == 0) {
+                    System.out.print(numPluginsCached);
                 }
 
-                if (cached % 1000 == 0) {
+                if (pluginsCached % 1000 == 0) {
                     System.out.println();
                 }
             }
+        }));
+
+        executor.shutdown();
+
+        try {
+            if (!executor.awaitTermination(30, TimeUnit.MINUTES)) {
+                logger.error("Failed to cache all plugins");
+                return;
+            }
+        } catch (InterruptedException e) {
+            logger.error("Failed to cache all plugins", e);
+            return;
         }
 
         System.out.println();
 
         logger.info("Cached all plugins");
-
-        // TODO cache plugin graphs?
     }
 
 }
