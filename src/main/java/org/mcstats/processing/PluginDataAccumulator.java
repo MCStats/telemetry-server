@@ -106,10 +106,12 @@ public class PluginDataAccumulator {
             e.printStackTrace();
         }
 
-        // Build the global cauldron from globalData and add it to the data
-        final GraphCauldron globalCauldron = new GraphCauldron();
-        globalData.forEach((serverId, data) -> globalCauldron.mix(data));
-        allData.put(PluginAccumulator.GLOBAL_PLUGIN_ID, globalCauldron.getData());
+        if (globalData.size() > 0) {
+            // Build the global cauldron from globalData and add it to the data
+            final GraphCauldron globalCauldron = new GraphCauldron();
+            globalData.forEach((serverId, data) -> globalCauldron.mix(data));
+            allData.put(PluginAccumulator.GLOBAL_PLUGIN_ID, globalCauldron.getData());
+        }
 
         // Send to S3
         accumulatorStorage.putPluginData(bucket, allData);
