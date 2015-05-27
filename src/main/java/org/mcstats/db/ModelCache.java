@@ -6,6 +6,9 @@ import org.mcstats.model.Plugin;
 
 import java.util.List;
 
+/**
+ * A cache for models. All operations must be thread-safe.
+ */
 public interface ModelCache {
 
     /**
