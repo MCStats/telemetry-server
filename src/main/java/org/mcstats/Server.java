@@ -44,7 +44,7 @@ public class Server {
 
         webServer.setHandler(handlers);
 
-        ServerConnector connector = new ServerConnector(webServer, 1, 1);
+        ServerConnector connector = new ServerConnector(webServer, 2, 2);
         connector.setPort(listenPort);
         connector.setAcceptQueueSize(2048);
         webServer.addConnector(connector);
