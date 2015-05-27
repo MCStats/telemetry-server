@@ -63,6 +63,12 @@ public class SQSWorker {
      */
     private boolean processMessage(Message message) {
         JSONObject root = (JSONObject) JSONValue.parse(message.getBody());
+
+        if (root == null) {
+            logger.info("Received invalid message: " + message.getBody());
+            return true;
+        }
+
         logger.info("Received subscribed message: " + root.toString());
 
         String type = root.get("type").toString();
