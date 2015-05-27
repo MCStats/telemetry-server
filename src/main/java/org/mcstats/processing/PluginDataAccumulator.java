@@ -12,10 +12,15 @@ import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class PluginDataAccumulator {
 
@@ -26,9 +31,12 @@ public class PluginDataAccumulator {
     private final PluginAccumulator accumulator;
     private final SQSWorkQueueClient sqsWorkQueueClient;
     private final AccumulatorStorage accumulatorStorage;
+    private final int numThreads;
 
     @Inject
-    public PluginDataAccumulator(Gson gson, JedisPool redisPool, PluginAccumulator accumulator, SQSWorkQueueClient sqsWorkQueueClient, AccumulatorStorage accumulatorStorage) {
+    public PluginDataAccumulator(@Named("accumulator.threads") int numThreads,
+                                 Gson gson, JedisPool redisPool, PluginAccumulator accumulator, SQSWorkQueueClient sqsWorkQueueClient, AccumulatorStorage accumulatorStorage) {
+        this.numThreads = numThreads;
         this.gson = gson;
         this.redisPool = redisPool;
         this.accumulator = accumulator;
@@ -42,14 +50,15 @@ public class PluginDataAccumulator {
         long start = System.currentTimeMillis();
 
         // cauldron for global stats (i.e. all servers)
-        final Map<Integer, Map<String, Map<String, Long>>> allData = new HashMap<>();
+        final Map<Integer, Map<String, Map<String, Long>>> allData = new ConcurrentHashMap<>();
 
         // global data. Does not use a cauldron here to prevent servers being counted twice.
         // key = server-uuid
-        final Map<String, Map<String, Map<String, Long>>> globalData = new HashMap<>();
+        final Map<String, Map<String, Map<String, Long>>> globalData = new ConcurrentHashMap<>();
 
-        // TODO this should be safely parallelized
-        pluginIds.parallelStream().mapToInt(Integer::parseInt).forEach(pluginId -> {
+        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+
+        pluginIds.stream().mapToInt(Integer::parseInt).forEach(pluginId -> executor.submit(() -> {
             try (Jedis redis = redisPool.getResource()) {
                 logger.debug("Accumulating data for plugin: " + pluginId);
 
@@ -85,7 +94,17 @@ public class PluginDataAccumulator {
 
                 allData.put(pluginId, pluginCauldron.getData());
             }
-        });
+        }));
+
+        executor.shutdown();
+
+        try {
+            if (!executor.awaitTermination(10, TimeUnit.MINUTES)) {
+                logger.error("Graph accumulation failed");
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         // Build the global cauldron from globalData and add it to the data
         final GraphCauldron globalCauldron = new GraphCauldron();
@@ -122,7 +141,7 @@ public class PluginDataAccumulator {
     /**
      * Gets plugin versions for every server given a plugin id. Every server is guaranteed to return a non-null Set,
      * whether or not it's empty.
-     * <p>
+     * <p/>
      * This uses a pipeline to mass fetch every version without wasting RTTs.
      *
      * @param redis
