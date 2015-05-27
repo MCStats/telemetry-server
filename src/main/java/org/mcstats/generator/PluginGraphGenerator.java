@@ -14,12 +14,12 @@ import org.mcstats.util.Tuple;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -60,11 +60,12 @@ public class PluginGraphGenerator {
 
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
 
+        Map<Graph, List<Tuple<Column, Long>>> generatedGraphs = new ConcurrentHashMap<>();
+
         data.keySet().forEach(pluginId -> executor.submit(() -> {
             Map<String, Map<String, Long>> pluginData = data.get(pluginId);
 
             final Plugin plugin = mcstats.loadPlugin(pluginId);
-            Map<Graph, List<Tuple<Column, Long>>> generatedGraphs = new HashMap<>();
 
             logger.debug("Generating data for plugin: " + plugin.getId());
 
@@ -89,9 +90,6 @@ public class PluginGraphGenerator {
 
                 generatedGraphs.put(graph, generatedData);
             });
-
-            // graphStore.insert(generatedGraphs, epoch);
-            // System.out.println("generated: " + generatedGraphs);
         }));
 
         executor.shutdown();
@@ -103,6 +101,8 @@ public class PluginGraphGenerator {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        // graphStore.insert(generatedGraphs, epoch);
 
         long taken = System.currentTimeMillis() - start;
         logger.info("Generated bucket " + bucket + " in " + taken + " ms");
@@ -166,6 +166,6 @@ public class PluginGraphGenerator {
         knownColumns.forEach(c1 -> result.removeIf(c2 -> c2.equalsIgnoreCase(c1.getName())));
 
         return result;
-    }
+    };
 
 }
