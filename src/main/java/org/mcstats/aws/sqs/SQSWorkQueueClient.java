@@ -23,6 +23,20 @@ public class SQSWorkQueueClient {
     }
 
     /**
+     * Queues the given bucket for accumulation
+     *
+     * @param bucket
+     */
+    public void accumulateBucket(int bucket) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("type", "plugin");
+        body.put("action", "accumulate");
+        body.put("bucket", bucket);
+
+        sqs.sendMessage(workQueueUrl, gson.toJson(body));
+    }
+
+    /**
      * Queues the given bucket for generation
      *
      * @param bucket

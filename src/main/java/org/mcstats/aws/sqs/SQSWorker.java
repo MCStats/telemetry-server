@@ -4,8 +4,9 @@ import com.amazonaws.services.sqs.model.Message;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.mcstats.generator.PluginGraphGenerator;
-import org.mcstats.processing.PluginDataAccumulator;
+import org.mcstats.generation.plugin.StartPluginGeneration;
+import org.mcstats.generation.plugin.PluginGraphGenerator;
+import org.mcstats.generation.plugin.PluginDataAccumulator;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -19,14 +20,17 @@ public class SQSWorker {
      */
     private final SQSQueueSubscriber subscriber;
 
+    private final StartPluginGeneration startPluginGeneration;
     private final PluginDataAccumulator pluginDataAccumulator;
     private final PluginGraphGenerator pluginGraphGenerator;
 
     @Inject
     public SQSWorker(SimpleSQSClient sqs,
+                     StartPluginGeneration startPluginGeneration,
                      PluginDataAccumulator pluginDataAccumulator,
                      PluginGraphGenerator pluginGraphGenerator,
                      @Named("sqs.work-queue") String workQueueName) {
+        this.startPluginGeneration = startPluginGeneration;
         this.pluginDataAccumulator = pluginDataAccumulator;
         this.pluginGraphGenerator = pluginGraphGenerator;
 
@@ -37,17 +41,24 @@ public class SQSWorker {
         String action = root.get("action").toString();
 
         switch (action) {
+            case "startGraphGeneration": {
+                int bucket = Integer.parseInt(root.get("bucket").toString());
+
+                startPluginGeneration.run(bucket);
+                break;
+            }
+
             case "accumulate": {
                 int bucket = Integer.parseInt(root.get("bucket").toString());
 
-                pluginDataAccumulator.accumulate(bucket);
+                pluginDataAccumulator.run(bucket);
                 break;
             }
 
             case "generate": {
                 int bucket = Integer.parseInt(root.get("bucket").toString());
 
-                pluginGraphGenerator.generateBucket(bucket);
+                pluginGraphGenerator.run(bucket);
                 break;
             }
         }

@@ -1,4 +1,4 @@
-package org.mcstats.generator;
+package org.mcstats.generation.plugin;
 
 import org.apache.log4j.Logger;
 import org.mcstats.MCStats;
@@ -52,7 +52,7 @@ public class PluginGraphGenerator {
      *
      * @param bucket
      */
-    public void generateBucket(int bucket) {
+    public void run(int bucket) {
         logger.info("Generating data from bucket: " + bucket);
 
         long start = System.currentTimeMillis();

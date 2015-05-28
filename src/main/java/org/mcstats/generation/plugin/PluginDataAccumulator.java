@@ -1,4 +1,4 @@
-package org.mcstats.processing;
+package org.mcstats.generation.plugin;
 
 import com.google.gson.Gson;
 import org.apache.log4j.Logger;
@@ -6,6 +6,7 @@ import org.mcstats.PluginAccumulator;
 import org.mcstats.aws.s3.AccumulatorStorage;
 import org.mcstats.aws.sqs.SQSWorkQueueClient;
 import org.mcstats.decoder.DecodedRequest;
+import org.mcstats.processing.GraphCauldron;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
@@ -44,7 +45,7 @@ public class PluginDataAccumulator {
         this.accumulatorStorage = accumulatorStorage;
     }
 
-    public void accumulate(int bucket) {
+    public void run(int bucket) {
         final Set<String> pluginIds = getPlugins(bucket);
 
         long start = System.currentTimeMillis();
