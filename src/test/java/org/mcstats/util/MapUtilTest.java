@@ -25,7 +25,7 @@ public class MapUtilTest {
         for (Map.Entry<String, Integer> entry : testMap.entrySet()) {
             assertNotNull(entry.getValue());
             if (previous != null) {
-                assertTrue(entry.getValue() >= previous);
+                assertTrue(entry.getValue() <= previous);
             }
             previous = entry.getValue();
         }
