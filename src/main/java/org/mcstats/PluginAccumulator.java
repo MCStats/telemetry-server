@@ -5,6 +5,7 @@ import org.mcstats.accumulator.MCStatsInfoAccumulator;
 import org.mcstats.accumulator.ServerInfoAccumulator;
 import org.mcstats.accumulator.VersionInfoAccumulator;
 import org.mcstats.decoder.DecodedRequest;
+import org.mcstats.model.Plugin;
 import org.mcstats.util.ServerBuildIdentifier;
 
 import javax.inject.Inject;
@@ -39,7 +40,28 @@ public class PluginAccumulator {
         add(new CustomDataAccumulator());
     }
 
-    public Map<Integer, Map<String, Map<String, Long>>> accumulate(DecodedRequest request, Set<String> versionChanges) {
+    /**
+     * Accumulates data based on plugin metadata only.
+     *
+     * @return
+     */
+    public Map<Integer, Map<String, Map<String, Long>>> accumulateForPlugin(Plugin plugin) {
+        Map<Integer, Map<String, Map<String, Long>>> data = new HashMap<>();
+
+        // TODO just manual (for now?) :-)
+        insertToAccumulation(data, plugin.getId(), "Rank", "Rank", plugin.getRank());
+
+        return data;
+    }
+
+    /**
+     * Accumulates data for a server that sent data
+     *
+     * @param request
+     * @param versionChanges
+     * @return
+     */
+    public Map<Integer, Map<String, Map<String, Long>>> accumulateForServer(DecodedRequest request, Set<String> versionChanges) {
         Map<Integer, Map<String, Map<String, Long>>> result = new HashMap<>();
 
         for (Accumulator accumulator : accumulators) {

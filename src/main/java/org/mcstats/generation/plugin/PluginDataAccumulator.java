@@ -2,10 +2,12 @@ package org.mcstats.generation.plugin;
 
 import com.google.gson.Gson;
 import org.apache.log4j.Logger;
+import org.mcstats.MCStats;
 import org.mcstats.PluginAccumulator;
 import org.mcstats.aws.s3.AccumulatorStorage;
 import org.mcstats.aws.sqs.SQSWorkQueueClient;
 import org.mcstats.decoder.DecodedRequest;
+import org.mcstats.model.Plugin;
 import org.mcstats.processing.GraphCauldron;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -28,21 +30,23 @@ public class PluginDataAccumulator {
     private static final Logger logger = Logger.getLogger(PluginDataAccumulator.class);
 
     private final Gson gson;
+    private final MCStats mcstats;
     private final JedisPool redisPool;
-    private final PluginAccumulator accumulator;
     private final SQSWorkQueueClient sqsWorkQueueClient;
     private final AccumulatorStorage accumulatorStorage;
+    private final PluginAccumulator pluginAccumulator;
     private final int numThreads;
 
     @Inject
     public PluginDataAccumulator(@Named("accumulator.threads") int numThreads,
-                                 Gson gson, JedisPool redisPool, PluginAccumulator accumulator, SQSWorkQueueClient sqsWorkQueueClient, AccumulatorStorage accumulatorStorage) {
+                                 Gson gson, MCStats mcstats, JedisPool redisPool, SQSWorkQueueClient sqsWorkQueueClient, AccumulatorStorage accumulatorStorage, PluginAccumulator pluginAccumulator) {
         this.numThreads = numThreads;
         this.gson = gson;
+        this.mcstats = mcstats;
         this.redisPool = redisPool;
-        this.accumulator = accumulator;
         this.sqsWorkQueueClient = sqsWorkQueueClient;
         this.accumulatorStorage = accumulatorStorage;
+        this.pluginAccumulator = pluginAccumulator;
     }
 
     public void run(int bucket) {
@@ -63,7 +67,18 @@ public class PluginDataAccumulator {
             try (Jedis redis = redisPool.getResource()) {
                 logger.debug("Accumulating data for plugin: " + pluginId);
 
+                Plugin plugin = mcstats.loadPlugin(pluginId);
+
                 final GraphCauldron pluginCauldron = new GraphCauldron();
+
+                // Add in the plugin graph data that doesn't depend on servers
+                pluginAccumulator.accumulateForPlugin(plugin).forEach((accumPluginId, accumPluginData) -> accumPluginData.forEach((graphName, graphData) -> {
+                    if (accumPluginId == pluginId) {
+                        pluginCauldron.mix(accumPluginData);
+                    } else {
+                        throw new UnsupportedOperationException("Accumulated data for unexpected plugin: " + accumPluginId + " was expecting: " + pluginId + " or global");
+                    }
+                }));
 
                 // server data
                 final Map<String, String> serverData = redis.hgetAll("plugin-data:" + bucket + ":" + pluginId);
@@ -80,7 +95,7 @@ public class PluginDataAccumulator {
 
                     // note: getPluginVersions guarantees this is non-null
                     final Set<String> versions = serverVersions.get(serverId);
-                    Map<Integer, Map<String, Map<String, Long>>> accumulatedData = accumulator.accumulate(request, versions);
+                    Map<Integer, Map<String, Map<String, Long>>> accumulatedData = pluginAccumulator.accumulateForServer(request, versions);
 
                     accumulatedData.forEach((accumPluginId, accumPluginData) -> accumPluginData.forEach((graphName, graphData) -> {
                         if (accumPluginId == PluginAccumulator.GLOBAL_PLUGIN_ID) {

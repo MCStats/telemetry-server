@@ -4,9 +4,9 @@ import com.amazonaws.services.sqs.model.Message;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.mcstats.generation.plugin.StartPluginGeneration;
-import org.mcstats.generation.plugin.PluginGraphGenerator;
 import org.mcstats.generation.plugin.PluginDataAccumulator;
+import org.mcstats.generation.plugin.PluginGraphGenerator;
+import org.mcstats.generation.plugin.StartPluginGeneration;
 
 import javax.inject.Inject;
 import javax.inject.Named;

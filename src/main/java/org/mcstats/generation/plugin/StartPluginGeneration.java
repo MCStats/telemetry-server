@@ -1,6 +1,5 @@
 package org.mcstats.generation.plugin;
 
-import org.apache.log4j.Logger;
 import org.mcstats.aws.sqs.SQSWorkQueueClient;
 
 import javax.inject.Inject;
