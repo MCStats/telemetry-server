@@ -9,13 +9,13 @@ import javax.inject.Singleton;
 @Singleton
 public class StartPluginGeneration {
 
-    private static final Logger logger = Logger.getLogger(StartPluginGeneration.class);
-
     private final SQSWorkQueueClient sqs;
+    private final PluginRanker pluginRanker;
 
     @Inject
-    public StartPluginGeneration(SQSWorkQueueClient sqs) {
+    public StartPluginGeneration(SQSWorkQueueClient sqs, PluginRanker pluginRanker) {
         this.sqs = sqs;
+        this.pluginRanker = pluginRanker;
     }
 
     /**
@@ -24,7 +24,8 @@ public class StartPluginGeneration {
      * @param bucket
      */
     public void run(int bucket) {
-        //
+        pluginRanker.run(bucket);
+        sqs.accumulateBucket(bucket);
     }
 
 }
