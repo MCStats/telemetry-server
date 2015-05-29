@@ -252,9 +252,11 @@ public class Plugin implements Savable {
     }
 
     public void saveNow() {
-        database.savePlugin(this);
-        modified = false;
-        queuedForSave = false;
+        if (modified) {
+            database.savePlugin(this);
+            modified = false;
+            queuedForSave = false;
+        }
     }
 
     public int getParent() {
