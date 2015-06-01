@@ -72,13 +72,13 @@ public class PluginDataAccumulator {
                 final GraphCauldron pluginCauldron = new GraphCauldron();
 
                 // Add in the plugin graph data that doesn't depend on servers
-                pluginAccumulator.accumulateForPlugin(plugin).forEach((accumPluginId, accumPluginData) -> accumPluginData.forEach((graphName, graphData) -> {
+                pluginAccumulator.accumulateForPlugin(plugin).forEach((accumPluginId, accumPluginData) -> {
                     if (accumPluginId == pluginId) {
                         pluginCauldron.mix(accumPluginData);
                     } else {
                         throw new UnsupportedOperationException("Accumulated data for unexpected plugin: " + accumPluginId + " was expecting: " + pluginId + " or global");
                     }
-                }));
+                });
 
                 // server data
                 final Map<String, String> serverData = redis.hgetAll("plugin-data:" + bucket + ":" + pluginId);
@@ -97,7 +97,7 @@ public class PluginDataAccumulator {
                     final Set<String> versions = serverVersions.get(serverId);
                     Map<Integer, Map<String, Map<String, Long>>> accumulatedData = pluginAccumulator.accumulateForServer(request, versions);
 
-                    accumulatedData.forEach((accumPluginId, accumPluginData) -> accumPluginData.forEach((graphName, graphData) -> {
+                    accumulatedData.forEach((accumPluginId, accumPluginData) -> {
                         if (accumPluginId == PluginAccumulator.GLOBAL_PLUGIN_ID) {
                             globalData.put(serverId, accumPluginData);
                         } else if (accumPluginId == pluginId) {
@@ -105,7 +105,7 @@ public class PluginDataAccumulator {
                         } else {
                             throw new UnsupportedOperationException("Accumulated data for unexpected plugin: " + accumPluginId + " was expecting: " + pluginId + " or global");
                         }
-                    }));
+                    });
                 });
 
                 allData.put(pluginId, pluginCauldron.getData());
@@ -132,7 +132,7 @@ public class PluginDataAccumulator {
         // Send to S3
         accumulatorStorage.putPluginData(bucket, allData);
 
-        sqsWorkQueueClient.generateBucket(bucket);
+        // sqsWorkQueueClient.generateBucket(bucket);
 
         long taken = System.currentTimeMillis() - start;
         logger.info("Accumulated " + pluginIds.size() + " plugins in " + taken + " ms");
