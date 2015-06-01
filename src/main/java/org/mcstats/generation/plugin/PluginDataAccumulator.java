@@ -132,7 +132,7 @@ public class PluginDataAccumulator {
         // Send to S3
         accumulatorStorage.putPluginData(bucket, allData);
 
-        // sqsWorkQueueClient.generateBucket(bucket);
+        sqsWorkQueueClient.generateBucket(bucket);
 
         long taken = System.currentTimeMillis() - start;
         logger.info("Accumulated " + pluginIds.size() + " plugins in " + taken + " ms");
