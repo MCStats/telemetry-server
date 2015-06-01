@@ -6,6 +6,7 @@ import org.mcstats.aws.s3.AccumulatorStorage;
 import org.mcstats.db.Database;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.ModelCache;
+import org.mcstats.generator.GeneratedData;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
@@ -59,9 +60,14 @@ public class PluginGraphGenerator {
 
         Map<Integer, Map<String, Map<String, Long>>> data = accumulatorStorage.getPluginData(bucket);
 
+        if (data == null) {
+            logger.error("No bucket found: " + bucket);
+            return;
+        }
+
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
 
-        Map<Graph, List<Tuple<Column, Long>>> generatedGraphs = new ConcurrentHashMap<>();
+        Map<Graph, List<Tuple<Column, GeneratedData>>> generatedGraphs = new ConcurrentHashMap<>();
 
         data.keySet().forEach(pluginId -> executor.submit(() -> {
             Map<String, Map<String, Long>> pluginData = data.get(pluginId);
@@ -71,7 +77,7 @@ public class PluginGraphGenerator {
             logger.debug("Generating data for plugin: " + plugin.getId());
 
             pluginData.forEach((graphName, graphData) -> {
-                List<Tuple<Column, Long>> generatedData = new ArrayList<>();
+                List<Tuple<Column, GeneratedData>> generatedData = new ArrayList<>();
                 Graph graph = plugin.getGraph(graphName);
 
                 //
@@ -86,7 +92,7 @@ public class PluginGraphGenerator {
                         return;
                     }
 
-                    generatedData.add(new Tuple<>(column, value));
+                    generatedData.add(new Tuple<>(column, new GeneratedData(value.intValue(), 0, 0, 0)));
                 });
 
                 generatedGraphs.put(graph, generatedData);
@@ -103,7 +109,7 @@ public class PluginGraphGenerator {
             e.printStackTrace();
         }
 
-        // graphStore.insert(generatedGraphs, epoch);
+        graphStore.insert(generatedGraphs, bucket);
 
         long taken = System.currentTimeMillis() - start;
         logger.info("Generated bucket " + bucket + " in " + taken + " ms");
