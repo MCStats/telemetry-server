@@ -94,12 +94,14 @@ public class MongoDBGraphStore implements GraphStore {
      */
     private Document createInsertDocument(PluginGraph graph, List<Tuple<PluginGraphColumn, GeneratedData>> batchData, int epoch) {
         Document document = new Document().append("epoch", epoch).append("plugin", graph.getPlugin().getId()).append("graph", graph.getId());
-        Document data = new Document();
+        List<BasicDBObject> data = new ArrayList<>();
 
         for (Tuple<PluginGraphColumn, GeneratedData> tuple : batchData) {
-            BasicDBObject col = new BasicDBObject();
             PluginGraphColumn column = tuple.first();
             GeneratedData gdata = tuple.second();
+
+            BasicDBObject col = new BasicDBObject();
+            col.append("name", column.getName());
 
             int sum = gdata.getSum();
             int count = gdata.getCount();
@@ -112,7 +114,7 @@ public class MongoDBGraphStore implements GraphStore {
                 col.append("count", count);
             }
 
-            data.append(Integer.toString(column.getId()), col);
+            data.add(col);
         }
 
         document.append("data", data);

@@ -198,6 +198,7 @@ public class RedisCache implements ModelCache {
         // TODO hmset
         pipeline.hset(key, "name", plugin.getName());
         pipeline.hset(key, "type", plugin.getType());
+        pipeline.hset(key, "hidden", plugin.isHidden() ? "1" : "0");
         pipeline.hset(key, "rank", Integer.toString(plugin.getRank()));
         pipeline.hset(key, "last_rank", Integer.toString(plugin.getLastRank()));
         pipeline.hset(key, "last_rank_change", Integer.toString(plugin.getLastRankChange()));
@@ -249,7 +250,7 @@ public class RedisCache implements ModelCache {
             plugin.setHidden(Integer.parseInt(data.get("hidden")) == 1);
             plugin.setRank(Integer.parseInt(data.get("rank")));
             plugin.setLastRank(Integer.parseInt(data.get("last_rank")));
-            plugin.setLastRankChange(Integer.parseInt(data.get("last_rank_changed")));
+            plugin.setLastRankChange(Integer.parseInt(data.get("last_rank_change")));
             plugin.setCreatedAt(new Date(Long.parseLong(data.get("created_at"))));
             plugin.setUpdatedAt(new Date(Long.parseLong(data.get("updated_at"))));
 

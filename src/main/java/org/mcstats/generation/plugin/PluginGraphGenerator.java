@@ -80,19 +80,8 @@ public class PluginGraphGenerator {
                 List<Tuple<PluginGraphColumn, GeneratedData>> generatedData = new ArrayList<>();
                 PluginGraph graph = plugin.getGraph(graphName);
 
-                //
-                Map<String, PluginGraphColumn> columns = loadAllColumns(graph, graphData.keySet());
-
                 graphData.forEach((columnName, value) -> {
-                    // TODO get/create column
-                    PluginGraphColumn column = columns.get(columnName);
-
-                    if (column == null) {
-                        logger.error("Null column for pluginId: " + plugin.getId() + " graphName: " + graph.getName() + " columnName: " + columnName);
-                        return;
-                    }
-
-                    generatedData.add(new Tuple<>(column, new GeneratedData(value.intValue(), 0, 0, 0)));
+                    generatedData.add(new Tuple<>(new PluginGraphColumn(graph, columnName), new GeneratedData(value.intValue(), 0, 0, 0)));
                 });
 
                 generatedGraphs.put(graph, generatedData);

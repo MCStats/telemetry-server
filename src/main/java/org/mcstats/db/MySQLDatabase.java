@@ -161,7 +161,7 @@ public class MySQLDatabase implements Database {
 
     public PluginGraph createGraph(Plugin plugin, String name) {
         try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("INSERT INTO plugin_graphs (plugin_id, type, active, name, display_name, scale) VALUES (?, ?, ?, ?, ?, ?)")) {
+             PreparedStatement statement = connection.prepareStatement("INSERT INTO plugin_graphs (plugin_id, type, active, name, display_name, scale, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())")) {
             statement.setInt(1, plugin.getId());
             statement.setInt(2, 0); // line
             statement.setInt(3, 0); // active
