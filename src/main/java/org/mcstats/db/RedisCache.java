@@ -202,7 +202,12 @@ public class RedisCache implements ModelCache {
         pipeline.hset(key, "last_rank", Integer.toString(plugin.getLastRank()));
         pipeline.hset(key, "last_rank_change", Integer.toString(plugin.getLastRankChange()));
         pipeline.hset(key, "created_at", Long.toString(plugin.getCreatedAt().getTime()));
-        pipeline.hset(key, "updated_at", Long.toString(plugin.getUpdatedAt().getTime()));
+
+        if (plugin.getUpdatedAt() != null) {
+            pipeline.hset(key, "updated_at", Long.toString(plugin.getUpdatedAt().getTime()));
+        } else {
+            pipeline.hset(key, "updated_at", "0");
+        }
 
         pipeline.sadd(PLUGINS_KEY, Integer.toString(plugin.getId()));
         pipeline.hset(PLUGINS_INDEX_KEY, plugin.getName().toLowerCase(), Integer.toString(plugin.getId()));
