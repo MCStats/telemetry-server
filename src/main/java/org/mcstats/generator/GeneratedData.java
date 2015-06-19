@@ -2,6 +2,8 @@ package org.mcstats.generator;
 
 public class GeneratedData {
 
+    private final String columnName;
+
     /**
      * The sum of the data in the data set
      */
@@ -27,7 +29,8 @@ public class GeneratedData {
         return String.format("GeneratedData(sum=%d, count=%d, avg=%d, max=%d, min=%d)", sum, count, getAverage(), max, min);
     }
 
-    public GeneratedData(int sum, int count, int max, int min) {
+    public GeneratedData(String columnName, int sum, int count, int max, int min) {
+        this.columnName = columnName;
         this.sum = sum;
         this.count = count;
         this.max = max;
@@ -51,6 +54,10 @@ public class GeneratedData {
 
     public void incrementCount() {
         this.count ++;
+    }
+
+    public String getColumnName() {
+        return columnName;
     }
 
     public int getSum() {

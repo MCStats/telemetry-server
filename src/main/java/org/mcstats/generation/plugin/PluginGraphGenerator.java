@@ -8,23 +8,17 @@ import org.mcstats.db.GraphStore;
 import org.mcstats.db.ModelCache;
 import org.mcstats.generator.GeneratedData;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.PluginGraph;
-import org.mcstats.model.PluginGraphColumn;
-import org.mcstats.util.Tuple;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class PluginGraphGenerator {
 
@@ -67,25 +61,37 @@ public class PluginGraphGenerator {
 
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
 
-        Map<PluginGraph, List<Tuple<PluginGraphColumn, GeneratedData>>> generatedGraphs = new ConcurrentHashMap<>();
+        // graphId, data
+        Map<Plugin, Map<Integer, List<GeneratedData>>> generatedGraphs = new ConcurrentHashMap<>();
 
         data.keySet().forEach(pluginId -> executor.submit(() -> {
             Map<String, Map<String, Long>> pluginData = data.get(pluginId);
 
             final Plugin plugin = mcstats.loadPlugin(pluginId);
+            Map<String, Integer> cachedGraphs = modelCache.getPluginGraphs(plugin);
 
             logger.debug("Generating data for plugin: " + plugin.getId());
+            Map<Integer, List<GeneratedData>> generatedPluginData = new HashMap<>();
 
             pluginData.forEach((graphName, graphData) -> {
-                List<Tuple<PluginGraphColumn, GeneratedData>> generatedData = new ArrayList<>();
-                PluginGraph graph = plugin.getGraph(graphName);
+                int graphId;
+
+                if (cachedGraphs.containsKey(graphName)) {
+                    graphId = cachedGraphs.get(graphName);
+                } else {
+                    graphId = plugin.getGraph(graphName).getId();
+                }
+
+                List<GeneratedData> generatedData = new ArrayList<>();
 
                 graphData.forEach((columnName, value) -> {
-                    generatedData.add(new Tuple<>(new PluginGraphColumn(graph, columnName), new GeneratedData(value.intValue(), 0, 0, 0)));
+                    generatedData.add(new GeneratedData(columnName, value.intValue(), 0, 0, 0));
                 });
 
-                generatedGraphs.put(graph, generatedData);
+                generatedPluginData.put(graphId, generatedData);
             });
+
+            generatedGraphs.put(plugin, generatedPluginData);
         }));
 
         executor.shutdown();
@@ -103,64 +109,5 @@ public class PluginGraphGenerator {
         long taken = System.currentTimeMillis() - start;
         logger.info("Generated bucket " + bucket + " in " + taken + " ms");
     }
-
-    /**
-     * Loads all of the given columns. They will be fetched or created, so all columns
-     * should be in the resultant map.
-     *
-     * Map: Column-Name => Column
-     *
-     * Note: The returned map will be one which has case-insensitive keys, so it should
-     * not be copied so that this can be exploited.
-     *
-     * @param graph
-     * @param columnsToFetch
-     * @return
-     */
-    private Map<String, PluginGraphColumn> loadAllColumns(PluginGraph graph, Set<String> columnsToFetch) {
-        Map<String, PluginGraphColumn> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-
-        List<PluginGraphColumn> columns = modelCache.getPluginGraphColumns(graph);
-        Set<String> missingColumns = getMissingColumns(columns, columnsToFetch);
-
-        if (missingColumns.size() == 0) {
-            // All columns were already cached
-            columns.forEach(column -> result.put(column.getName(), column));
-            return result;
-        }
-
-        columns = database.loadColumns(graph);
-        Set<String> columnsToCreate = getMissingColumns(columns, columnsToFetch);
-
-        for (String columnName : columnsToCreate) {
-            PluginGraphColumn column = database.createColumn(graph, columnName);
-
-            if (column == null) {
-                continue;
-            }
-
-            columns.add(column);
-        }
-
-        modelCache.cachePluginGraphColumns(graph, columns);
-        columns.forEach(column -> result.put(column.getName(), column));
-        return result;
-    }
-
-    /**
-     * Gets all of the columns that are not inside the columns list from a known list of names.
-     *
-     * @param knownColumns
-     * @param columnsToFetch
-     * @return
-     */
-    private Set<String> getMissingColumns(List<PluginGraphColumn> knownColumns, Set<String> columnsToFetch) {
-        Set<String> result = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-
-        result.addAll(columnsToFetch);
-        result.removeAll(knownColumns.stream().map(PluginGraphColumn::getName).collect(Collectors.toSet()));
-
-        return result;
-    };
 
 }

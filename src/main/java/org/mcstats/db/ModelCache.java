@@ -2,9 +2,8 @@ package org.mcstats.db;
 
 import org.mcstats.model.Plugin;
 import org.mcstats.model.PluginGraph;
-import org.mcstats.model.PluginGraphColumn;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * A cache for models. All operations must be thread-safe.
@@ -61,27 +60,19 @@ public interface ModelCache {
     PluginGraph getPluginGraph(Plugin plugin, int id);
 
     /**
+     * Gets the plugin graph index for the given plugin. Name -> Id
+     *
+     * @param plugin
+     * @return
+     */
+    Map<String, Integer> getPluginGraphs(Plugin plugin);
+
+    /**
      * Caches the given graph for the plugin. It must come from the database.
      *
      * @param plugin
      * @param graph
      */
     void cachePluginGraph(Plugin plugin, PluginGraph graph);
-
-    /**
-     * Gets all columns for the given graph
-     *
-     * @param graph
-     * @return
-     */
-    List<PluginGraphColumn> getPluginGraphColumns(PluginGraph graph);
-
-    /**
-     * Caches all the given graph columns
-     *
-     * @param graph
-     * @param columns
-     */
-    void cachePluginGraphColumns(PluginGraph graph, List<PluginGraphColumn> columns);
 
 }

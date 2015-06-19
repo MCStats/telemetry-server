@@ -44,7 +44,6 @@ public class PluginCachePopulator {
 
             for (PluginGraph graph : database.loadGraphs(plugin)) {
                 modelCache.cachePluginGraph(plugin, graph);
-                modelCache.cachePluginGraphColumns(graph, database.loadColumns(graph));
             }
 
             int pluginsCached = numPluginsCached.incrementAndGet();

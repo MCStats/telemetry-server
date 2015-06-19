@@ -5,17 +5,14 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.PluginGraph;
-import org.mcstats.model.PluginGraphColumn;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -28,7 +25,6 @@ public class RedisCache implements ModelCache {
 
     public static final String PLUGIN_GRAPH_KEY = "plugin-graphs:%d"; // hash: id -> name
     public static final String PLUGIN_GRAPH_INDEX_KEY = "plugin-graphs-index:%d"; // hash: name.toLowerCase() -> id
-    public static final String PLUGIN_GRAPH_COLUMNS_KEY = "plugin-graph-columns:%d"; // hash: id -> name
 
     public static final String SERVER_LAST_SENT_KEY = "server-last-sent:%s"; // hash: plugin-id -> last-sent
 
@@ -136,6 +132,19 @@ public class RedisCache implements ModelCache {
     }
 
     @Override
+    public Map<String, Integer> getPluginGraphs(Plugin plugin) {
+        String key = String.format(PLUGIN_GRAPH_KEY, plugin.getId());
+
+        try (Jedis redis = pool.getResource()) {
+            Map<String, Integer> result = new HashMap<>();
+
+            redis.hgetAll(key).forEach((k, v) -> result.put(v, Integer.parseInt(k)));
+
+            return result;
+        }
+    }
+
+    @Override
     public void cachePluginGraph(Plugin plugin, PluginGraph graph) {
         if (!graph.isFromDatabase()) {
             throw new UnsupportedOperationException("Graph to be cached cannot be virtual.");
@@ -145,42 +154,6 @@ public class RedisCache implements ModelCache {
             Pipeline pipeline = redis.pipelined();
 
             cachePluginGraph(plugin, graph, pipeline);
-
-            pipeline.sync();
-        }
-    }
-
-    @Override
-    public List<PluginGraphColumn> getPluginGraphColumns(PluginGraph graph) {
-        List<PluginGraphColumn> columns = new ArrayList<>();
-
-        String key = String.format(PLUGIN_GRAPH_COLUMNS_KEY, graph.getId());
-
-        try (Jedis redis = pool.getResource()) {
-            Map<String, String> data = redis.hgetAll(key);
-
-            data.forEach((columnId, columnName) -> {
-                PluginGraphColumn column = new PluginGraphColumn(graph, columnName);
-                column.initFromDatabase(Integer.parseInt(columnId));
-
-                columns.add(column);
-            });
-        }
-
-        return columns;
-    }
-
-    @Override
-    public void cachePluginGraphColumns(PluginGraph graph, List<PluginGraphColumn> columns) {
-        String key = String.format(PLUGIN_GRAPH_COLUMNS_KEY, graph.getId());
-
-        Map<String, String> data = new HashMap<>();
-        columns.forEach(column -> data.put(Integer.toString(column.getId()), column.getName()));
-
-        try (Jedis redis = pool.getResource()) {
-            Pipeline pipeline = redis.pipelined();
-
-            pipeline.hmset(key, data);
 
             pipeline.sync();
         }

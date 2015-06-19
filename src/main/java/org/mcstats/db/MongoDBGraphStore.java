@@ -8,9 +8,7 @@ import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.mcstats.generator.GeneratedData;
 import org.mcstats.handler.ReportHandler;
-import org.mcstats.model.PluginGraph;
-import org.mcstats.model.PluginGraphColumn;
-import org.mcstats.util.Tuple;
+import org.mcstats.model.Plugin;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -71,15 +69,14 @@ public class MongoDBGraphStore implements GraphStore {
     }
 
     @Override
-    public void insert(PluginGraph graph, List<Tuple<PluginGraphColumn, GeneratedData>> data, int epoch) {
-        graphDataCollection.insertOne(createInsertDocument(graph, data, epoch));
-    }
-
-    @Override
-    public void insert(Map<PluginGraph, List<Tuple<PluginGraphColumn, GeneratedData>>> graphData, int epoch) {
+    public void insert(Map<Plugin, Map<Integer, List<GeneratedData>>> data, int epoch) {
         List<Document> documentsToInsert = new ArrayList<>();
 
-        graphData.forEach((graph, data) -> documentsToInsert.add(createInsertDocument(graph, data, epoch)));
+        data.forEach((plugin, pluginData) -> {
+            pluginData.forEach((graphId, graphData) -> {
+                documentsToInsert.add(createInsertDocument(plugin, graphId, graphData, epoch));
+            });
+        });
 
         graphDataCollection.insertMany(documentsToInsert);
     }
@@ -87,24 +84,22 @@ public class MongoDBGraphStore implements GraphStore {
     /**
      * Creates the document to insert for the given data
      *
-     * @param graph
-     * @param batchData
+     * @param plugin
+     * @param graphId
+     * @param columnData
      * @param epoch
      * @return
      */
-    private Document createInsertDocument(PluginGraph graph, List<Tuple<PluginGraphColumn, GeneratedData>> batchData, int epoch) {
-        Document document = new Document().append("epoch", epoch).append("plugin", graph.getPlugin().getId()).append("graph", graph.getId());
+    private Document createInsertDocument(Plugin plugin, int graphId, List<GeneratedData> columnData, int epoch) {
+        Document document = new Document().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graphId);
         List<BasicDBObject> data = new ArrayList<>();
 
-        for (Tuple<PluginGraphColumn, GeneratedData> tuple : batchData) {
-            PluginGraphColumn column = tuple.first();
-            GeneratedData gdata = tuple.second();
-
+        for (GeneratedData generatedData : columnData) {
             BasicDBObject col = new BasicDBObject();
-            col.append("name", column.getName());
+            col.append("name", generatedData.getColumnName());
 
-            int sum = gdata.getSum();
-            int count = gdata.getCount();
+            int sum = generatedData.getSum();
+            int count = generatedData.getCount();
 
             if (sum != 0) {
                 col.append("sum", sum);
