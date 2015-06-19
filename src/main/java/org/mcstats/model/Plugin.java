@@ -5,6 +5,7 @@ import org.mcstats.db.ModelCache;
 import org.mcstats.db.Savable;
 
 import javax.inject.Inject;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,30 +17,19 @@ public class Plugin implements Savable {
     private int id;
 
     /**
-     * This plugin's parent, that data should be forwarded to instead
-     */
-    private int parent;
-
-    /**
      * The plugin's name
      */
     private String name;
 
     /**
-     * The plugin's authors
+     * The plugin type
      */
-    private String authors;
+    private String type;
 
     /**
      * If the plugin is hidden
      */
-    private int hidden;
-
-    /**
-     * The total amount of server startups the plugin has received
-     */
-    @Deprecated
-    private int globalHits;
+    private boolean hidden;
 
     /**
      * The plugin's rank
@@ -59,17 +49,12 @@ public class Plugin implements Savable {
     /**
      * The unix epoch the plugin was created at
      */
-    private int created;
+    private Date createdAt;
 
     /**
      * When a server last used this plugin
      */
-    private int lastUpdated;
-
-    /**
-     * The number of servers in the last 30 minutes (ish)
-     */
-    private int serverCount30;
+    private Date updatedAt;
 
     /**
      * If this plugin was modified
@@ -145,7 +130,7 @@ public class Plugin implements Savable {
      * @return
      */
     public boolean recentlyUpdated() {
-        return lastUpdated > (((int) System.currentTimeMillis() / 1000) - 1800);
+        return (updatedAt.getTime() / 1000) > (((int) System.currentTimeMillis() / 1000) - 1800);
     }
 
     public int getId() {
@@ -163,35 +148,6 @@ public class Plugin implements Savable {
 
     public void setName(String name) {
         this.name = name;
-        modified = true;
-    }
-
-    public String getAuthors() {
-        return authors;
-    }
-
-    public void setAuthors(String authors) {
-        this.authors = authors;
-        modified = true;
-    }
-
-    public int getHidden() {
-        return hidden;
-    }
-
-    public void setHidden(int hidden) {
-        this.hidden = hidden;
-        modified = true;
-    }
-
-    @Deprecated
-    public int getGlobalHits() {
-        return globalHits;
-    }
-
-    @Deprecated
-    public void setGlobalHits(int globalHits) {
-        this.globalHits = globalHits;
         modified = true;
     }
 
@@ -222,20 +178,28 @@ public class Plugin implements Savable {
         modified = true;
     }
 
-    public int getServerCount30() {
-        return serverCount30;
-    }
-
-    public void setServerCount30(int serverCount30) {
-        this.serverCount30 = serverCount30;
-    }
-
     public boolean isModified() {
         return modified;
     }
 
     public void setModified(boolean modified) {
         this.modified = modified;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
     }
 
     public void save() {
@@ -259,28 +223,19 @@ public class Plugin implements Savable {
         }
     }
 
-    public int getParent() {
-        return parent;
+    public Date getCreatedAt() {
+        return createdAt;
     }
 
-    public void setParent(int parent) {
-        this.parent = parent;
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public int getCreated() {
-        return created;
+    public Date getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setCreated(int created) {
-        this.created = created;
-    }
-
-    public int getLastUpdated() {
-        return lastUpdated;
-    }
-
-    public void setLastUpdated(int lastUpdated) {
-        this.lastUpdated = lastUpdated;
-        modified = true;
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

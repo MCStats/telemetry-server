@@ -83,11 +83,6 @@ public class PluginRanker {
                 plugin.setRank(newRank);
                 System.out.println(pluginId + " modified");
             }
-
-            if (plugin.getServerCount30() != serverCount) {
-                plugin.setServerCount30(serverCount);
-                System.out.println(pluginId + " modified");
-            }
         });
 
         ensurePluginsSaved(new ArrayList<>(plugins.values()));

@@ -7,8 +7,8 @@ import org.apache.log4j.Logger;
 import org.mcstats.db.Database;
 import org.mcstats.db.ModelCache;
 import org.mcstats.guice.GuiceModule;
-import org.mcstats.model.PluginGraph;
 import org.mcstats.model.Plugin;
+import org.mcstats.model.PluginGraph;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;

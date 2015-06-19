@@ -1,8 +1,8 @@
 package org.mcstats.db;
 
-import org.mcstats.model.PluginGraphColumn;
-import org.mcstats.model.PluginGraph;
 import org.mcstats.model.Plugin;
+import org.mcstats.model.PluginGraph;
+import org.mcstats.model.PluginGraphColumn;
 
 import java.util.List;
 

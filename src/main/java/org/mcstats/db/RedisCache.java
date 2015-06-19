@@ -3,9 +3,9 @@ package org.mcstats.db;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import org.mcstats.model.PluginGraphColumn;
-import org.mcstats.model.PluginGraph;
 import org.mcstats.model.Plugin;
+import org.mcstats.model.PluginGraph;
+import org.mcstats.model.PluginGraphColumn;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
@@ -13,6 +13,7 @@ import redis.clients.jedis.Pipeline;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -195,17 +196,13 @@ public class RedisCache implements ModelCache {
         String key = String.format(PLUGIN_KEY, plugin.getId());
 
         // TODO hmset
-        pipeline.hset(key, "parent", Integer.toString(plugin.getParent()));
         pipeline.hset(key, "name", plugin.getName());
-        pipeline.hset(key, "authors", plugin.getAuthors());
-        pipeline.hset(key, "hidden", Integer.toString(plugin.getHidden()));
-        pipeline.hset(key, "globalHits", Integer.toString(plugin.getGlobalHits()));
+        pipeline.hset(key, "type", plugin.getType());
         pipeline.hset(key, "rank", Integer.toString(plugin.getRank()));
-        pipeline.hset(key, "lastRank", Integer.toString(plugin.getLastRank()));
-        pipeline.hset(key, "lastRankChange", Integer.toString(plugin.getLastRankChange()));
-        pipeline.hset(key, "created", Integer.toString(plugin.getCreated()));
-        pipeline.hset(key, "lastUpdated", Integer.toString(plugin.getLastUpdated()));
-        pipeline.hset(key, "serverCount30", Integer.toString(plugin.getServerCount30()));
+        pipeline.hset(key, "last_rank", Integer.toString(plugin.getLastRank()));
+        pipeline.hset(key, "last_rank_change", Integer.toString(plugin.getLastRankChange()));
+        pipeline.hset(key, "created_at", Long.toString(plugin.getCreatedAt().getTime()));
+        pipeline.hset(key, "updated_at", Long.toString(plugin.getUpdatedAt().getTime()));
 
         pipeline.sadd(PLUGINS_KEY, Integer.toString(plugin.getId()));
         pipeline.hset(PLUGINS_INDEX_KEY, plugin.getName().toLowerCase(), Integer.toString(plugin.getId()));
@@ -242,17 +239,14 @@ public class RedisCache implements ModelCache {
             Plugin plugin = new Plugin(database, this);
 
             plugin.setId(id);
-            plugin.setParent(Integer.parseInt(data.get("parent")));
             plugin.setName(data.get("name"));
-            plugin.setAuthors(data.get("authors"));
-            plugin.setHidden(Integer.parseInt(data.get("hidden")));
-            plugin.setGlobalHits(Integer.parseInt(data.get("globalHits")));
+            plugin.setType(data.get("type"));
+            plugin.setHidden(Integer.parseInt(data.get("hidden")) == 1);
             plugin.setRank(Integer.parseInt(data.get("rank")));
-            plugin.setLastRank(Integer.parseInt(data.get("lastRank")));
-            plugin.setLastRankChange(Integer.parseInt(data.get("lastRankChange")));
-            plugin.setCreated(Integer.parseInt(data.get("created")));
-            plugin.setLastUpdated(Integer.parseInt(data.get("lastUpdated")));
-            plugin.setServerCount30(Integer.parseInt(data.get("serverCount30")));
+            plugin.setLastRank(Integer.parseInt(data.get("last_rank")));
+            plugin.setLastRankChange(Integer.parseInt(data.get("last_rank_changed")));
+            plugin.setCreatedAt(new Date(Long.parseLong(data.get("created_at"))));
+            plugin.setUpdatedAt(new Date(Long.parseLong(data.get("updated_at"))));
 
             plugin.setModified(false);
 

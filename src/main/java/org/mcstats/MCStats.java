@@ -198,11 +198,6 @@ public class MCStats {
             return null;
         }
 
-        // Check if the plugin is just a child -- if so the parent is returned instead.
-        if (plugin.getParent() != -1) {
-            return loadPlugin(plugin.getParent());
-        }
-
         return plugin;
     }
 
@@ -230,11 +225,6 @@ public class MCStats {
         if (plugin == null) {
             logger.error("Failed to create plugin for \"" + name + "\"");
             return null;
-        }
-
-        // Check if the plugin is just a child -- if so the parent is returned instead.
-        if (plugin.getParent() != -1) {
-            return loadPlugin(plugin.getParent());
         }
 
         return plugin;

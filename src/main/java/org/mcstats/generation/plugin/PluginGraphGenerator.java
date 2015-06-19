@@ -7,9 +7,9 @@ import org.mcstats.db.Database;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.ModelCache;
 import org.mcstats.generator.GeneratedData;
-import org.mcstats.model.PluginGraphColumn;
-import org.mcstats.model.PluginGraph;
 import org.mcstats.model.Plugin;
+import org.mcstats.model.PluginGraph;
+import org.mcstats.model.PluginGraphColumn;
 import org.mcstats.util.Tuple;
 
 import javax.inject.Inject;

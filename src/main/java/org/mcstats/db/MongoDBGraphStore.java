@@ -8,8 +8,8 @@ import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.mcstats.generator.GeneratedData;
 import org.mcstats.handler.ReportHandler;
-import org.mcstats.model.PluginGraphColumn;
 import org.mcstats.model.PluginGraph;
+import org.mcstats.model.PluginGraphColumn;
 import org.mcstats.util.Tuple;
 
 import javax.inject.Inject;
