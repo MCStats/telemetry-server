@@ -5,7 +5,6 @@ import org.apache.log4j.Logger;
 import org.mcstats.DatabaseQueue;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.PluginGraph;
-import org.mcstats.model.PluginGraphColumn;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -213,69 +212,6 @@ public class MySQLDatabase implements Database {
         return graphs;
     }
 
-    public PluginGraphColumn createColumn(PluginGraph graph, String name) {
-        if (name.length() > 100) {
-            return null;
-        }
-
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("INSERT INTO plugin_graph_columns (plugin_graph_id, name) VALUES (?, ?)")) {
-            statement.setInt(1, graph.getId());
-            statement.setString(2, name);
-            statement.executeUpdate();
-            QUERIES++;
-        } catch (SQLException e) {
-            logger.info("Failed to create column " + name + " for graph: " + graph.getId());
-        }
-
-        return loadColumn(graph, name);
-    }
-
-    public PluginGraphColumn loadColumn(PluginGraph graph, String name) {
-        if (name.length() > 100) {
-            return null;
-        }
-
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT * FROM plugin_graph_columns WHERE plugin_graph_id = ? AND name = ?")) {
-            statement.setInt(1, graph.getId());
-            statement.setString(2, name);
-
-            try (ResultSet set = statement.executeQuery()) {
-                QUERIES++;
-
-                if (set.next()) {
-                    return resolveColumn(graph, set);
-                }
-            }
-        } catch (SQLException e) {
-            logger.info("Failed to load column " + name + " for graph: " + graph.getId());
-        }
-
-        return null;
-    }
-
-    public List<PluginGraphColumn> loadColumns(PluginGraph graph) {
-        List<PluginGraphColumn> columns = new ArrayList<>();
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT * FROM plugin_graph_columns WHERE plugin_graph_id = ?")) {
-            statement.setInt(1, graph.getId());
-
-            try (ResultSet set = statement.executeQuery()) {
-                QUERIES++;
-
-                while (set.next()) {
-                    PluginGraphColumn column = resolveColumn(graph, set);
-                    columns.add(column);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return columns;
-    }
-
     /**
      * Resolve a graph from a ResultSet. Does not close the result set.
      *
@@ -290,23 +226,6 @@ public class MySQLDatabase implements Database {
 
         graph.initFromDatabase(id);
         return graph;
-    }
-
-    /**
-     * Resolve a column from a REsultSet. Does not close the result set.
-     *
-     * @param graph
-     * @param set
-     * @return
-     * @throws SQLException
-     */
-    private PluginGraphColumn resolveColumn(PluginGraph graph, ResultSet set) throws SQLException {
-        PluginGraphColumn column = new PluginGraphColumn(graph, set.getString("name"));
-
-        int id = set.getInt("id");
-
-        column.initFromDatabase(id);
-        return column;
     }
 
     /**

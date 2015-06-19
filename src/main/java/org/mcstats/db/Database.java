@@ -2,7 +2,6 @@ package org.mcstats.db;
 
 import org.mcstats.model.Plugin;
 import org.mcstats.model.PluginGraph;
-import org.mcstats.model.PluginGraphColumn;
 
 import java.util.List;
 
@@ -78,31 +77,5 @@ public interface Database {
      * @return
      */
     List<PluginGraph> loadGraphs(Plugin plugin);
-
-    /**
-     * Create a column for the given graph
-     *
-     * @param graph
-     * @param name
-     * @return
-     */
-    PluginGraphColumn createColumn(PluginGraph graph, String name);
-
-    /**
-     * Load a column for the given graph
-     *
-     * @param graph
-     * @param name
-     * @return
-     */
-    PluginGraphColumn loadColumn(PluginGraph graph, String name);
-
-    /**
-     * Load all columns for the given graph
-     *
-     * @param graph
-     * @return
-     */
-    List<PluginGraphColumn> loadColumns(PluginGraph graph);
 
 }
