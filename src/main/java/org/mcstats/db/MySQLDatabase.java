@@ -3,8 +3,8 @@ package org.mcstats.db;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.log4j.Logger;
 import org.mcstats.DatabaseQueue;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
+import org.mcstats.model.PluginGraphColumn;
+import org.mcstats.model.PluginGraph;
 import org.mcstats.model.Plugin;
 
 import javax.inject.Inject;
@@ -158,7 +158,7 @@ public class MySQLDatabase implements Database {
         }
     }
 
-    public Graph createGraph(Plugin plugin, String name) {
+    public PluginGraph createGraph(Plugin plugin, String name) {
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("INSERT INTO Graph (Plugin, Type, Active, Name, DisplayName, Scale) VALUES (?, ?, ?, ?, ?, ?)")) {
             statement.setInt(1, plugin.getId());
@@ -175,7 +175,7 @@ public class MySQLDatabase implements Database {
         return loadGraph(plugin, name);
     }
 
-    public Graph loadGraph(Plugin plugin, String name) {
+    public PluginGraph loadGraph(Plugin plugin, String name) {
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("SELECT ID, Type, Position, Active, Name, DisplayName, Scale FROM Graph WHERE Plugin = ? AND Name = ?")) {
             statement.setInt(1, plugin.getId());
@@ -193,15 +193,15 @@ public class MySQLDatabase implements Database {
         return null;
     }
 
-    public List<Graph> loadGraphs(Plugin plugin) {
-        List<Graph> graphs = new ArrayList<>();
+    public List<PluginGraph> loadGraphs(Plugin plugin) {
+        List<PluginGraph> graphs = new ArrayList<>();
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("SELECT ID, Type, Position, Active, Name, DisplayName, Scale FROM Graph WHERE Plugin = ?")) {
             statement.setInt(1, plugin.getId());
 
             try (ResultSet set = statement.executeQuery()) {
                 while (set.next()) {
-                    Graph graph = resolveGraph(plugin, set);
+                    PluginGraph graph = resolveGraph(plugin, set);
                     graphs.add(graph);
                 }
             }
@@ -212,7 +212,7 @@ public class MySQLDatabase implements Database {
         return graphs;
     }
 
-    public Column createColumn(Graph graph, String name) {
+    public PluginGraphColumn createColumn(PluginGraph graph, String name) {
         if (name.length() > 100) {
             return null;
         }
@@ -231,7 +231,7 @@ public class MySQLDatabase implements Database {
         return loadColumn(graph, name);
     }
 
-    public Column loadColumn(Graph graph, String name) {
+    public PluginGraphColumn loadColumn(PluginGraph graph, String name) {
         if (name.length() > 100) {
             return null;
         }
@@ -255,8 +255,8 @@ public class MySQLDatabase implements Database {
         return null;
     }
 
-    public List<Column> loadColumns(Graph graph) {
-        List<Column> columns = new ArrayList<>();
+    public List<PluginGraphColumn> loadColumns(PluginGraph graph) {
+        List<PluginGraphColumn> columns = new ArrayList<>();
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("SELECT ID, Name FROM CustomColumn WHERE Graph = ?")) {
             statement.setInt(1, graph.getId());
@@ -265,7 +265,7 @@ public class MySQLDatabase implements Database {
                 QUERIES++;
 
                 while (set.next()) {
-                    Column column = resolveColumn(graph.getPlugin(), graph, set);
+                    PluginGraphColumn column = resolveColumn(graph.getPlugin(), graph, set);
                     columns.add(column);
                 }
             }
@@ -283,8 +283,8 @@ public class MySQLDatabase implements Database {
      * @return
      * @throws SQLException
      */
-    private Graph resolveGraph(Plugin plugin, ResultSet set) throws SQLException {
-        Graph graph = new Graph(plugin, set.getString("Name"));
+    private PluginGraph resolveGraph(Plugin plugin, ResultSet set) throws SQLException {
+        PluginGraph graph = new PluginGraph(plugin, set.getString("Name"));
 
         int id = set.getInt("ID");
 
@@ -301,8 +301,8 @@ public class MySQLDatabase implements Database {
      * @return
      * @throws SQLException
      */
-    private Column resolveColumn(Plugin plugin, Graph graph, ResultSet set) throws SQLException {
-        Column column = new Column(graph, set.getString("Name"));
+    private PluginGraphColumn resolveColumn(Plugin plugin, PluginGraph graph, ResultSet set) throws SQLException {
+        PluginGraphColumn column = new PluginGraphColumn(graph, set.getString("Name"));
 
         int id = set.getInt("ID");
 

@@ -1,6 +1,6 @@
 package org.mcstats.model;
 
-public class Graph {
+public class PluginGraph {
 
     /**
      * The plugin this graph is for
@@ -22,12 +22,12 @@ public class Graph {
      */
     private boolean isFromDatabase = false;
 
-    public Graph(Plugin plugin, String name) {
+    public PluginGraph(Plugin plugin, String name) {
         this.plugin = plugin;
         this.name = name;
     }
 
-    public Graph(Plugin plugin, int id, String name) {
+    public PluginGraph(Plugin plugin, int id, String name) {
         this(plugin, name);
         this.id = id;
         isFromDatabase = true;
@@ -35,7 +35,7 @@ public class Graph {
 
     @Override
     public String toString() {
-        return String.format("Graph(id=%d, name=%s)", id, name);
+        return String.format("PluginGraph(id=%d, name=%s)", id, name);
     }
 
     public Plugin getPlugin() {
@@ -68,7 +68,7 @@ public class Graph {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Graph graph = (Graph) o;
+        PluginGraph graph = (PluginGraph) o;
 
         if (name != null ? !name.equals(graph.name) : graph.name != null) return false;
         if (plugin != null ? !plugin.equals(graph.plugin) : graph.plugin != null) return false;

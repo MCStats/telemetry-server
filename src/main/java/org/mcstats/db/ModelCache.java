@@ -1,7 +1,7 @@
 package org.mcstats.db;
 
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
+import org.mcstats.model.PluginGraphColumn;
+import org.mcstats.model.PluginGraph;
 import org.mcstats.model.Plugin;
 
 import java.util.List;
@@ -49,7 +49,7 @@ public interface ModelCache {
      * @param name
      * @return
      */
-    Graph getPluginGraph(Plugin plugin, String name);
+    PluginGraph getPluginGraph(Plugin plugin, String name);
 
     /**
      * Loads a graph from the cache
@@ -58,7 +58,7 @@ public interface ModelCache {
      * @param id
      * @return
      */
-    Graph getPluginGraph(Plugin plugin, int id);
+    PluginGraph getPluginGraph(Plugin plugin, int id);
 
     /**
      * Caches the given graph for the plugin. It must come from the database.
@@ -66,7 +66,7 @@ public interface ModelCache {
      * @param plugin
      * @param graph
      */
-    void cachePluginGraph(Plugin plugin, Graph graph);
+    void cachePluginGraph(Plugin plugin, PluginGraph graph);
 
     /**
      * Gets all columns for the given graph
@@ -74,7 +74,7 @@ public interface ModelCache {
      * @param graph
      * @return
      */
-    List<Column> getPluginGraphColumns(Graph graph);
+    List<PluginGraphColumn> getPluginGraphColumns(PluginGraph graph);
 
     /**
      * Caches all the given graph columns
@@ -82,6 +82,6 @@ public interface ModelCache {
      * @param graph
      * @param columns
      */
-    void cachePluginGraphColumns(Graph graph, List<Column> columns);
+    void cachePluginGraphColumns(PluginGraph graph, List<PluginGraphColumn> columns);
 
 }

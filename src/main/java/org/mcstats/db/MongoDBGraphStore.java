@@ -8,8 +8,8 @@ import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.mcstats.generator.GeneratedData;
 import org.mcstats.handler.ReportHandler;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
+import org.mcstats.model.PluginGraphColumn;
+import org.mcstats.model.PluginGraph;
 import org.mcstats.util.Tuple;
 
 import javax.inject.Inject;
@@ -71,12 +71,12 @@ public class MongoDBGraphStore implements GraphStore {
     }
 
     @Override
-    public void insert(Graph graph, List<Tuple<Column, GeneratedData>> data, int epoch) {
+    public void insert(PluginGraph graph, List<Tuple<PluginGraphColumn, GeneratedData>> data, int epoch) {
         graphDataCollection.insertOne(createInsertDocument(graph, data, epoch));
     }
 
     @Override
-    public void insert(Map<Graph, List<Tuple<Column, GeneratedData>>> graphData, int epoch) {
+    public void insert(Map<PluginGraph, List<Tuple<PluginGraphColumn, GeneratedData>>> graphData, int epoch) {
         List<Document> documentsToInsert = new ArrayList<>();
 
         graphData.forEach((graph, data) -> documentsToInsert.add(createInsertDocument(graph, data, epoch)));
@@ -92,13 +92,13 @@ public class MongoDBGraphStore implements GraphStore {
      * @param epoch
      * @return
      */
-    private Document createInsertDocument(Graph graph, List<Tuple<Column, GeneratedData>> batchData, int epoch) {
+    private Document createInsertDocument(PluginGraph graph, List<Tuple<PluginGraphColumn, GeneratedData>> batchData, int epoch) {
         Document document = new Document().append("epoch", epoch).append("plugin", graph.getPlugin().getId()).append("graph", graph.getId());
         Document data = new Document();
 
-        for (Tuple<Column, GeneratedData> tuple : batchData) {
+        for (Tuple<PluginGraphColumn, GeneratedData> tuple : batchData) {
             BasicDBObject col = new BasicDBObject();
-            Column column = tuple.first();
+            PluginGraphColumn column = tuple.first();
             GeneratedData gdata = tuple.second();
 
             int sum = gdata.getSum();

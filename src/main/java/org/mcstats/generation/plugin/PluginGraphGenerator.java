@@ -7,8 +7,8 @@ import org.mcstats.db.Database;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.ModelCache;
 import org.mcstats.generator.GeneratedData;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
+import org.mcstats.model.PluginGraphColumn;
+import org.mcstats.model.PluginGraph;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.Tuple;
 
@@ -67,7 +67,7 @@ public class PluginGraphGenerator {
 
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
 
-        Map<Graph, List<Tuple<Column, GeneratedData>>> generatedGraphs = new ConcurrentHashMap<>();
+        Map<PluginGraph, List<Tuple<PluginGraphColumn, GeneratedData>>> generatedGraphs = new ConcurrentHashMap<>();
 
         data.keySet().forEach(pluginId -> executor.submit(() -> {
             Map<String, Map<String, Long>> pluginData = data.get(pluginId);
@@ -77,15 +77,15 @@ public class PluginGraphGenerator {
             logger.debug("Generating data for plugin: " + plugin.getId());
 
             pluginData.forEach((graphName, graphData) -> {
-                List<Tuple<Column, GeneratedData>> generatedData = new ArrayList<>();
-                Graph graph = plugin.getGraph(graphName);
+                List<Tuple<PluginGraphColumn, GeneratedData>> generatedData = new ArrayList<>();
+                PluginGraph graph = plugin.getGraph(graphName);
 
                 //
-                Map<String, Column> columns = loadAllColumns(graph, graphData.keySet());
+                Map<String, PluginGraphColumn> columns = loadAllColumns(graph, graphData.keySet());
 
                 graphData.forEach((columnName, value) -> {
                     // TODO get/create column
-                    Column column = columns.get(columnName);
+                    PluginGraphColumn column = columns.get(columnName);
 
                     if (column == null) {
                         logger.error("Null column for pluginId: " + plugin.getId() + " graphName: " + graph.getName() + " columnName: " + columnName);
@@ -128,10 +128,10 @@ public class PluginGraphGenerator {
      * @param columnsToFetch
      * @return
      */
-    private Map<String, Column> loadAllColumns(Graph graph, Set<String> columnsToFetch) {
-        Map<String, Column> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private Map<String, PluginGraphColumn> loadAllColumns(PluginGraph graph, Set<String> columnsToFetch) {
+        Map<String, PluginGraphColumn> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-        List<Column> columns = modelCache.getPluginGraphColumns(graph);
+        List<PluginGraphColumn> columns = modelCache.getPluginGraphColumns(graph);
         Set<String> missingColumns = getMissingColumns(columns, columnsToFetch);
 
         if (missingColumns.size() == 0) {
@@ -144,7 +144,7 @@ public class PluginGraphGenerator {
         Set<String> columnsToCreate = getMissingColumns(columns, columnsToFetch);
 
         for (String columnName : columnsToCreate) {
-            Column column = database.createColumn(graph, columnName);
+            PluginGraphColumn column = database.createColumn(graph, columnName);
 
             if (column == null) {
                 continue;
@@ -165,11 +165,11 @@ public class PluginGraphGenerator {
      * @param columnsToFetch
      * @return
      */
-    private Set<String> getMissingColumns(List<Column> knownColumns, Set<String> columnsToFetch) {
+    private Set<String> getMissingColumns(List<PluginGraphColumn> knownColumns, Set<String> columnsToFetch) {
         Set<String> result = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
         result.addAll(columnsToFetch);
-        result.removeAll(knownColumns.stream().map(Column::getName).collect(Collectors.toSet()));
+        result.removeAll(knownColumns.stream().map(PluginGraphColumn::getName).collect(Collectors.toSet()));
 
         return result;
     };

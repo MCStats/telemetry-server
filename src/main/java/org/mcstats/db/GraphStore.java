@@ -1,8 +1,8 @@
 package org.mcstats.db;
 
 import org.mcstats.generator.GeneratedData;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
+import org.mcstats.model.PluginGraphColumn;
+import org.mcstats.model.PluginGraph;
 import org.mcstats.util.Tuple;
 
 import java.util.List;
@@ -15,13 +15,13 @@ public interface GraphStore {
      *
      * @param data
      */
-    void insert(Graph graph, List<Tuple<Column, GeneratedData>> data, int epoch);
+    void insert(PluginGraph graph, List<Tuple<PluginGraphColumn, GeneratedData>> data, int epoch);
 
     /**
      * Batches inserts the data for graphs into the graph store
      *
      * @param epoch
      */
-    void insert(Map<Graph, List<Tuple<Column, GeneratedData>>> data, int epoch);
+    void insert(Map<PluginGraph, List<Tuple<PluginGraphColumn, GeneratedData>>> data, int epoch);
 
 }

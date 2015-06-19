@@ -1,7 +1,7 @@
 package org.mcstats.db;
 
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
+import org.mcstats.model.PluginGraphColumn;
+import org.mcstats.model.PluginGraph;
 import org.mcstats.model.Plugin;
 
 import java.util.List;
@@ -60,7 +60,7 @@ public interface Database {
      * @param name
      * @return
      */
-    Graph createGraph(Plugin plugin, String name);
+    PluginGraph createGraph(Plugin plugin, String name);
 
     /**
      * Load the graph for the given plugin
@@ -69,7 +69,7 @@ public interface Database {
      * @param name
      * @return
      */
-    Graph loadGraph(Plugin plugin, String name);
+    PluginGraph loadGraph(Plugin plugin, String name);
 
     /**
      * Load all of the graphs for a given plugin
@@ -77,7 +77,7 @@ public interface Database {
      * @param plugin
      * @return
      */
-    List<Graph> loadGraphs(Plugin plugin);
+    List<PluginGraph> loadGraphs(Plugin plugin);
 
     /**
      * Create a column for the given graph
@@ -86,7 +86,7 @@ public interface Database {
      * @param name
      * @return
      */
-    Column createColumn(Graph graph, String name);
+    PluginGraphColumn createColumn(PluginGraph graph, String name);
 
     /**
      * Load a column for the given graph
@@ -95,7 +95,7 @@ public interface Database {
      * @param name
      * @return
      */
-    Column loadColumn(Graph graph, String name);
+    PluginGraphColumn loadColumn(PluginGraph graph, String name);
 
     /**
      * Load all columns for the given graph
@@ -103,6 +103,6 @@ public interface Database {
      * @param graph
      * @return
      */
-    List<Column> loadColumns(Graph graph);
+    List<PluginGraphColumn> loadColumns(PluginGraph graph);
 
 }

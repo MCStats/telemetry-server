@@ -3,8 +3,8 @@ package org.mcstats.db;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
+import org.mcstats.model.PluginGraphColumn;
+import org.mcstats.model.PluginGraph;
 import org.mcstats.model.Plugin;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -105,14 +105,14 @@ public class RedisCache implements ModelCache {
     }
 
     @Override
-    public Graph getPluginGraph(Plugin plugin, String name) {
+    public PluginGraph getPluginGraph(Plugin plugin, String name) {
         String key = String.format(PLUGIN_GRAPH_INDEX_KEY, plugin.getId());
 
         try (Jedis redis = pool.getResource()) {
             String id = redis.hget(key, name.toLowerCase());
 
             if (id != null) {
-                return new Graph(plugin, Integer.parseInt(id), name);
+                return new PluginGraph(plugin, Integer.parseInt(id), name);
             } else {
                 return null;
             }
@@ -120,14 +120,14 @@ public class RedisCache implements ModelCache {
     }
 
     @Override
-    public Graph getPluginGraph(Plugin plugin, int id) {
+    public PluginGraph getPluginGraph(Plugin plugin, int id) {
         String key = String.format(PLUGIN_GRAPH_KEY, plugin.getId());
 
         try (Jedis redis = pool.getResource()) {
             String name = redis.hget(key, Integer.toString(id));
 
             if (name != null) {
-                return new Graph(plugin, id, name);
+                return new PluginGraph(plugin, id, name);
             } else {
                 return null;
             }
@@ -135,7 +135,7 @@ public class RedisCache implements ModelCache {
     }
 
     @Override
-    public void cachePluginGraph(Plugin plugin, Graph graph) {
+    public void cachePluginGraph(Plugin plugin, PluginGraph graph) {
         if (!graph.isFromDatabase()) {
             throw new UnsupportedOperationException("Graph to be cached cannot be virtual.");
         }
@@ -150,8 +150,8 @@ public class RedisCache implements ModelCache {
     }
 
     @Override
-    public List<Column> getPluginGraphColumns(Graph graph) {
-        List<Column> columns = new ArrayList<>();
+    public List<PluginGraphColumn> getPluginGraphColumns(PluginGraph graph) {
+        List<PluginGraphColumn> columns = new ArrayList<>();
 
         String key = String.format(PLUGIN_GRAPH_COLUMNS_KEY, graph.getId());
 
@@ -159,7 +159,7 @@ public class RedisCache implements ModelCache {
             Map<String, String> data = redis.hgetAll(key);
 
             data.forEach((columnId, columnName) -> {
-                Column column = new Column(graph, columnName);
+                PluginGraphColumn column = new PluginGraphColumn(graph, columnName);
                 column.initFromDatabase(Integer.parseInt(columnId));
 
                 columns.add(column);
@@ -170,7 +170,7 @@ public class RedisCache implements ModelCache {
     }
 
     @Override
-    public void cachePluginGraphColumns(Graph graph, List<Column> columns) {
+    public void cachePluginGraphColumns(PluginGraph graph, List<PluginGraphColumn> columns) {
         String key = String.format(PLUGIN_GRAPH_COLUMNS_KEY, graph.getId());
 
         Map<String, String> data = new HashMap<>();
@@ -218,7 +218,7 @@ public class RedisCache implements ModelCache {
      * @param graph
      * @param pipeline
      */
-    public void cachePluginGraph(Plugin plugin, Graph graph, Pipeline pipeline) {
+    public void cachePluginGraph(Plugin plugin, PluginGraph graph, Pipeline pipeline) {
         if (!graph.isFromDatabase()) {
             throw new UnsupportedOperationException("Graph to be cached cannot be virtual.");
         }

@@ -7,7 +7,7 @@ import org.apache.log4j.Logger;
 import org.mcstats.db.Database;
 import org.mcstats.db.ModelCache;
 import org.mcstats.guice.GuiceModule;
-import org.mcstats.model.Graph;
+import org.mcstats.model.PluginGraph;
 import org.mcstats.model.Plugin;
 
 import java.util.List;
@@ -42,7 +42,7 @@ public class PluginCachePopulator {
         plugins.forEach(plugin -> executor.submit(() -> {
             modelCache.cachePlugin(plugin);
 
-            for (Graph graph : database.loadGraphs(plugin)) {
+            for (PluginGraph graph : database.loadGraphs(plugin)) {
                 modelCache.cachePluginGraph(plugin, graph);
                 modelCache.cachePluginGraphColumns(graph, database.loadColumns(graph));
             }

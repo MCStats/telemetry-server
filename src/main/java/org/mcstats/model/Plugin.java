@@ -84,7 +84,7 @@ public class Plugin implements Savable {
     /**
      * Map of the graphs for the plugin
      */
-    private Map<String, Graph> graphs = new ConcurrentHashMap<>();
+    private Map<String, PluginGraph> graphs = new ConcurrentHashMap<>();
 
     private final Database database;
     private final ModelCache modelCache;
@@ -116,12 +116,12 @@ public class Plugin implements Savable {
      * @param name
      * @return
      */
-    public Graph getGraph(String name) {
+    public PluginGraph getGraph(String name) {
         if (graphs.containsKey(name)) {
             return graphs.get(name);
         }
 
-        Graph graph = modelCache.getPluginGraph(this, name);
+        PluginGraph graph = modelCache.getPluginGraph(this, name);
 
         if (graph == null) {
             graph = database.loadGraph(this, name);

@@ -1,11 +1,11 @@
 package org.mcstats.model;
 
-public class Column {
+public class PluginGraphColumn {
 
     /**
      * The graph this column belongs to
      */
-    private final Graph graph;
+    private final PluginGraph graph;
 
     /**
      * The id of the column (if available)
@@ -22,17 +22,17 @@ public class Column {
      */
     private boolean isFromDatabase = false;
 
-    public Column(Graph graph, String name) {
+    public PluginGraphColumn(PluginGraph graph, String name) {
         this.graph = graph;
         this.name = name;
     }
 
     @Override
     public String toString() {
-        return String.format("Column(graph=%s, id=%d, name=%s)", graph.toString(), id, name);
+        return String.format("PluginGraphColumn(graph=%s, id=%d, name=%s)", graph.toString(), id, name);
     }
 
-    public Graph getGraph() {
+    public PluginGraph getGraph() {
         return graph;
     }
 
@@ -57,7 +57,7 @@ public class Column {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Column column = (Column) o;
+        PluginGraphColumn column = (PluginGraphColumn) o;
 
         if (graph != null ? !graph.equals(column.graph) : column.graph != null) return false;
         if (name != null ? !name.equals(column.name) : column.name != null) return false;
