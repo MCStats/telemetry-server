@@ -45,3 +45,6 @@ Bungee                              BungeeCord
 canarybukkit                        CanaryBukkit
 pore                                Pore
 git-Cauldron                        Cauldron
+
+SpongeVanilla                       SpongeVanilla
+SpongeForge                         SpongeForge
