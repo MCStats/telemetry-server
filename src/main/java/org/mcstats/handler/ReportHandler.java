@@ -174,10 +174,17 @@ public class ReportHandler extends AbstractHandler {
             String userAgent = request.getHeader("User-Agent");
             final DecodedRequest decoded;
 
-            if (userAgent.startsWith("MCStats/")) {
-                decoded = modernDecoder.decode(plugin, baseRequest);
-            } else {
-                decoded = legacyDecoder.decode(plugin, baseRequest);
+            try {
+                if (userAgent.startsWith("MCStats/")) {
+                    decoded = modernDecoder.decode(plugin, baseRequest);
+                } else {
+                    decoded = legacyDecoder.decode(plugin, baseRequest);
+                }
+            } catch (IOException e) {
+                // Trap IOException from the decoder because it's common for decoding to fail
+                // when a request is malformed.
+                finishRequest(null, ResponseType.OK, baseRequest, response);
+                return;
             }
 
             if (decoded == null) {
