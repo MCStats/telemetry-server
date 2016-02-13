@@ -12,6 +12,9 @@ git-Bukkit-jenkins-MultiModWorld    MultiModWorld
 git-Bukkit-jenkins-Spigot-Legacy    Spigot-Legacy
 git-Bukkit-jenkins-Spigot           Spigot
 git-Spigot                          Spigot
+git-PaperSpigot                     PaperSpigot
+git-HexionSpigot                    HexionSpigot
+git-Migot                           Migot
 git-CraftBukkitJ                    CraftBukkitJ
 git-Cubixlaunch                     Cubixlaunch
 git-Spout                           Spout
@@ -21,7 +24,6 @@ git:BungeeCord                      BungeeCord
 
 git-MCPC-Plus                       MCPC+
 git-MCPC                            MCPC
-git-Spigot                          Spigot
 git-libigot                         Libigot
 git-SportBukkit                     SportBukkit
 
@@ -44,6 +46,7 @@ Bukkit                              CraftBukkit
 Bungee                              BungeeCord
 canarybukkit                        CanaryBukkit
 git-Cauldron                        Cauldron
+KCauldron                           KCauldron
 
 SpongeVanilla                       SpongeVanilla
 SpongeForge                         SpongeForge
