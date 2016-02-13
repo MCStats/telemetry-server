@@ -285,6 +285,13 @@ public class ReportHandler extends AbstractHandler {
                     }
                 }
 
+                // BungeeCord doesn't send a proper version string, so detect it via the metrics data it sends with the server
+                ServerPlugin bungeeCordPlugin = server.getPlugin(mcstats.loadPlugin(5921));
+
+                if (bungeeCordPlugin != null) {
+                    canonicalServerVersion = "BungeeCord";
+                }
+
                 if (!server.getServerSoftware().equals(canonicalServerVersion)) {
                     server.setServerSoftware(canonicalServerVersion);
                 }
