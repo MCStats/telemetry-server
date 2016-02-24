@@ -1,6 +1,6 @@
-package org.mcstats.handler;
+package org.mcstats.jetty;
 
-public enum ResponseType {
+public enum PluginTelemetryResponseType {
 
     /**
      * Tell the server everything is OK

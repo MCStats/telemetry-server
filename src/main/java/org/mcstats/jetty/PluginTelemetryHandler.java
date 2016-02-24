@@ -1,4 +1,4 @@
-package org.mcstats.handler;
+package org.mcstats.jetty;
 
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Request;
@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ReportHandler extends AbstractHandler {
+public class PluginTelemetryHandler extends AbstractHandler {
 
     private Logger logger = Logger.getLogger("ReportHandler");
 
@@ -57,7 +57,7 @@ public class ReportHandler extends AbstractHandler {
      */
     private Map<String, Integer> serverLastSendCache = new ConcurrentHashMap<>();
 
-    public ReportHandler(MCStats mcstats) {
+    public PluginTelemetryHandler(MCStats mcstats) {
         this.mcstats = mcstats;
         modernDecoder = new ModernRequestDecoder(mcstats);
         legacyDecoder = new LegacyRequestDecoder(mcstats);
@@ -89,27 +89,27 @@ public class ReportHandler extends AbstractHandler {
      * @param response
      * @throws IOException
      */
-    private void finishRequest(DecodedRequest decoded, ResponseType responseType, String message, Request baseRequest, HttpServletResponse response) throws IOException {
+    private void finishRequest(DecodedRequest decoded, PluginTelemetryResponseType responseType, String message, Request baseRequest, HttpServletResponse response) throws IOException {
         ByteArrayISO8859Writer writer = new ByteArrayISO8859Writer(1500);
         if (decoded != null && decoded.revision >= 7) {
-            if (responseType == ResponseType.OK) {
+            if (responseType == PluginTelemetryResponseType.OK) {
                 writer.write("0");
-            } else if (responseType == ResponseType.OK_FIRST_REQUEST) {
+            } else if (responseType == PluginTelemetryResponseType.OK_FIRST_REQUEST) {
                 writer.write("1");
-            } else if (responseType == ResponseType.OK_REGENERATE_GUID) {
+            } else if (responseType == PluginTelemetryResponseType.OK_REGENERATE_GUID) {
                 writer.write("2");
-            } else if (responseType == ResponseType.ERROR) {
+            } else if (responseType == PluginTelemetryResponseType.ERROR) {
                 writer.write("7");
             }
             if (!message.isEmpty()) {
                 writer.write((new StringBuilder()).append(",").append(message).toString());
             }
         } else {
-            if (responseType == ResponseType.OK || responseType == ResponseType.OK_REGENERATE_GUID) {
+            if (responseType == PluginTelemetryResponseType.OK || responseType == PluginTelemetryResponseType.OK_REGENERATE_GUID) {
                 writer.write("OK");
-            } else if (responseType == ResponseType.OK_FIRST_REQUEST) {
+            } else if (responseType == PluginTelemetryResponseType.OK_FIRST_REQUEST) {
                 writer.write("OK This is your first update this hour.");
-            } else if (responseType == ResponseType.ERROR) {
+            } else if (responseType == PluginTelemetryResponseType.ERROR) {
                 writer.write("ERR");
             }
             if (!message.isEmpty()) {
@@ -134,7 +134,7 @@ public class ReportHandler extends AbstractHandler {
      * @param response
      * @throws IOException
      */
-    private void finishRequest(DecodedRequest decoded, ResponseType responseType, Request baseRequest, HttpServletResponse response) throws IOException {
+    private void finishRequest(DecodedRequest decoded, PluginTelemetryResponseType responseType, Request baseRequest, HttpServletResponse response) throws IOException {
         finishRequest(decoded, responseType, "", baseRequest, response);
     }
 
@@ -156,14 +156,14 @@ public class ReportHandler extends AbstractHandler {
             mcstats.incrementAndGetRequests();
 
             if (SOFT_IGNORE_REQUESTS) {
-                finishRequest(null, ResponseType.OK, baseRequest, response);
+                finishRequest(null, PluginTelemetryResponseType.OK, baseRequest, response);
                 return;
             }
 
             String pluginName = URLUtils.decode(getPluginName(request));
 
             if (pluginName == null) {
-                finishRequest(null, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
+                finishRequest(null, PluginTelemetryResponseType.ERROR, "Invalid arguments.", baseRequest, response);
                 return;
             }
 
@@ -181,12 +181,12 @@ public class ReportHandler extends AbstractHandler {
             } catch (IOException e) {
                 // Trap IOException from the decoder because it's common for decoding to fail
                 // when a request is malformed.
-                finishRequest(null, ResponseType.OK, baseRequest, response);
+                finishRequest(null, PluginTelemetryResponseType.OK, baseRequest, response);
                 return;
             }
 
             if (decoded == null) {
-                finishRequest(decoded, ResponseType.ERROR, "Invalid arguments.", baseRequest, response);
+                finishRequest(decoded, PluginTelemetryResponseType.ERROR, "Invalid arguments.", baseRequest, response);
                 return;
             }
 
@@ -202,7 +202,7 @@ public class ReportHandler extends AbstractHandler {
             final String geoipCountryCode = geoipCountryCodeNonFinal;
 
             if (plugin.getId() == -1) {
-                finishRequest(decoded, ResponseType.ERROR, "Rejected.", baseRequest, response);
+                finishRequest(decoded, PluginTelemetryResponseType.ERROR, "Rejected.", baseRequest, response);
                 return;
             }
 
@@ -218,9 +218,9 @@ public class ReportHandler extends AbstractHandler {
 
             if (((plugin.getId() != 1) || (decoded.revision != 7)) ||
                     (lastSent > normalizedTime)) {
-                finishRequest(decoded, ResponseType.OK, baseRequest, response);
+                finishRequest(decoded, PluginTelemetryResponseType.OK, baseRequest, response);
             } else {
-                finishRequest(decoded, ResponseType.OK_FIRST_REQUEST, baseRequest, response);
+                finishRequest(decoded, PluginTelemetryResponseType.OK_FIRST_REQUEST, baseRequest, response);
             }
 
             serverLastSendCache.put(serverCacheKey, (int) System.currentTimeMillis());
@@ -364,7 +364,7 @@ public class ReportHandler extends AbstractHandler {
         } catch (Exception e) {
             e.printStackTrace();
 
-            finishRequest(null, ResponseType.OK, baseRequest, response);
+            finishRequest(null, PluginTelemetryResponseType.OK, baseRequest, response);
         }
     }
 

@@ -3,7 +3,7 @@ package org.mcstats.cron;
 import org.mcstats.MCStats;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
-import org.mcstats.handler.ReportHandler;
+import org.mcstats.jetty.PluginTelemetryHandler;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.ServerPlugin;
 
@@ -79,7 +79,7 @@ public class CronGraphGenerator implements Runnable {
         try {
             logger.info("Beginning graph generation");
             GraphStore store = mcstats.getGraphStore();
-            ReportHandler.SOFT_IGNORE_REQUESTS = true;
+            PluginTelemetryHandler.SOFT_IGNORE_REQUESTS = true;
 
             if (mcstats.countRecentServers() < 50000) {
                 logger.info("Not enough data. Auto correcting internal caches.");
@@ -95,7 +95,7 @@ public class CronGraphGenerator implements Runnable {
 
                 Map<Column, GeneratedData> data = generator.generate(mcstats);
 
-                int epoch = ReportHandler.normalizeTime();
+                int epoch = PluginTelemetryHandler.normalizeTime();
 
                 logger.info("Storing " + data.size() + " columns of data");
 
@@ -161,7 +161,7 @@ public class CronGraphGenerator implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            ReportHandler.SOFT_IGNORE_REQUESTS = false;
+            PluginTelemetryHandler.SOFT_IGNORE_REQUESTS = false;
         }
     }
 }

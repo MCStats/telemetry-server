@@ -2,7 +2,7 @@ package org.mcstats.cron;
 
 import com.google.common.collect.Lists;
 import org.mcstats.MCStats;
-import org.mcstats.handler.ReportHandler;
+import org.mcstats.jetty.PluginTelemetryHandler;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.MapUtil;
 
@@ -43,7 +43,7 @@ public class CronRanking implements Runnable {
             pluginServerCounts.put(plugin, plugin.getServerCount30());
         }
 
-        int epoch = ReportHandler.normalizeTime();
+        int epoch = PluginTelemetryHandler.normalizeTime();
         int rank = 1;
 
         Map<Plugin, Integer> sorted = MapUtil.sortByValue(pluginServerCounts);

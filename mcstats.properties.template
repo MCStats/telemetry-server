@@ -1,7 +1,7 @@
 debug=false
 
 listen.port=9050
-blackhole.port=9051
+server-telemetry.port=9051
 
 webapp.path=org/mcstats/webapp
 webapp.context=/webapp

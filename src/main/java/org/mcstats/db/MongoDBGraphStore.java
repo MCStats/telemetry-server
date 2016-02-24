@@ -9,7 +9,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.WriteConcern;
 import org.mcstats.MCStats;
 import org.mcstats.generator.GeneratedData;
-import org.mcstats.handler.ReportHandler;
+import org.mcstats.jetty.PluginTelemetryHandler;
 import org.mcstats.model.Plugin;
 import org.mcstats.util.Tuple;
 
@@ -62,7 +62,7 @@ public class MongoDBGraphStore implements GraphStore {
      */
     public void finishGeneration() {
         DBObject query = new BasicDBObject().append("_id", 1);
-        DBObject op = new BasicDBObject().append("$set", new BasicDBObject("max.epoch", ReportHandler.normalizeTime()));
+        DBObject op = new BasicDBObject().append("$set", new BasicDBObject("max.epoch", PluginTelemetryHandler.normalizeTime()));
 
         collStatistic.update(query, op, true, false);
     }

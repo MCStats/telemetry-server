@@ -17,8 +17,8 @@ import org.mcstats.db.Database;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.db.PluginOnlyMySQLDatabase;
-import org.mcstats.handler.BlackholeHandler;
-import org.mcstats.handler.ReportHandler;
+import org.mcstats.jetty.PluginTelemetryHandler;
+import org.mcstats.jetty.ServerTelemetryHandler;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.PluginVersion;
@@ -84,7 +84,7 @@ public class MCStats {
     /**
      * The report handler for requests
      */
-    private ReportHandler handler = new ReportHandler(this);
+    private PluginTelemetryHandler handler = new PluginTelemetryHandler(this);
 
     /**
      * The server build identifier
@@ -563,7 +563,8 @@ public class MCStats {
      */
     private void createWebServer() {
         int listenPort = Integer.parseInt(config.getProperty("listen.port"));
-        int blackholePort = Integer.parseInt(config.getProperty("blackhole.port"));
+        int serverTelemetryPort = Integer.parseInt(config.getProperty("server-telemetry.port"));
+
         webServer = new org.eclipse.jetty.server.Server();
 
         String webApp = config.getProperty("webapp.path");
@@ -588,12 +589,12 @@ public class MCStats {
         connector.setSoLingerTime(0);
         webServer.addConnector(connector);
 
-        org.eclipse.jetty.server.Server blackholeServer = new org.eclipse.jetty.server.Server();
-        blackholeServer.setHandler(new BlackholeHandler());
-        ServerConnector connector2 = new ServerConnector(blackholeServer, 1, 1);
-        connector2.setPort(blackholePort);
+        org.eclipse.jetty.server.Server serverTelemetryServer = new org.eclipse.jetty.server.Server();
+        serverTelemetryServer.setHandler(new ServerTelemetryHandler());
+        ServerConnector connector2 = new ServerConnector(serverTelemetryServer, 1, 1);
+        connector2.setPort(serverTelemetryPort);
         connector2.setSoLingerTime(0);
-        blackholeServer.addConnector(connector2);
+        serverTelemetryServer.addConnector(connector2);
 
         if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
             Scheduler scheduler = new Scheduler();
@@ -614,9 +615,9 @@ public class MCStats {
         try {
             // Start the server
             webServer.start();
-            blackholeServer.start();
-            logger.info("Created web server on port " + listenPort);
-            logger.info("Created blackhole server on port " + blackholePort);
+            serverTelemetryServer.start();
+            logger.info("Created plugin telemetry server on port " + listenPort);
+            logger.info("Created server telemetry server on port " + serverTelemetryPort);
 
             // and now join it
             webServer.join();
@@ -683,10 +684,10 @@ public class MCStats {
     }
 
     /**
-     * Get the {@link ReportHandler}
+     * Get the {@link PluginTelemetryHandler}
      * @return
      */
-    public ReportHandler getReportHandler() {
+    public PluginTelemetryHandler getReportHandler() {
         return handler;
     }
 
