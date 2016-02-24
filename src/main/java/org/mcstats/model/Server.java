@@ -1,9 +1,13 @@
 package org.mcstats.model;
 
+import org.json.simple.JSONObject;
 import org.mcstats.MCStats;
 import org.mcstats.db.Savable;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -121,6 +125,36 @@ public class Server implements Savable {
 
     public Server(MCStats mcstats) {
         this.mcstats = mcstats;
+    }
+
+    /**
+     * Converts this Server to a JSON-serializable object
+     *
+     * @return
+     */
+    public JSONObject toJson() {
+        JSONObject result = new JSONObject();
+
+        result.put("id", guid);
+        result.put("country", country);
+        result.put("players", players);
+        result.put("server_version", serverVersion);
+        result.put("os_name", osname);
+        result.put("os_version", osversion);
+        result.put("os_arch", osarch);
+        result.put("java_name", java_name);
+        result.put("java_version", java_version);
+        result.put("cores", cores);
+        result.put("online_mode", online_mode);
+        result.put("server_software", serverSoftware);
+        result.put("minecraft_version", minecraftVersion);
+
+        List<Map<String, Object>> pluginsJson = new ArrayList<>();
+        plugins.forEach((plugin, serverPlugin) -> pluginsJson.add(serverPlugin.toJson()));
+
+        result.put("plugins", pluginsJson);
+
+        return result;
     }
 
     /**

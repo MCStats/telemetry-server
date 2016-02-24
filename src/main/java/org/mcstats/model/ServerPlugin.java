@@ -1,10 +1,12 @@
 package org.mcstats.model;
 
+import org.json.simple.JSONObject;
 import org.mcstats.MCStats;
 import org.mcstats.db.Savable;
 import org.mcstats.util.Tuple;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -84,6 +86,21 @@ public class ServerPlugin implements Savable {
         hash *= 31 + server.getId();
         hash *= 31 + plugin.getId();
         return hash;
+    }
+
+    /**
+     * Converts this ServerPlugin to a JSON-serializable object.
+     *
+     * @return
+     */
+    public JSONObject toJson() {
+        JSONObject result = new JSONObject();
+
+        result.put("plugin", plugin.getId());
+        result.put("server", server.getGUID());
+        result.put("version", version);
+
+        return result;
     }
 
     /**

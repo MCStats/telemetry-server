@@ -1,5 +1,8 @@
 package org.mcstats.cron;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import org.mcstats.MCStats;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
@@ -20,15 +23,23 @@ import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
+import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
 import org.mcstats.util.Tuple;
 
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.zip.GZIPOutputStream;
 
 public class CronGraphGenerator implements Runnable {
 
@@ -41,8 +52,13 @@ public class CronGraphGenerator implements Runnable {
      */
     private List<GraphGenerator> generators = new LinkedList<>();
 
+    private final AmazonS3 s3;
+    private final String archiveS3Bucket;
+
     public CronGraphGenerator(MCStats mcstats) {
         this.mcstats = mcstats;
+        this.archiveS3Bucket = mcstats.getConfig().getProperty("generator.archive_s3_bucket");
+        s3 = new AmazonS3Client();
 
         // -- custom data
 
@@ -164,13 +180,15 @@ public class CronGraphGenerator implements Runnable {
                         serverPlugin.getServer().setViolationCount(0);
                         // serverPlugin.getServer().save();
                         // serverPlugin.save();
-                        numServers30 ++;
+                        numServers30++;
                     }
                 }
 
                 plugin.setServerCount30(numServers30);
                 plugin.saveNow();
             }
+
+            archiveServers(mcstats.getCachedServers(), ReportHandler.normalizeTime());
 
             ((MongoDBGraphStore) store).finishGeneration();
             mcstats.resetIntervalData();
@@ -186,4 +204,45 @@ public class CronGraphGenerator implements Runnable {
             ReportHandler.SOFT_IGNORE_REQUESTS = false;
         }
     }
+
+    /**
+     * Archives the given servers.
+     *
+     * @param servers
+     * @param epoch
+     */
+    private void archiveServers(List<Server> servers, int epoch) {
+        // Generate the archive bytes
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(out), "UTF-8"))) {
+            for (Server server : servers) {
+                server.toJson().writeJSONString(writer);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            logger.severe("Failed to archive servers: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        byte[] archiveData = out.toByteArray();
+
+        // Upload to S3
+        String s3Key = String.format("server/%d.json.gz", epoch);
+
+        try (InputStream inputStream = new ByteArrayInputStream(archiveData)) {
+            ObjectMetadata meta = new ObjectMetadata();
+            meta.setContentLength(archiveData.length);
+            meta.setContentType("application/json");
+            meta.setContentEncoding("gzip");
+
+            s3.putObject(archiveS3Bucket, s3Key, inputStream, meta);
+
+            logger.info("Archived " + servers.size() + " servers to S3 successfully.");
+        } catch (IOException e) {
+            logger.severe("Failed to archive servers: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 }

@@ -19,4 +19,6 @@ mysql.database=metrics
 mysql.username=root
 mysql.password=
 
+generator.archive_s3_bucket=generator-archive.mcstats.org
+
 graphs.generate=true
