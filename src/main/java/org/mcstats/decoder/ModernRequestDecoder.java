@@ -118,36 +118,36 @@ public class ModernRequestDecoder implements RequestDecoder {
      * @param post
      * @return
      */
-    private Map<Column, Long> extractCustomData(Plugin plugin, JSONObject post) {
-        Map<Column, Long> customData = new HashMap();
+    private Map<String, Map<String, Long>> extractCustomData(Plugin plugin, JSONObject post) {
+        Map<String, Map<String, Long>> result = new HashMap<>();
+
         if (!post.containsKey("graphs")) {
-            return customData;
+            return result;
         }
 
         JSONObject graphs = (JSONObject) post.get("graphs");
 
         for (Object o : graphs.entrySet()) {
             Map.Entry<String, JSONObject> entry = (Map.Entry<String, JSONObject>) o;
+
             String graphName = entry.getKey();
             JSONObject columns = entry.getValue();
-            Graph graph = mcstats.loadGraph(plugin, graphName);
 
-            if (graph != null && graph.getActive() != 0) {
-                for (Object o2 : columns.entrySet()) {
-                    Map.Entry<String, Long> entryColumn = (Map.Entry<String, Long>) o2;
+            Map<String, Long> columnValues = new HashMap<>();
 
-                    String columnName = entryColumn.getKey();
-                    long value = tryParseLong(entryColumn.getValue());
-                    org.mcstats.model.Column column = graph.loadColumn(columnName);
+            for (Object o2 : columns.entrySet()) {
+                Map.Entry<String, Long> entryColumn = (Map.Entry<String, Long>) o2;
 
-                    if (column != null) {
-                        customData.put(column, value);
-                    }
-                }
+                String columnName = entryColumn.getKey();
+                long value = tryParseLong(entryColumn.getValue());
+
+                columnValues.put(columnName, value);
             }
+
+            result.put(graphName, columnValues);
         }
 
-        return customData;
+        return result;
     }
 
     /**

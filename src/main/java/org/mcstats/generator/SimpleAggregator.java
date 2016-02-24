@@ -49,8 +49,8 @@ public abstract class SimpleAggregator implements GraphGenerator {
      */
     public abstract List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server);
 
-    private Map<Column, GeneratedData> aggregate(MCStats mcstats, Plugin plugin) {
-        Map<Column, GeneratedData> data = new HashMap<>();
+    private Map<String, Map<String, GeneratedData>> aggregate(MCStats mcstats, Plugin plugin) {
+        Map<String, Map<String, GeneratedData>> result = new HashMap<>();
 
         Plugin pluginValue;
 
@@ -78,7 +78,7 @@ public abstract class SimpleAggregator implements GraphGenerator {
                         Column column = value.first();
                         long columnValue = value.second();
 
-                        GeneratedData current = data.get(column);
+                        GeneratedData current = result.get(column);
 
                         if (current == null) {
                             current = new GeneratedData();
@@ -86,7 +86,7 @@ public abstract class SimpleAggregator implements GraphGenerator {
                             current.setMax((int) columnValue);
                             current.setMin((int) columnValue);
                             current.setSum((int) columnValue);
-                            data.put(column, current);
+                            result.put(column, current);
                             continue;
                         }
 
@@ -112,7 +112,7 @@ public abstract class SimpleAggregator implements GraphGenerator {
                         Column column = value.first();
                         long columnValue = value.second();
 
-                        GeneratedData current = data.get(column);
+                        GeneratedData current = result.get(column);
 
                         if (current == null) {
                             current = new GeneratedData();
@@ -120,7 +120,7 @@ public abstract class SimpleAggregator implements GraphGenerator {
                             current.setMax((int) columnValue);
                             current.setMin((int) columnValue);
                             current.setSum((int) columnValue);
-                            data.put(column, current);
+                            result.put(column, current);
                             continue;
                         }
 
@@ -131,26 +131,26 @@ public abstract class SimpleAggregator implements GraphGenerator {
             }
         }
 
-        return data;
+        return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    public Map<Column, GeneratedData> generate(MCStats mcstats) {
-        Map<Column, GeneratedData> data = new HashMap<>();
+    public Map<String, Map<String, GeneratedData>> generate(MCStats mcstats) {
+        Map<String, Map<String, GeneratedData>> result = new HashMap<>();
 
         // aggregate all servers first
-        data.putAll(aggregate(mcstats, null));
+        result.putAll(aggregate(mcstats, null));
 
         // aggregate all plugins
         for (Plugin plugin : mcstats.getCachedPlugins()) {
             if (plugin.recentlyUpdated()) {
-                data.putAll(aggregate(mcstats, plugin));
+                result.putAll(aggregate(mcstats, plugin));
             }
         }
 
-        return data;
+        return result;
     }
 
 }

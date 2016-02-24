@@ -1,5 +1,6 @@
 package org.mcstats.db;
 
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -68,55 +69,19 @@ public class MongoDBGraphStore implements GraphStore {
         collStatistic.update(query, op, true, false);
     }
 
-    public void insert(Column column, int epoch, int sum, int count, int avg, int max, int min) {
-        Graph graph = column.getGraph();
-        Plugin plugin = column.getPlugin();
-
-        // logger.info(String.format("insert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
-
-        BasicDBObject toset = new BasicDBObject().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
-        BasicDBObject data = new BasicDBObject();
-        BasicDBObject col = new BasicDBObject();
-
-        if (sum != 0) {
-            col.append("sum", sum);
-        }
-
-        if (count != 0) {
-            col.append("count", count);
-        }
-
-        /*
-        if (avg != 0) {
-            col.append("avg", avg);
-        }
-
-        if (max != 0) {
-            col.append("max", max);
-        }
-
-        if (min != 0) {
-            col.append("min", min);
-        }
-        */
-
-        data.append(Integer.toString(column.getId()), col);
-        toset.append("data", data);
-
-        coll.insert(toset);
-    }
-
-    public void batchInsert(Graph graph, List<Tuple<Column, GeneratedData>> batchData, int epoch) {
-        Plugin plugin = graph.getPlugin();
-
+    public void batchInsert(Plugin plugin, String graphName, List<Tuple<String, GeneratedData>> batchData, int epoch) {
         // logger.info(String.format("batchInsert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
 
-        BasicDBObject toset = new BasicDBObject().append("epoch", epoch).append("plugin", plugin.getId()).append("graph", graph.getId());
-        BasicDBObject data = new BasicDBObject();
+        BasicDBObject toInsert = new BasicDBObject()
+                .append("epoch", epoch)
+                .append("plugin", plugin.getId())
+                .append("graph", graphName);
 
-        for (Tuple<Column, GeneratedData> tuple : batchData) {
-            BasicDBObject col = new BasicDBObject();
-            Column column = tuple.first();
+        BasicDBList data = new BasicDBList();
+
+        for (Tuple<String, GeneratedData> tuple : batchData) {
+            BasicDBObject columnObject = new BasicDBObject();
+            String columnName = tuple.first();
             GeneratedData gdata = tuple.second();
 
             int sum = gdata.getSum();
@@ -125,33 +90,21 @@ public class MongoDBGraphStore implements GraphStore {
             int max = gdata.getMax();
             int min = gdata.getMin();
 
+            columnObject.append("name", columnName);
+
             if (sum != 0) {
-                col.append("sum", sum);
+                columnObject.append("sum", sum);
             }
 
             if (count != 0) {
-                col.append("count", count);
+                columnObject.append("count", count);
             }
 
-            /*
-            if (avg != 0) {
-                col.append("avg", avg);
-            }
-
-            if (max != 0) {
-                col.append("max", max);
-            }
-
-            if (min != 0) {
-                col.append("min", min);
-            }
-            */
-
-            data.append(Integer.toString(column.getId()), col);
+            data.add(columnObject);
         }
 
-        toset.append("data", data);
+        toInsert.append("data", data);
 
-        coll.insert(toset);
+        coll.insert(toInsert);
     }
 }

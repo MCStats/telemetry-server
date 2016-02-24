@@ -84,40 +84,6 @@ public class Graph {
         return id;
     }
 
-    /**
-     * Load a column for the given graph or created it if necessary
-     *
-     * @param name
-     * @return
-     */
-    public Column loadColumn(String name) {
-        if (!didTryLoadColumns && columns.size() == 0) {
-            for (Column column : mcstats.getDatabase().loadColumns(this)) {
-                columns.put(column.getName().toLowerCase(), column);
-            }
-
-            didTryLoadColumns = true;
-        }
-
-        Column column = columns.get(name.toLowerCase());
-
-        if (column != null) {
-            return column;
-        }
-
-        column = mcstats.getDatabase().createColumn(this, name);
-
-        if (column == null) {
-            if (mcstats.isDebug()) {
-                logger.error("Failed to create Column for " + name + " , \"" + name + "\"");
-            }
-            return null;
-        }
-
-        columns.put(name.toLowerCase(), column);
-        return column;
-    }
-
     public int getId() {
         return id;
     }

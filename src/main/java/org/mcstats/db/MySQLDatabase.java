@@ -471,70 +471,6 @@ public class MySQLDatabase implements Database {
         return graphs;
     }
 
-    public Column createColumn(Graph graph, String name) {
-        if (name.length() > 100) {
-            return null;
-        }
-
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("INSERT INTO CustomColumn (Plugin, Graph, Name) VALUES (?, ?, ?)")) {
-            statement.setInt(1, graph.getPlugin().getId());
-            statement.setInt(2, graph.getId());
-            statement.setString(3, name);
-            statement.executeUpdate();
-            QUERIES++;
-        } catch (SQLException e) {
-                logger.info("Failed to create column " + name + " for graph: " + graph.getId());
-        }
-
-        return loadColumn(graph, name);
-    }
-
-    public Column loadColumn(Graph graph, String name) {
-        if (name.length() > 100) {
-            return null;
-        }
-
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT ID, Name FROM CustomColumn WHERE Graph = ? AND Name = ?")) {
-            statement.setInt(1, graph.getId());
-            statement.setString(2, name);
-
-            try (ResultSet set = statement.executeQuery()) {
-                QUERIES++;
-
-                if (set.next()) {
-                    return resolveColumn(graph.getPlugin(), graph, set);
-                }
-            }
-        } catch (SQLException e) {
-            logger.info("Failed to load column " + name + " for graph: " + graph.getId());
-        }
-
-        return null;
-    }
-
-    public List<Column> loadColumns(Graph graph) {
-        List<Column> columns = new ArrayList<>();
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT ID, Name FROM CustomColumn WHERE Graph = ?")) {
-            statement.setInt(1, graph.getId());
-
-            try (ResultSet set = statement.executeQuery()) {
-                QUERIES++;
-
-                while (set.next()) {
-                    Column column = resolveColumn(graph.getPlugin(), graph, set);
-                    columns.add(column);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return columns;
-    }
-
     public void blacklistServer(Server server) {
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("INSERT INTO ServerBlacklist (Server, Violations) VALUES (?, ?)")) {
@@ -583,22 +519,6 @@ public class MySQLDatabase implements Database {
         graph.setDisplayName(set.getString("DisplayName"));
         graph.setScale(set.getString("Scale"));
         return graph;
-    }
-
-    /**
-     * Resolve a column from a REsultSet. Does not close the result set.
-     *
-     * @param plugin
-     * @param graph
-     * @param set
-     * @return
-     * @throws SQLException
-     */
-    private Column resolveColumn(Plugin plugin, Graph graph, ResultSet set) throws SQLException {
-        Column column = new Column(mcstats, graph, plugin);
-        column.setId(set.getInt("ID"));
-        column.setName(set.getString("Name"));
-        return column;
     }
 
     /**

@@ -178,32 +178,6 @@ public interface Database {
     public List<Graph> loadGraphs(Plugin plugin);
 
     /**
-     * Create a column for the given graph
-     *
-     * @param graph
-     * @param name
-     * @return
-     */
-    public Column createColumn(Graph graph, String name);
-
-    /**
-     * Load a column for the given graph
-     *
-     * @param graph
-     * @param name
-     * @return
-     */
-    public Column loadColumn(Graph graph, String name);
-
-    /**
-     * Load all columns for the given graph
-     *
-     * @param graph
-     * @return
-     */
-    public List<Column> loadColumns(Graph graph);
-
-    /**
      * Blacklist a server
      *
      * @param server
