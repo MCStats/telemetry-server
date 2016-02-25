@@ -14,6 +14,7 @@ import org.eclipse.jetty.webapp.WebAppContext;
 import org.mcstats.cron.CronGraphGenerator;
 import org.mcstats.cron.CronRanking;
 import org.mcstats.db.Database;
+import org.mcstats.db.DatabaseQueue;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.db.PluginOnlyMySQLDatabase;

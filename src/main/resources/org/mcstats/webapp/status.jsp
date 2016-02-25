@@ -1,4 +1,4 @@
-<%@ page import="org.mcstats.DatabaseQueue" %>
+<%@ page import="org.mcstats.db.DatabaseQueue" %>
 <%@ page import="org.mcstats.MCStats" %>
 <%@ page import="org.mcstats.util.TimeUtils" %>
 <%@ page import="java.text.DecimalFormat" %>

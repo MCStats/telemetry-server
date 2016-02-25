@@ -1,6 +1,7 @@
-package org.mcstats;
+package org.mcstats.db;
 
 import org.apache.log4j.Logger;
+import org.mcstats.MCStats;
 import org.mcstats.db.Savable;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
