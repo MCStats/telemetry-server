@@ -4,8 +4,6 @@ import org.eclipse.jetty.server.Request;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.mcstats.MCStats;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 
 import java.io.BufferedReader;

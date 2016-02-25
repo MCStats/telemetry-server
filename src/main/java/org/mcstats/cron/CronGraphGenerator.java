@@ -3,31 +3,10 @@ package org.mcstats.cron;
 import org.mcstats.MCStats;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
-import org.mcstats.generator.DecoderAggregator;
-import org.mcstats.generator.GeneratedData;
-import org.mcstats.generator.GraphGenerator;
-import org.mcstats.generator.IncrementAggregator;
-import org.mcstats.generator.MergeAggregator;
-import org.mcstats.generator.ReflectionAggregator;
-import org.mcstats.generator.ReflectionDonutAggregator;
-import org.mcstats.generator.aggregator.CountryAggregator;
-import org.mcstats.generator.aggregator.CustomDataAggregator;
-import org.mcstats.generator.aggregator.RankAggregator;
-import org.mcstats.generator.aggregator.RevisionAggregator;
-import org.mcstats.generator.aggregator.VersionChangesAggregator;
-import org.mcstats.generator.aggregator.VersionDemographicsAggregator;
 import org.mcstats.handler.ReportHandler;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.ServerPlugin;
-import org.mcstats.util.Tuple;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class CronGraphGenerator implements Runnable {
@@ -35,11 +14,6 @@ public class CronGraphGenerator implements Runnable {
     private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
     private MCStats mcstats;
-
-    /**
-     * A list of all generators
-     */
-    private List<GraphGenerator> generators = new LinkedList<>();
 
     public CronGraphGenerator(MCStats mcstats) {
         this.mcstats = mcstats;
@@ -62,6 +36,7 @@ public class CronGraphGenerator implements Runnable {
         // -- version demographics
         // -- version trends
 
+        /*
         generators.add(new MergeAggregator(new IncrementAggregator("Global Statistics", "Servers"), new ReflectionAggregator("players", "Global Statistics", "Players")));
 
         generators.add(new ReflectionAggregator("serverSoftware", "Server Software"));
@@ -94,6 +69,7 @@ public class CronGraphGenerator implements Runnable {
                     return "Unknown";
             }
         }));
+        */
     }
 
     /**
@@ -113,6 +89,7 @@ public class CronGraphGenerator implements Runnable {
 
             long start = System.currentTimeMillis();
 
+            /*
             for (GraphGenerator generator : generators) {
                 logger.info("Generating graph for: " + generator);
 
@@ -153,6 +130,7 @@ public class CronGraphGenerator implements Runnable {
 
                 // logger.info("Aggregated: " + data);
             }
+            */
 
             logger.info("Beginning final stage of graph generation");
 

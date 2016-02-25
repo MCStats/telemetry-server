@@ -9,8 +9,6 @@ import org.mcstats.decoder.DecodedRequest;
 import org.mcstats.decoder.LegacyRequestDecoder;
 import org.mcstats.decoder.ModernRequestDecoder;
 import org.mcstats.decoder.RequestDecoder;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;

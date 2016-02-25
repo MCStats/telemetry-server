@@ -3,7 +3,6 @@ package org.mcstats.db;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.log4j.Logger;
 import org.mcstats.MCStats;
-import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.PluginVersion;

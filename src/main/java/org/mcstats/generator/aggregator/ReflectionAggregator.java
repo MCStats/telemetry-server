@@ -1,17 +1,11 @@
-package org.mcstats.generator;
+package org.mcstats.generator.aggregator;
 
-import org.mcstats.MCStats;
-import org.mcstats.model.Column;
-import org.mcstats.model.Graph;
-import org.mcstats.model.Plugin;
-import org.mcstats.model.Server;
-import org.mcstats.util.Tuple;
+import org.mcstats.generator.Aggregator;
+import org.mcstats.generator.DataContainer;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
 
-public class ReflectionAggregator extends SimpleAggregator {
+public class ReflectionAggregator<T> implements Aggregator<T> {
 
     /**
      * The name of the graph to use
@@ -37,8 +31,8 @@ public class ReflectionAggregator extends SimpleAggregator {
      * @param graphName
      * @param fieldName
      */
-    public ReflectionAggregator(String fieldName, String graphName) {
-        this(fieldName, graphName, null);
+    public ReflectionAggregator(Class<T> clazz, String fieldName, String graphName) {
+        this(clazz, fieldName, graphName, null);
     }
 
     /**
@@ -51,9 +45,9 @@ public class ReflectionAggregator extends SimpleAggregator {
      * @param graphName
      * @param columnName
      */
-    public ReflectionAggregator(String fieldName, String graphName, String columnName) {
+    public ReflectionAggregator(Class<T> clazz, String fieldName, String graphName, String columnName) {
         try {
-            this.field = Server.class.getDeclaredField(fieldName);
+            this.field = clazz.getDeclaredField(fieldName);
             this.field.setAccessible(true);
         } catch (Exception e) {
             throw new UnsupportedOperationException(e);
@@ -67,12 +61,17 @@ public class ReflectionAggregator extends SimpleAggregator {
         }
     }
 
+    @Override
+    public String toString() {
+        return String.format("ReflectionAggregator(fieldName = %s, graphName = %s, columnName = %s)", field.getName(), graphName, columnName);
+    }
+
     /**
      * Get the column name
      *
      * @return
      */
-    public String getColumnName(Server server) {
+    public String getColumnName(T instance) {
         return columnName;
     }
 
@@ -80,14 +79,14 @@ public class ReflectionAggregator extends SimpleAggregator {
      * Get the column's value
      *
      * @param fieldValue
-     * @param usingColumn generally equal to getColumnName
+     * @param columnName generally equal to getColumnName
      * @return
      */
-    public long getColumnValue(Object fieldValue, String usingColumn) {
+    public long getColumnValue(Object fieldValue, String columnName) {
         long columnValue = 1;
 
         // attempt to parse it as a string
-        if (usingColumn != null) {
+        if (columnName != null) {
             try {
                 columnValue = Long.parseLong(fieldValue.toString());
             } catch (Exception e) {
@@ -98,49 +97,32 @@ public class ReflectionAggregator extends SimpleAggregator {
         return columnValue;
     }
 
-    /**
-     * {@inheritDoc
-     */
     @Override
-    public List<Tuple<Column, Long>> getValues(MCStats mcstats, Plugin plugin, Server server) {
-        List<Tuple<Column, Long>> res = new ArrayList<>();
-
+    public void aggregate(DataContainer container, T instance) {
         if (field == null) {
-            return res;
+            return;
         }
 
         try {
-            Object value = field.get(server);
+            Object rawValue = field.get(instance);
+            String columnName = getColumnName(instance);
+            long value;
 
-            String usingColumn = getColumnName(server);
-            long columnValue;
-
-            if (usingColumn == null) {
-                usingColumn = value.toString();
-                columnValue = 1;
+            if (columnName == null) {
+                columnName = rawValue.toString();
+                value = 1;
             } else {
-                columnValue = getColumnValue(value, usingColumn);
+                value = getColumnValue(rawValue, columnName);
             }
 
-            if (usingColumn.isEmpty()) {
-                return res;
+            if (columnName.isEmpty()) {
+                return;
             }
 
-            // load the graph for the plugin
-            Graph graph = mcstats.loadGraph(plugin, graphName);
-            Column column = graph.loadColumn(usingColumn);
-
-            res.add(new Tuple<>(column, columnValue));
+            container.add(graphName, columnName, value);
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        return res;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("ReflectionAggregator(fieldName = %s, graphName = %s, columnName = %s)", field.getName(), graphName, columnName);
     }
 
 }
