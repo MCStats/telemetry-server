@@ -1,5 +1,6 @@
 package org.mcstats.decoder;
 
+import com.google.common.collect.ImmutableMap;
 import org.eclipse.jetty.server.Request;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -105,7 +106,7 @@ public class ModernRequestDecoder implements RequestDecoder {
             }
         }
 
-        decoded.customData = extractCustomData(plugin, post);
+        decoded.customData = ImmutableMap.copyOf(extractCustomData(plugin, post));
         return decoded;
     }
 
