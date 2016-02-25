@@ -1,5 +1,6 @@
 package org.mcstats.decoder;
 
+import com.google.common.collect.ImmutableMap;
 import org.eclipse.jetty.server.Request;
 import org.mcstats.MCStats;
 import org.mcstats.model.Plugin;
@@ -90,9 +91,9 @@ public class LegacyRequestDecoder implements RequestDecoder {
         }
 
         if (decoded.revision >= 5) {
-            decoded.customData = extractCustomData(plugin, post);
+            decoded.customData = ImmutableMap.copyOf(extractCustomData(post));
         } else {
-            decoded.customData = extractCustomDataLegacy(plugin, post);
+            decoded.customData = ImmutableMap.copyOf(extractCustomDataLegacy(post));
         }
 
         return decoded;
@@ -117,11 +118,10 @@ public class LegacyRequestDecoder implements RequestDecoder {
     /**
      * Extract the custom data from the post request
      *
-     * @param plugin
      * @param post
      * @return
      */
-    private Map<String, Map<String, Long>> extractCustomData(Plugin plugin, Map<String, String> post) {
+    private Map<String, Map<String, Long>> extractCustomData(Map<String, String> post) {
         Map<String, Map<String, Long>> result = new HashMap<>();
 
         for (Map.Entry<String, String> entry : post.entrySet()) {
@@ -163,11 +163,10 @@ public class LegacyRequestDecoder implements RequestDecoder {
     /**
      * Extract legacy custom data (no custom graphs just one graph)
      *
-     * @param plugin
      * @param post
      * @return
      */
-    private Map<String, Map<String, Long>> extractCustomDataLegacy(Plugin plugin, Map<String, String> post) {
+    private Map<String, Map<String, Long>> extractCustomDataLegacy(Map<String, String> post) {
         Map<String, Map<String, Long>> result = new HashMap<>();
 
         Map<String, Long> values = new HashMap<>();

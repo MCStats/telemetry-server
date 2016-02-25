@@ -1,5 +1,7 @@
 package org.mcstats.decoder;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.lang.reflect.Field;
 import java.util.Map;
 
@@ -73,7 +75,7 @@ public class DecodedRequest {
     /**
      * Any custom data for the plugin this request is for
      */
-    public Map<String, Map<String, Long>> customData;
+    public ImmutableMap<String, Map<String, Long>> customData;
 
     @Override
     public String toString() {

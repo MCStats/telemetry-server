@@ -1,5 +1,6 @@
 package org.mcstats.model;
 
+import com.google.common.collect.ImmutableMap;
 import org.mcstats.MCStats;
 import org.mcstats.db.Savable;
 import org.mcstats.util.Tuple;
@@ -45,7 +46,7 @@ public class ServerPlugin implements Savable {
     /**
      * The last custom data sent to the server
      */
-    private Map<String, Map<String, Long>> customData = new ConcurrentHashMap<>();
+    private ImmutableMap<String, Map<String, Long>> customData = ImmutableMap.of();
 
     /**
      * If this was modified
@@ -146,11 +147,11 @@ public class ServerPlugin implements Savable {
         this.revision = revision;
     }
 
-    public Map<String, Map<String, Long>> getCustomData() {
+    public ImmutableMap<String, Map<String, Long>> getCustomData() {
         return customData;
     }
 
-    public void setCustomData(Map<String, Map<String, Long>> customData) {
+    public void setCustomData(ImmutableMap<String, Map<String, Long>> customData) {
         this.customData = customData;
     }
 
