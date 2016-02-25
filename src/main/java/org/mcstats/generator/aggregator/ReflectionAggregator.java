@@ -27,12 +27,11 @@ public class ReflectionAggregator<T> implements Aggregator<T> {
      * the given field as the name of the column and the value to be summed
      * will be a constant 1.
      * All of the data will be inserted into the graph with name graphName
-     *
-     * @param graphName
-     * @param fieldName
+     *  @param graphName
+     * @param columnNameFieldName
      */
-    public ReflectionAggregator(Class<T> clazz, String fieldName, String graphName) {
-        this(clazz, fieldName, graphName, null);
+    public ReflectionAggregator(Class<T> clazz, String graphName, String columnNameFieldName) {
+        this(clazz, graphName, null, columnNameFieldName);
     }
 
     /**
@@ -40,14 +39,13 @@ public class ReflectionAggregator<T> implements Aggregator<T> {
      * by the given field as the value of the data and the given columnName
      * as the name of the column.
      * All of the data will be inserted into the graph with name graphName
-     *
-     * @param fieldName
-     * @param graphName
+     *  @param graphName
      * @param columnName
+     * @param valueFieldValue
      */
-    public ReflectionAggregator(Class<T> clazz, String fieldName, String graphName, String columnName) {
+    public ReflectionAggregator(Class<T> clazz, String graphName, String columnName, String valueFieldValue) {
         try {
-            this.field = clazz.getDeclaredField(fieldName);
+            this.field = clazz.getDeclaredField(valueFieldValue);
             this.field.setAccessible(true);
         } catch (Exception e) {
             throw new UnsupportedOperationException(e);

@@ -7,11 +7,11 @@ public class DecoderReflectionAggregator<T, V> extends ReflectionAggregator<T> {
     /**
      * The function used to get column names
      */
-    private final Function<V, String> columnNameFunction;
+    private final Function<V, String> columnNameToValueFunction;
 
-    public DecoderReflectionAggregator(Class<T> clazz, String fieldName, String graphName, Function<V, String> columnNameFunction) {
-        super(clazz, fieldName, graphName);
-        this.columnNameFunction = columnNameFunction;
+    public DecoderReflectionAggregator(Class<T> clazz, String graphName, String columnNameFieldName, Function<V, String> columnNameToValueFunction) {
+        super(clazz, graphName, columnNameFieldName);
+        this.columnNameToValueFunction = columnNameToValueFunction;
     }
 
     @SuppressWarnings("unchecked")
@@ -20,7 +20,7 @@ public class DecoderReflectionAggregator<T, V> extends ReflectionAggregator<T> {
         try {
             V value = (V) field.get(instance);
 
-            return columnNameFunction.apply(value);
+            return columnNameToValueFunction.apply(value);
         } catch (IllegalAccessException e) {
             return "Unknown";
         }

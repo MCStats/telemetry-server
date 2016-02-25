@@ -6,6 +6,7 @@ import org.json.simple.JSONValue;
 import org.mcstats.generator.aggregator.DecoderReflectionAggregator;
 import org.mcstats.generator.aggregator.IncrementAggregator;
 import org.mcstats.generator.aggregator.ReflectionAggregator;
+import org.mcstats.generator.aggregator.ReflectionDonutAggregator;
 import org.mcstats.model.Server;
 
 import java.io.BufferedReader;
@@ -36,15 +37,17 @@ public class TestPluginGenerator {
             }
         };
 
-        generator.addAggregator(new ReflectionAggregator<>(Server.class, "serverSoftware", "Server Software"));
-        generator.addAggregator(new ReflectionAggregator<>(Server.class, "minecraftVersion", "Game Version"));
-        generator.addAggregator(new ReflectionAggregator<>(Server.class, "osarch", "System Arch"));
-        generator.addAggregator(new ReflectionAggregator<>(Server.class, "cores", "System Cores"));
+        generator.addAggregator(new ReflectionAggregator<>(Server.class, "Server Software", "serverSoftware"));
+        generator.addAggregator(new ReflectionAggregator<>(Server.class, "Game Version", "minecraftVersion"));
+        generator.addAggregator(new ReflectionAggregator<>(Server.class, "System Arch", "osarch"));
+        generator.addAggregator(new ReflectionAggregator<>(Server.class, "System Cores", "cores"));
+
+        generator.addAggregator(new ReflectionDonutAggregator<>(Server.class, "Operating System", "osname", "osversion"));
 
         generator.addAggregator(new IncrementAggregator<>("Global Statistics", "Servers"));
-        generator.addAggregator(new ReflectionAggregator<>(Server.class, "players", "Global Statistics", "Players"));
+        generator.addAggregator(new ReflectionAggregator<>(Server.class, "Global Statistics", "Players", "players"));
 
-        generator.addAggregator(new DecoderReflectionAggregator<Server, Integer>(Server.class, "online_mode", "Auth Mode", value -> {
+        generator.addAggregator(new DecoderReflectionAggregator<Server, Integer>(Server.class, "Auth Mode", "online_mode", value -> {
             switch (value) {
                 case 1:
                     return "Online";
