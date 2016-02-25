@@ -1,11 +1,10 @@
 package org.mcstats.generator.aggregator;
 
-import org.mcstats.generator.Aggregator;
 import org.mcstats.generator.DataContainer;
 
 import java.lang.reflect.Field;
 
-public class ReflectionAggregator<T> implements Aggregator<T> {
+public class ReflectionAggregator<T> implements BasicAggregator<T> {
 
     /**
      * The name of the graph to use

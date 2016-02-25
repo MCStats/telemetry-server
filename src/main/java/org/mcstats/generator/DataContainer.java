@@ -40,6 +40,24 @@ public class DataContainer {
     }
 
     /**
+     * Sets graph data in the container to the specific datum
+     *
+     * @param graphName
+     * @param columnName
+     * @param datum
+     */
+    public void set(String graphName, String columnName, Datum datum) {
+        Map<String, Datum> columns = data.get(graphName);
+
+        if (columns == null) {
+            columns = new HashMap<>();
+            data.put(graphName, columns);
+        }
+
+        columns.put(columnName, datum);
+    }
+
+    /**
      * Clears the container
      */
     public void clear() {

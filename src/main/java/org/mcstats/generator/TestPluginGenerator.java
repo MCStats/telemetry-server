@@ -7,6 +7,12 @@ import org.mcstats.generator.aggregator.DecoderReflectionAggregator;
 import org.mcstats.generator.aggregator.IncrementAggregator;
 import org.mcstats.generator.aggregator.ReflectionAggregator;
 import org.mcstats.generator.aggregator.ReflectionDonutAggregator;
+import org.mcstats.generator.aggregator.plugin.CountryAggregator;
+import org.mcstats.generator.aggregator.plugin.CustomDataPluginAggregator;
+import org.mcstats.generator.aggregator.plugin.RankPluginAggregator;
+import org.mcstats.generator.aggregator.plugin.RevisionPluginAggregator;
+import org.mcstats.generator.aggregator.plugin.VersionDemographicsPluginAggregator;
+import org.mcstats.generator.aggregator.plugin.VersionTrendsPluginAggregator;
 import org.mcstats.model.Server;
 
 import java.io.BufferedReader;
@@ -30,12 +36,7 @@ public class TestPluginGenerator {
 
         logger.info("Loaded " + servers.size() + " test servers");
 
-        AbstractGenerator<Server> generator = new AbstractGenerator<Server>() {
-            @Override
-            public List<Server> getAllInstances() {
-                return servers;
-            }
-        };
+        PluginGenerator generator = new PluginGenerator(() -> servers);
 
         generator.addAggregator(new ReflectionAggregator<>(Server.class, "Server Software", "serverSoftware"));
         generator.addAggregator(new ReflectionAggregator<>(Server.class, "Game Version", "minecraftVersion"));
@@ -43,6 +44,7 @@ public class TestPluginGenerator {
         generator.addAggregator(new ReflectionAggregator<>(Server.class, "System Cores", "cores"));
 
         generator.addAggregator(new ReflectionDonutAggregator<>(Server.class, "Operating System", "osname", "osversion"));
+        generator.addAggregator(new ReflectionDonutAggregator<>(Server.class, "Java Version", "java_name", "java_version"));
 
         generator.addAggregator(new IncrementAggregator<>("Global Statistics", "Servers"));
         generator.addAggregator(new ReflectionAggregator<>(Server.class, "Global Statistics", "Players", "players"));
@@ -57,6 +59,13 @@ public class TestPluginGenerator {
                     return "Unknown";
             }
         }));
+
+        generator.addAggregator(new CountryAggregator());
+        generator.addAggregator(new RankPluginAggregator());
+        generator.addAggregator(new RevisionPluginAggregator());
+        generator.addAggregator(new CustomDataPluginAggregator());
+        generator.addAggregator(new VersionDemographicsPluginAggregator());
+        generator.addAggregator(new VersionTrendsPluginAggregator());
 
         ImmutableMap<String, Map<String, Datum>> data = generator.generateAll();
 
@@ -92,6 +101,7 @@ public class TestPluginGenerator {
                 server.setPlayers(Integer.parseInt(root.get("players").toString()));
 
                 // TODO plugins
+
 
                 result.add(server);
             }
