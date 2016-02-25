@@ -15,7 +15,7 @@ public class URLUtils {
         try {
             return URLDecoder.decode(data, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            return data; // Unsuppoted
+            return data; // Unsupported
         }
     }
 
