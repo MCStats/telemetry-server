@@ -88,16 +88,6 @@ public class Plugin implements Savable {
      */
     private Map<String, Graph> graphs = new ConcurrentHashMap<>();
 
-    /**
-     * Map of the plugin versions by their database id
-     */
-    private Map<Integer, PluginVersion> versionsById = new ConcurrentHashMap<>();
-
-    /**
-     * Map of the plugin versions by their string name
-     */
-    private Map<String, PluginVersion> versionsByName = new ConcurrentHashMap<>();
-
     public Plugin(MCStats mcstats) {
         this.mcstats = mcstats;
     }
@@ -134,36 +124,6 @@ public class Plugin implements Savable {
      */
     public void addGraph(Graph graph) {
         graphs.put(graph.getName().toLowerCase(), graph);
-    }
-
-    /**
-     * Get a plugin version by its id
-     *
-     * @param id
-     * @return
-     */
-    public PluginVersion getVersionById(int id) {
-        return versionsById.get(id);
-    }
-
-    /**
-     * Get a plugin version by its name
-     *
-     * @param name
-     * @return
-     */
-    public PluginVersion getVersionByName(String name) {
-        return versionsByName.get(name);
-    }
-
-    /**
-     * Add a version to the plugin
-     *
-     * @param version
-     */
-    public void addVersion(PluginVersion version) {
-        versionsById.put(version.getId(), version);
-        versionsByName.put(version.getVersion(), version);
     }
 
     /**

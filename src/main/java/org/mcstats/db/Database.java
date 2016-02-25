@@ -2,7 +2,6 @@ package org.mcstats.db;
 
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.PluginVersion;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
 
@@ -63,30 +62,6 @@ public interface Database {
     public void savePlugin(Plugin plugin);
 
     /**
-     * Create a version for the given plugin and then reload the versions it has
-     *
-     * @param plugin
-     * @param version
-     */
-    public PluginVersion createPluginVersion(Plugin plugin, String version);
-
-    /**
-     * Load a plugin's versions and add them to it
-     *
-     * @param plugin
-     */
-    public List<PluginVersion> loadPluginVersions(Plugin plugin);
-
-    /**
-     * Load a plugin version
-     *
-     * @param plugin
-     * @param version
-     * @return
-     */
-    public PluginVersion loadPluginVersion(Plugin plugin, String version);
-
-    /**
      * Create a ServerPlugin entry in the database for the server/plugin pair
      *
      * @param server
@@ -118,14 +93,6 @@ public interface Database {
      * @param serverPlugin
      */
     public void saveServerPlugin(ServerPlugin serverPlugin);
-
-    /**
-     * Add version history for the given server/plugin combo to the database
-     *
-     * @param server
-     * @param version
-     */
-    public void addPluginVersionHistory(Server server, PluginVersion version);
 
     /**
      * Create a server in the database using the given guid

@@ -5,7 +5,6 @@ import org.apache.log4j.Logger;
 import org.mcstats.MCStats;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.PluginVersion;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
 
@@ -170,75 +169,7 @@ public class MySQLDatabase implements Database {
         }
     }
 
-    public PluginVersion createPluginVersion(Plugin plugin, String version) {
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("INSERT INTO Versions (Plugin, Version, Created) VALUES (?, ?, UNIX_TIMESTAMP())")) {
-            statement.setInt(1, plugin.getId());
-            statement.setString(2, version);
-            statement.executeUpdate();
-            QUERIES++;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return loadPluginVersion(plugin, version);
-    }
-
-    public List<PluginVersion> loadPluginVersions(Plugin plugin) {
-        List<PluginVersion> versions = new ArrayList<>();
-
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT ID, Version, Created FROM Versions WHERE Plugin = ?")) {
-            statement.setInt(1, plugin.getId());
-
-            try (ResultSet set = statement.executeQuery()) {
-                while (set.next()) {
-                    versions.add(resolvePluginVersion(plugin, set));
-                }
-            }
-
-            QUERIES++;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return versions;
-    }
-
-    public PluginVersion loadPluginVersion(Plugin plugin, String version) {
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT ID, Version, Created FROM Versions WHERE Plugin = ? AND Version = ?")) {
-            statement.setInt(1, plugin.getId());
-            statement.setString(2, version);
-
-            try (ResultSet set = statement.executeQuery()) {
-                if (set.next()) {
-                    return resolvePluginVersion(plugin, set);
-                }
-            }
-
-            QUERIES++;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
     public ServerPlugin createServerPlugin(Server server, Plugin plugin, String version) {
-        // make sure there's a Versions row for that version
-        PluginVersion pluginVersion = plugin.getVersionByName(version);
-
-        if (pluginVersion == null) {
-            pluginVersion = loadPluginVersion(plugin, version);
-        }
-
-        // version still does not exist, so create it
-        if (pluginVersion == null) {
-            pluginVersion = createPluginVersion(plugin, version);
-            plugin.addVersion(pluginVersion);
-        }
-
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("INSERT INTO ServerPlugin (Server, Plugin, Version, Updated) VALUES (?, ?, ?, UNIX_TIMESTAMP())")) {
             statement.setInt(1, server.getId());
@@ -339,19 +270,6 @@ public class MySQLDatabase implements Database {
             }
 
             QUERIES++;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void addPluginVersionHistory(Server server, PluginVersion version) {
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("INSERT INTO VersionHistory (Plugin, Server, Version, Created) VALUES (?, ?, ?, UNIX_TIMESTAMP())")) {
-            statement.setInt(1, version.getPlugin().getId());
-            statement.setInt(2, server.getId());
-            statement.setInt(3, version.getId());
-
-            statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -546,21 +464,6 @@ public class MySQLDatabase implements Database {
         server.setJavaVersion(set.getString("java_version"));
         server.setModified(false);
         return server;
-    }
-
-    /**
-     * Resolve a plugin version from a ResultSet. Does not close the result set.
-     *
-     * @param set
-     * @return
-     * @throws SQLException
-     */
-    private PluginVersion resolvePluginVersion(Plugin plugin, ResultSet set) throws SQLException {
-        PluginVersion version = new PluginVersion(mcstats, plugin);
-        version.setId(set.getInt("ID"));
-        version.setVersion(set.getString("Version"));
-        version.setCreated(set.getInt("Created"));
-        return version;
     }
 
     /**

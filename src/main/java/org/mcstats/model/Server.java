@@ -148,13 +148,6 @@ public class Server implements Savable {
     }
 
     /**
-     * @param version
-     */
-    public void addVersionHistory(PluginVersion version) {
-        mcstats.getDatabase().addPluginVersionHistory(this, version);
-    }
-
-    /**
      * Get all of the plugins that are on the server
      *
      * @return

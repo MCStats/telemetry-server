@@ -3,7 +3,6 @@ package org.mcstats.db;
 import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.mcstats.MCStats;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.PluginVersion;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
 
@@ -74,11 +73,6 @@ public class PluginOnlyMySQLDatabase extends MySQLDatabase {
     }
 
     @Override
-    public void addPluginVersionHistory(Server server, PluginVersion version) {
-        throw new UnsupportedOperationException("addPluginVersionHistory not supported");
-    }
-
-    @Override
     public void saveServerPlugin(ServerPlugin serverPlugin) {
         // no persistence
     }
@@ -102,23 +96,4 @@ public class PluginOnlyMySQLDatabase extends MySQLDatabase {
         return serverPlugin;
     }
 
-    @Override
-    public PluginVersion loadPluginVersion(Plugin plugin, String version) {
-        // no persistence
-        return null;
-    }
-
-    @Override
-    public List<PluginVersion> loadPluginVersions(Plugin plugin) {
-        // no persistence
-        return new ArrayList<>();
-    }
-
-    @Override
-    public PluginVersion createPluginVersion(Plugin plugin, String version) {
-        PluginVersion pluginVersion = new PluginVersion(mcstats, plugin);
-        pluginVersion.setId(currentId.incrementAndGet());
-        pluginVersion.setVersion(version);
-        return pluginVersion;
-    }
 }

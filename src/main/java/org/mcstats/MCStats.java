@@ -21,7 +21,6 @@ import org.mcstats.jetty.PluginTelemetryHandler;
 import org.mcstats.jetty.ServerTelemetryHandler;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.PluginVersion;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
 import org.mcstats.util.RequestCalculator;
@@ -341,66 +340,6 @@ public class MCStats {
     }
 
     /**
-     * Load a version for the given plugin
-     *
-     * @param plugin
-     * @param version
-     * @return
-     */
-    public PluginVersion loadPluginVersion(Plugin plugin, String version) {
-        PluginVersion pluginVersion = plugin.getVersionByName(version);
-
-        if (pluginVersion != null) {
-            return pluginVersion;
-        }
-
-        // attempt to load it
-        pluginVersion = database.loadPluginVersion(plugin, version);
-
-        if (pluginVersion == null) {
-            // Create it
-            pluginVersion = database.createPluginVersion(plugin, version);
-        }
-
-        if (pluginVersion == null) {
-            // ????
-            return null;
-        }
-
-        plugin.addVersion(pluginVersion);
-        return pluginVersion;
-    }
-
-    /**
-     * Load the graph for the given plugin or create if it is does not already exist
-     *
-     * @param plugin
-     * @param name
-     * @return
-     */
-    public Graph loadGraph(Plugin plugin, String name) {
-        Graph graph = plugin.getGraph(name);
-
-        if (graph != null) {
-            return graph;
-        }
-
-        graph = database.loadGraph(plugin, name);
-
-        if (graph == null) {
-            graph = database.createGraph(plugin, name);
-        }
-
-        if (graph == null) {
-            logger.error("Failed to create graph for " + plugin.getName() + ", \"" + name + "\"");
-            return null;
-        }
-
-        plugin.addGraph(graph);
-        return graph;
-    }
-
-    /**
      * Load the server plugin for the given server/plugin combo
      *
      * @param server
@@ -461,11 +400,6 @@ public class MCStats {
             return parent;
         }
 
-        // Load the versions
-        for (PluginVersion version : database.loadPluginVersions(plugin)) {
-            plugin.addVersion(version);
-        }
-
         // Cache it
         addPlugin(plugin);
 
@@ -514,11 +448,6 @@ public class MCStats {
             }
 
             return parent;
-        }
-
-        // Load the versions
-        for (PluginVersion version : database.loadPluginVersions(plugin)) {
-            plugin.addVersion(version);
         }
 
         // Cache it
