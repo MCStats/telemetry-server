@@ -18,6 +18,17 @@ import org.mcstats.db.DatabaseQueue;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.db.PluginOnlyMySQLDatabase;
+import org.mcstats.generator.PluginGenerator;
+import org.mcstats.generator.aggregator.DecoderReflectionAggregator;
+import org.mcstats.generator.aggregator.IncrementAggregator;
+import org.mcstats.generator.aggregator.ReflectionAggregator;
+import org.mcstats.generator.aggregator.ReflectionDonutAggregator;
+import org.mcstats.generator.aggregator.plugin.CountryAggregator;
+import org.mcstats.generator.aggregator.plugin.CustomDataPluginAggregator;
+import org.mcstats.generator.aggregator.plugin.RankPluginAggregator;
+import org.mcstats.generator.aggregator.plugin.RevisionPluginAggregator;
+import org.mcstats.generator.aggregator.plugin.VersionDemographicsPluginAggregator;
+import org.mcstats.generator.aggregator.plugin.VersionTrendsPluginAggregator;
 import org.mcstats.jetty.PluginTelemetryHandler;
 import org.mcstats.jetty.ServerTelemetryHandler;
 import org.mcstats.model.Graph;
@@ -489,6 +500,46 @@ public class MCStats {
     }
 
     /**
+     * Creates a new plugin generator
+     *
+     * @return
+     */
+    private PluginGenerator createPluginGenerator() {
+        PluginGenerator generator = new PluginGenerator(this::getCachedServers);
+
+        generator.addAggregator(new ReflectionAggregator<>(Server.class, "Server Software", "serverSoftware"));
+        generator.addAggregator(new ReflectionAggregator<>(Server.class, "Game Version", "minecraftVersion"));
+        generator.addAggregator(new ReflectionAggregator<>(Server.class, "System Arch", "osarch"));
+        generator.addAggregator(new ReflectionAggregator<>(Server.class, "System Cores", "cores"));
+
+        generator.addAggregator(new ReflectionDonutAggregator<>(Server.class, "Operating System", "osname", "osversion"));
+        generator.addAggregator(new ReflectionDonutAggregator<>(Server.class, "Java Version", "java_name", "java_version"));
+
+        generator.addAggregator(new IncrementAggregator<>("Global Statistics", "Servers"));
+        generator.addAggregator(new ReflectionAggregator<>(Server.class, "Global Statistics", "Players", "players"));
+
+        generator.addAggregator(new DecoderReflectionAggregator<Server, Integer>(Server.class, "Auth Mode", "online_mode", value -> {
+            switch (value) {
+                case 1:
+                    return "Online";
+                case 0:
+                    return "Offline";
+                default:
+                    return "Unknown";
+            }
+        }));
+
+        generator.addAggregator(new CountryAggregator());
+        generator.addAggregator(new RankPluginAggregator());
+        generator.addAggregator(new RevisionPluginAggregator());
+        generator.addAggregator(new CustomDataPluginAggregator());
+        generator.addAggregator(new VersionDemographicsPluginAggregator());
+        generator.addAggregator(new VersionTrendsPluginAggregator());
+
+        return generator;
+    }
+
+    /**
      * Create and open the web server
      */
     private void createWebServer() {
@@ -528,7 +579,7 @@ public class MCStats {
 
         if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
             Scheduler scheduler = new Scheduler();
-            scheduler.schedule("*/30 * * * *", new CronGraphGenerator(this));
+            scheduler.schedule("*/30 * * * *", new CronGraphGenerator(this, createPluginGenerator()));
             scheduler.schedule("45 * * * *", new CronRanking(this));
             scheduler.start();
             logger.info("Graph & rank generator is active");

@@ -1,75 +1,28 @@
 package org.mcstats.cron;
 
+import com.google.common.collect.ImmutableMap;
 import org.mcstats.MCStats;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
+import org.mcstats.generator.Datum;
+import org.mcstats.generator.PluginGenerator;
 import org.mcstats.jetty.PluginTelemetryHandler;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.ServerPlugin;
 
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class CronGraphGenerator implements Runnable {
 
     private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
-    private MCStats mcstats;
+    private final MCStats mcstats;
+    private final PluginGenerator pluginGenerator;
 
-    public CronGraphGenerator(MCStats mcstats) {
+    public CronGraphGenerator(MCStats mcstats, PluginGenerator pluginGenerator) {
         this.mcstats = mcstats;
-
-        // -- custom data
-
-        // -- auth mode
-        // -- game version
-        // -- global stats
-        // -- > Players
-        // -- > Servers
-        // -- java version, donut (Reflection2Aggregator)
-        // -- operating system, donut
-        // -- rank
-        // -- revision
-        // -- server locations
-        // -- server software
-        // -- system arch
-        // -- system cores
-        // -- version demographics
-        // -- version trends
-
-        /*
-        generators.add(new MergeAggregator(new IncrementAggregator("Global Statistics", "Servers"), new ReflectionAggregator("players", "Global Statistics", "Players")));
-
-        generators.add(new ReflectionAggregator("serverSoftware", "Server Software"));
-        generators.add(new ReflectionAggregator("minecraftVersion", "Game Version"));
-        generators.add(new ReflectionAggregator("osarch", "System Arch"));
-        generators.add(new ReflectionAggregator("cores", "System Cores"));
-
-        generators.add(new RevisionAggregator("MCStats Revision"));
-
-        generators.add(new ReflectionDonutAggregator("osname", "osversion", "Operating System"));
-        generators.add(new ReflectionDonutAggregator("java_name", "java_version", "Java Version"));
-
-        generators.add(new VersionDemographicsAggregator("Version Demographics"));
-
-        generators.add(new VersionChangesAggregator("Version Trends"));
-
-        generators.add(new CountryAggregator("Server Locations"));
-
-        generators.add(new CustomDataAggregator());
-
-        generators.add(new RankAggregator());
-
-        generators.add(new DecoderAggregator<Integer>("online_mode", "Auth Mode", value -> {
-            switch (value) {
-                case 1:
-                    return "Online";
-                case 0:
-                    return "Offline";
-                default:
-                    return "Unknown";
-            }
-        }));
-        */
+        this.pluginGenerator = pluginGenerator;
     }
 
     /**
@@ -88,49 +41,24 @@ public class CronGraphGenerator implements Runnable {
             }
 
             long start = System.currentTimeMillis();
+            int epoch = PluginTelemetryHandler.normalizeTime();
 
-            /*
-            for (GraphGenerator generator : generators) {
-                logger.info("Generating graph for: " + generator);
+            // Generate All Servers
+            // TODO insert all_servers data to its own collection
+            Plugin allServersPlugin = mcstats.loadPlugin(-1);
+            ImmutableMap<String, Map<String, Datum>> allServerGeneratedData = pluginGenerator.generateAll();
 
-                Map<Column, GeneratedData> data = generator.generate(mcstats);
+            allServerGeneratedData.forEach((graphName, data) -> {
+                store.insertPluginData(allServersPlugin, graphName, data, epoch);
+            });
 
-                int epoch = PluginTelemetryHandler.normalizeTime();
+            for (Plugin plugin : mcstats.getCachedPlugins()) {
+                ImmutableMap<String, Map<String, Datum>> generatedData = pluginGenerator.generatorFor(plugin);
 
-                logger.info("Storing " + data.size() + " columns of data");
-
-                Map<Graph, List<Tuple<Column, GeneratedData>>> grouped = new HashMap<>();
-
-                // group together the data for each graph
-                for (Map.Entry<Column, GeneratedData> entry : data.entrySet()) {
-                    Column column = entry.getKey();
-                    GeneratedData columnData = entry.getValue();
-
-                    if (column == null || columnData == null) {
-                        continue;
-                    }
-
-                    List<Tuple<Column, GeneratedData>> listdata = grouped.get(column.getGraph());
-
-                    if (listdata == null) {
-                        listdata = new ArrayList<>();
-                        grouped.put(column.getGraph(), listdata);
-                    }
-
-                    listdata.add(new Tuple<>(column, columnData));
-                }
-
-                for (Map.Entry<Graph, List<Tuple<Column, GeneratedData>>> entry : grouped.entrySet()) {
-                    List<Tuple<Column, GeneratedData>> listdata = entry.getValue();
-                    store.batchInsert(entry.getKey(), listdata, epoch);
-                }
-
-                grouped.clear();
-                data.clear();
-
-                // logger.info("Aggregated: " + data);
+                generatedData.forEach((graphName, data) -> {
+                    store.insertPluginData(plugin, graphName, data, epoch);
+                });
             }
-            */
 
             logger.info("Beginning final stage of graph generation");
 
