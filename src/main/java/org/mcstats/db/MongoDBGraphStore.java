@@ -8,13 +8,12 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.WriteConcern;
 import org.mcstats.MCStats;
-import org.mcstats.generator.GeneratedData;
+import org.mcstats.generator.Datum;
 import org.mcstats.jetty.PluginTelemetryHandler;
 import org.mcstats.model.Plugin;
-import org.mcstats.util.Tuple;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class MongoDBGraphStore implements GraphStore {
@@ -67,39 +66,26 @@ public class MongoDBGraphStore implements GraphStore {
         collStatistic.update(query, op, true, false);
     }
 
-    public void batchInsert(Plugin plugin, String graphName, List<Tuple<String, GeneratedData>> batchData, int epoch) {
-        // logger.info(String.format("batchInsert(%s, %d, %d, %d, %d, %d, %d)", column.toString(), epoch, sum, count, avg, max, min));
-
+    public void batchInsert(Plugin plugin, String graphName, Map<String, Datum> data, int epoch) {
         BasicDBObject toInsert = new BasicDBObject()
                 .append("epoch", epoch)
                 .append("plugin", plugin.getId())
                 .append("graph", graphName);
 
-        BasicDBList data = new BasicDBList();
+        BasicDBList mongoData = new BasicDBList();
 
-        for (Tuple<String, GeneratedData> tuple : batchData) {
+        data.forEach((columnName, datum) -> {
+            long sum = datum.getSum();
+            long count = datum.getCount();
+
             BasicDBObject columnObject = new BasicDBObject();
-            String columnName = tuple.first();
-            GeneratedData gdata = tuple.second();
-
-            int sum = gdata.getSum();
-            int count = gdata.getCount();
-            int avg = gdata.getAverage();
-            int max = gdata.getMax();
-            int min = gdata.getMin();
 
             columnObject.append("name", columnName);
+            columnObject.append("sum", sum);
+            columnObject.append("count", count);
 
-            if (sum != 0) {
-                columnObject.append("sum", sum);
-            }
-
-            if (count != 0) {
-                columnObject.append("count", count);
-            }
-
-            data.add(columnObject);
-        }
+            mongoData.add(columnObject);
+        });
 
         toInsert.append("data", data);
 

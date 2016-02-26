@@ -1,10 +1,9 @@
 package org.mcstats.db;
 
-import org.mcstats.generator.GeneratedData;
+import org.mcstats.generator.Datum;
 import org.mcstats.model.Plugin;
-import org.mcstats.util.Tuple;
 
-import java.util.List;
+import java.util.Map;
 
 public interface GraphStore {
 
@@ -13,6 +12,6 @@ public interface GraphStore {
      *
      * @param data
      */
-    void batchInsert(Plugin plugin, String graphName, List<Tuple<String, GeneratedData>> data, int epoch);
+    void batchInsert(Plugin plugin, String graphName, Map<String, Datum> data, int epoch);
 
 }
