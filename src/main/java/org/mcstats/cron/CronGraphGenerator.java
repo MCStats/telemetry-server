@@ -153,10 +153,6 @@ public class CronGraphGenerator implements Runnable {
             ((MongoDBGraphStore) store).finishGeneration();
             mcstats.resetIntervalData();
 
-            System.gc();
-            System.runFinalization();
-            System.gc();
-
             logger.info("Finished graph generation in " + (System.currentTimeMillis() - start) + "ms");
         } catch (Exception e) {
             e.printStackTrace();
