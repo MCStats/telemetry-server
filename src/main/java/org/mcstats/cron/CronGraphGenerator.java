@@ -49,14 +49,14 @@ public class CronGraphGenerator implements Runnable {
             ImmutableMap<String, Map<String, Datum>> allServerGeneratedData = pluginGenerator.generateAll();
 
             allServerGeneratedData.forEach((graphName, data) -> {
-                store.insertPluginData(allServersPlugin, graphName, data, epoch);
+                store.insertPluginData(epoch, allServersPlugin, graphName, data);
             });
 
             for (Plugin plugin : mcstats.getCachedPlugins()) {
                 ImmutableMap<String, Map<String, Datum>> generatedData = pluginGenerator.generatorFor(plugin);
 
                 generatedData.forEach((graphName, data) -> {
-                    store.insertPluginData(plugin, graphName, data, epoch);
+                    store.insertPluginData(epoch, plugin, graphName, data);
                 });
             }
 

@@ -66,7 +66,7 @@ public class MongoDBGraphStore implements GraphStore {
         collStatistic.update(query, op, true, false);
     }
 
-    public void insertPluginData(Plugin plugin, String graphName, Map<String, Datum> data, int epoch) {
+    public void insertPluginData(int epoch, Plugin plugin, String graphName, Map<String, Datum> data) {
         BasicDBObject toInsert = new BasicDBObject()
                 .append("epoch", epoch)
                 .append("plugin", plugin.getId())
