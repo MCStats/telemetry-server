@@ -17,7 +17,7 @@ import org.mcstats.db.Database;
 import org.mcstats.db.DatabaseQueue;
 import org.mcstats.db.GraphStore;
 import org.mcstats.db.MongoDBGraphStore;
-import org.mcstats.db.PluginOnlyMySQLDatabase;
+import org.mcstats.db.MySQLDatabase;
 import org.mcstats.generator.PluginGenerator;
 import org.mcstats.generator.aggregator.DecoderReflectionAggregator;
 import org.mcstats.generator.aggregator.IncrementAggregator;
@@ -125,27 +125,7 @@ public class MCStats {
             .build(new CacheLoader<String, Server>() {
 
                 public Server load(String key) {
-                    Server server = database.loadServer(key);
-
-                    if (server == null) {
-                        server = database.createServer(key);
-                    }
-
-                    if (server == null) {
-                        logger.error("Failed to create server for \"" + key + "\"");
-                        return null;
-                    }
-
-                    // Now load the plugins
-                    for (ServerPlugin serverPlugin : database.loadServerPlugins(server)) {
-                        server.addPlugin(serverPlugin);
-                    }
-
-                    if (database.isServerBlacklisted(server)) {
-                        server.setBlacklisted(true);
-                    }
-
-                    return server;
+                    return new Server(key);
                 }
 
             });
@@ -159,11 +139,6 @@ public class MCStats {
      * A map of all of the currently loaded pluginsByName, by the plugin's internal id
      */
     private final Map<Integer, Plugin> pluginsById = new ConcurrentHashMap<>();
-
-    /**
-     * A map of all countries, keyed by the 2 letter country code
-     */
-    private final Map<String, String> countries = new ConcurrentHashMap<>();
 
     /**
      * Cache of server plugins mapped by their plugins
@@ -181,12 +156,9 @@ public class MCStats {
      * Reset data used for each interval
      */
     public void resetIntervalData() {
-        if (database instanceof PluginOnlyMySQLDatabase) {
-            ((PluginOnlyMySQLDatabase) database).resetIntervalData();
-            servers.invalidateAll();
-            resetInternalCaches();
-            serverPluginsByPlugin.clear();
-        }
+        servers.invalidateAll();
+        resetInternalCaches();
+        serverPluginsByPlugin.clear();
     }
 
     /**
@@ -211,7 +183,6 @@ public class MCStats {
      */
     public void resetInternalCaches() {
         databaseQueue.clear();
-        handler.clearQueue();
     }
 
     /**
@@ -236,9 +207,6 @@ public class MCStats {
 
         // Connect to the database
         connectToDatabase();
-
-        countries.putAll(database.loadCountries());
-        logger.info("Loaded " + countries.size() + " countries");
 
         graphStore = new MongoDBGraphStore(this);
 
@@ -282,16 +250,6 @@ public class MCStats {
      */
     public boolean isDebug() {
         return debug;
-    }
-
-    /**
-     * Get the shortcode for a country
-     *
-     * @param shortCode
-     * @return
-     */
-    public String getCountryName(String shortCode) {
-        return countries.get(shortCode);
     }
 
     /**
@@ -349,35 +307,6 @@ public class MCStats {
      */
     public long incrementAndGetRequests() {
         return requests.incrementAndGet();
-    }
-
-    /**
-     * Load the server plugin for the given server/plugin combo
-     *
-     * @param server
-     * @param plugin
-     * @param version If the server plugin needs to be created, this is the version that will be used initially
-     * @return
-     */
-    public ServerPlugin loadServerPlugin(Server server, Plugin plugin, String version) {
-        ServerPlugin serverPlugin = server.getPlugin(plugin);
-
-        // it is already loaded !
-        if (serverPlugin != null) {
-            return serverPlugin;
-        }
-
-        // attempt to load the plugin
-        serverPlugin = database.loadServerPlugin(server, plugin);
-
-        if (serverPlugin == null) {
-            // we just need to create it
-            serverPlugin = database.createServerPlugin(server, plugin, version);
-        }
-
-        // now cache it
-        server.addPlugin(serverPlugin);
-        return serverPlugin;
     }
 
     /**
@@ -613,7 +542,7 @@ public class MCStats {
      */
     private void connectToDatabase() {
         // Create the database
-        database = new PluginOnlyMySQLDatabase(this, config.getProperty("mysql.hostname"), config.getProperty("mysql.database"),
+        database = new MySQLDatabase(this, config.getProperty("mysql.hostname"), config.getProperty("mysql.database"),
                 config.getProperty("mysql.username"), config.getProperty("mysql.password"));
 
         logger.info("Connected to MySQL");

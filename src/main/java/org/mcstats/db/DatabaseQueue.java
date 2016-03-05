@@ -2,9 +2,7 @@ package org.mcstats.db;
 
 import org.apache.log4j.Logger;
 import org.mcstats.MCStats;
-import org.mcstats.db.Savable;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.Server;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -137,10 +135,6 @@ public class DatabaseQueue {
                             Savable savable = (Savable) iter.next();
 
                             if (!(savable instanceof Plugin)) {
-                                if ((savable instanceof Server)) {
-                                    ((Server) savable).resetQueuedStatus();
-                                }
-
                                 iter.remove();
                             }
                         }

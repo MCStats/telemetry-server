@@ -1,22 +1,14 @@
 package org.mcstats.model;
 
 import com.google.common.collect.ImmutableMap;
-import org.mcstats.MCStats;
-import org.mcstats.db.Savable;
 import org.mcstats.util.Tuple;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
-public class ServerPlugin implements Savable {
-
-    /**
-     * The MCStats object
-     */
-    private final MCStats mcstats;
+public class ServerPlugin {
 
     /**
      * The server this plugin belongs to
@@ -49,22 +41,11 @@ public class ServerPlugin implements Savable {
     private ImmutableMap<String, Map<String, Long>> customData = ImmutableMap.of();
 
     /**
-     * If this was modified
-     */
-    private boolean modified = false;
-
-    /**
-     * If the version was modified
-     */
-    public boolean versionModified = false;
-
-    /**
      * The version changes for this plugin
      */
     public final Set<Tuple<String, String>> versionChanges = new HashSet<>();
 
-    public ServerPlugin(MCStats mcstats, Server server, Plugin plugin) {
-        this.mcstats = mcstats;
+    public ServerPlugin(Server server, Plugin plugin) {
         this.server = server;
         this.plugin = plugin;
     }
@@ -76,13 +57,13 @@ public class ServerPlugin implements Savable {
         }
 
         ServerPlugin other = (ServerPlugin) o;
-        return server.getId() == other.server.getId() && plugin.getId() == other.plugin.getId();
+        return server.equals(other.server) && plugin.getId() == other.plugin.getId();
     }
 
     @Override
     public int hashCode() {
         int hash = 23;
-        hash *= 31 + server.getId();
+        hash *= 31 + server.getUniqueId().hashCode();
         hash *= 31 + plugin.getId();
         return hash;
     }
@@ -135,8 +116,6 @@ public class ServerPlugin implements Savable {
 
     public void setVersion(String version) {
         this.version = version;
-        modified = true;
-        versionModified = true;
     }
 
     public int getRevision() {
@@ -153,43 +132,6 @@ public class ServerPlugin implements Savable {
 
     public void setCustomData(ImmutableMap<String, Map<String, Long>> customData) {
         this.customData = customData;
-    }
-
-    public int getUpdated() {
-        return updated;
-    }
-
-    public void setUpdated(int updated) {
-        this.updated = updated;
-        modified = true;
-    }
-
-    public boolean isModified() {
-        return modified;
-    }
-
-    public boolean isVersionModified() {
-        return versionModified;
-    }
-
-    public void setModified(boolean modified) {
-        this.modified = modified;
-
-        if (!modified) {
-            versionModified = false;
-        }
-    }
-
-    public void save() {
-        if (modified) {
-            mcstats.getDatabaseQueue().offer(this);
-            modified = false;
-        }
-    }
-
-    public void saveNow() {
-        mcstats.getDatabase().saveServerPlugin(this);
-        modified = false;
     }
 
 }

@@ -64,13 +64,6 @@ public class PluginTelemetryHandler extends AbstractHandler {
     }
 
     /**
-     * Clear the current thread queue
-     */
-    public void clearQueue() {
-        // executor.getQueue().clear();
-    }
-
-    /**
      * Get the size of the work queue in the background
      *
      * @return
@@ -234,18 +227,17 @@ public class PluginTelemetryHandler extends AbstractHandler {
 
                 if ((server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) && (!server.isBlacklisted())) {
                     server.setBlacklisted(true);
-                    mcstats.getDatabase().blacklistServer(server);
                     return;
                 }
 
-                if ((plugin == null) || (server == null)) {
-                    return;
-                }
-
-                ServerPlugin serverPlugin = mcstats.loadServerPlugin(server, plugin, decoded.pluginVersion);
+                ServerPlugin serverPlugin = server.getPlugin(plugin);
 
                 if (serverPlugin == null) {
-                    return;
+                    serverPlugin = new ServerPlugin(server, plugin);
+                    serverPlugin.setVersion(decoded.pluginVersion);
+
+                    server.addPlugin(serverPlugin);
+                    mcstats.notifyServerPlugin(serverPlugin);
                 }
 
                 if ((!serverPlugin.getVersion().equals(decoded.pluginVersion)) && (!server.isBlacklisted())) {
@@ -355,7 +347,6 @@ public class PluginTelemetryHandler extends AbstractHandler {
 
                 }
 
-                serverPlugin.setUpdated((int) (System.currentTimeMillis() / 1000L));
                 plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
                 server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
             } catch (Exception e) {

@@ -1,28 +1,17 @@
 package org.mcstats.model;
 
-import org.mcstats.MCStats;
-import org.mcstats.db.Savable;
+import org.apache.commons.lang3.Validate;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Server implements Savable {
+public class Server {
 
     /**
-     * The MCStats object
+     * The server's unique id
      */
-    private final MCStats mcstats;
-
-    /**
-     * The server's id
-     */
-    private int id;
-
-    /**
-     * The server's guid
-     */
-    private String guid;
+    private final String id;
 
     /**
      * The server's country
@@ -90,16 +79,6 @@ public class Server implements Savable {
     private String minecraftVersion = "";
 
     /**
-     * If the server was modified
-     */
-    private boolean modified = false;
-
-    /**
-     * If the plugin has been queued to save
-     */
-    private boolean queuedForSave = false;
-
-    /**
      * Violation count
      */
     private int violations = 0;
@@ -117,10 +96,10 @@ public class Server implements Savable {
     /**
      * Unix timestamp of when it last sent data
      */
-    private int lastSentData;
+    private int lastSentData = (int) (System.currentTimeMillis() / 1000L);
 
-    public Server(MCStats mcstats) {
-        this.mcstats = mcstats;
+    public Server(String guid) {
+        this.id = guid;
     }
 
     /**
@@ -139,12 +118,12 @@ public class Server implements Savable {
         }
 
         Server other = (Server) o;
-        return id == other.id;
+        return id.equals(other.id);
     }
 
     @Override
     public int hashCode() {
-        return id;
+        return id.hashCode();
     }
 
     /**
@@ -172,33 +151,14 @@ public class Server implements Savable {
      * @param serverPlugin
      */
     public void addPlugin(ServerPlugin serverPlugin) {
-        if (serverPlugin == null) {
-            throw new IllegalArgumentException("Server plugin cannot be null");
-        }
-        if (serverPlugin.getServer() != this) {
-            throw new IllegalArgumentException("Server plugin must be assigned to the server it belongs to");
-        }
+        Validate.notNull(serverPlugin);
+        Validate.isTrue(serverPlugin.getServer() ==  this);
 
         plugins.put(serverPlugin.getPlugin(), serverPlugin);
-        mcstats.notifyServerPlugin(serverPlugin);
     }
 
-    public int getId() {
+    public String getUniqueId() {
         return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-        modified = true;
-    }
-
-    public String getGUID() {
-        return guid;
-    }
-
-    public void setGUID(String guid) {
-        this.guid = guid;
-        modified = true;
     }
 
     public String getCountry() {
@@ -207,7 +167,6 @@ public class Server implements Savable {
 
     public void setCountry(String country) {
         this.country = country;
-        modified = true;
     }
 
     public int getPlayers() {
@@ -216,7 +175,6 @@ public class Server implements Savable {
 
     public void setPlayers(int players) {
         this.players = players;
-        modified = true;
     }
 
     public String getServerVersion() {
@@ -225,7 +183,6 @@ public class Server implements Savable {
 
     public void setServerVersion(String serverVersion) {
         this.serverVersion = serverVersion;
-        modified = true;
     }
 
     public int getCreated() {
@@ -234,15 +191,6 @@ public class Server implements Savable {
 
     public void setCreated(int created) {
         this.created = created;
-        modified = true;
-    }
-
-    public boolean isModified() {
-        return modified;
-    }
-
-    public void setModified(boolean modified) {
-        this.modified = modified;
     }
 
     public int getViolationCount() {
@@ -279,7 +227,6 @@ public class Server implements Savable {
 
     public void setOSName(String osname) {
         this.osname = osname;
-        modified = true;
     }
 
     public String getOSArch() {
@@ -288,7 +235,6 @@ public class Server implements Savable {
 
     public void setOSArch(String osarch) {
         this.osarch = osarch;
-        modified = true;
     }
 
     public String getOSVersion() {
@@ -297,7 +243,6 @@ public class Server implements Savable {
 
     public void setOSVersion(String osversion) {
         this.osversion = osversion;
-        modified = true;
     }
 
     public int getCores() {
@@ -306,7 +251,6 @@ public class Server implements Savable {
 
     public void setCores(int cores) {
         this.cores = cores;
-        modified = true;
     }
 
     public int getOnlineMode() {
@@ -315,7 +259,6 @@ public class Server implements Savable {
 
     public void setOnlineMode(int online_mode) {
         this.online_mode = online_mode;
-        modified = true;
     }
 
     public String getJavaName() {
@@ -324,7 +267,6 @@ public class Server implements Savable {
 
     public void setJavaName(String java_name) {
         this.java_name = java_name;
-        modified = true;
     }
 
     public String getJavaVersion() {
@@ -333,30 +275,6 @@ public class Server implements Savable {
 
     public void setJavaVersion(String java_version) {
         this.java_version = java_version;
-        modified = true;
-    }
-
-    public void resetQueuedStatus() {
-        queuedForSave = false;
-    }
-
-    public void save() {
-        if (queuedForSave) {
-            modified = false;
-            return;
-        }
-
-        if (modified) {
-            mcstats.getDatabaseQueue().offer(this);
-            modified = false;
-            queuedForSave = true;
-        }
-    }
-
-    public void saveNow() {
-        mcstats.getDatabase().saveServer(this);
-        modified = false;
-        queuedForSave = false;
     }
 
     public String getMinecraftVersion() {
@@ -365,7 +283,6 @@ public class Server implements Savable {
 
     public void setMinecraftVersion(String minecraftVersion) {
         this.minecraftVersion = minecraftVersion;
-        modified = true;
     }
 
     public String getServerSoftware() {
@@ -374,7 +291,6 @@ public class Server implements Savable {
 
     public void setServerSoftware(String serverSoftware) {
         this.serverSoftware = serverSoftware;
-        modified = true;
     }
 
 }
