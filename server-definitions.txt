@@ -13,6 +13,7 @@ git-Bukkit-jenkins-Spigot-Legacy    Spigot-Legacy
 git-Bukkit-jenkins-Spigot           Spigot
 git-Spigot                          Spigot
 git-PaperSpigot                     PaperSpigot
+git-TacoSpigot                      TacoSpigot
 git-Paper                           PaperSpigot
 git-HexionSpigot                    HexionSpigot
 git-Migot                           Migot
