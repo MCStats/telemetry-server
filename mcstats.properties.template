@@ -19,4 +19,6 @@ mysql.database=metrics
 mysql.username=root
 mysql.password=
 
+logs.path=logs
+
 graphs.generate=true

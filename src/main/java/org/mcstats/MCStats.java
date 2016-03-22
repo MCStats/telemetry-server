@@ -84,7 +84,7 @@ public class MCStats {
     /**
      * The report handler for requests
      */
-    private ReportHandler handler = new ReportHandler(this);
+    private ReportHandler handler;
 
     /**
      * The server build identifier
@@ -575,6 +575,8 @@ public class MCStats {
 
         URL warURL = getClass().getClassLoader().getResource(webApp);
         WebAppContext webAppContext = new WebAppContext(warURL.toExternalForm(), contextPath);
+
+        handler = new ReportHandler(this);
 
         // Create the handler list
         HandlerList handlers = new HandlerList();
