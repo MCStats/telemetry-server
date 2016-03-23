@@ -153,23 +153,14 @@ public class PluginTelemetryHandler extends AbstractHandler {
                 return;
             }
 
-            String pluginName = URLUtils.decode(getPluginName(request));
-
-            if (pluginName == null) {
-                finishRequest(null, PluginTelemetryResponseType.ERROR, "Invalid arguments.", baseRequest, response);
-                return;
-            }
-
-            final Plugin plugin = mcstats.loadPlugin(pluginName);
-
             String userAgent = request.getHeader("User-Agent");
             final DecodedRequest decoded;
 
             try {
                 if (userAgent != null && userAgent.startsWith("MCStats/")) {
-                    decoded = modernDecoder.decode(plugin, baseRequest);
+                    decoded = modernDecoder.decode(baseRequest);
                 } else {
-                    decoded = legacyDecoder.decode(plugin, baseRequest);
+                    decoded = legacyDecoder.decode(baseRequest);
                 }
             } catch (IOException e) {
                 // Trap IOException from the decoder because it's common for decoding to fail
@@ -179,9 +170,18 @@ public class PluginTelemetryHandler extends AbstractHandler {
             }
 
             if (decoded == null) {
-                finishRequest(decoded, PluginTelemetryResponseType.ERROR, "Invalid arguments.", baseRequest, response);
+                finishRequest(null, PluginTelemetryResponseType.ERROR, "Invalid arguments.", baseRequest, response);
                 return;
             }
+
+            String pluginName = decoded.pluginName != null ? decoded.pluginName : URLUtils.decode(getPluginName(request));
+
+            if (pluginName == null) {
+                finishRequest(null, PluginTelemetryResponseType.ERROR, "Invalid arguments.", baseRequest, response);
+                return;
+            }
+
+            final Plugin plugin = mcstats.loadPlugin(pluginName);
 
             if (mcstats.isDebug()) {
                 logger.debug("Processing request for " + plugin.getName() + " request=" + decoded);

@@ -18,6 +18,11 @@ public class DecodedRequest {
     public boolean isPing;
 
     /**
+     * The name of the plugin. This might be null, if it wasn't provided in the request body.
+     */
+    public String pluginName = null;
+
+    /**
      * The guid in the request
      */
     public String guid;

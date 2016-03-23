@@ -10,11 +10,10 @@ public interface RequestDecoder {
     /**
      * Decode a request
      *
-     * @param plugin
      * @param request
      * @return
      * @throws IOException
      */
-    public DecodedRequest decode(Plugin plugin, Request request) throws IOException;
+    DecodedRequest decode(Request request) throws IOException;
 
 }

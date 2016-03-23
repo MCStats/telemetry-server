@@ -4,8 +4,6 @@ import com.google.common.collect.ImmutableMap;
 import org.eclipse.jetty.server.Request;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.mcstats.MCStats;
-import org.mcstats.model.Plugin;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,10 +14,8 @@ import java.util.zip.GZIPInputStream;
 
 public class ModernRequestDecoder implements RequestDecoder {
 
-    /**
-     * {@inheritDoc}
-     */
-    public DecodedRequest decode(Plugin plugin, Request request) throws IOException {
+    @Override
+    public DecodedRequest decode(Request request) throws IOException {
         String encoding = request.getHeader("Content-Encoding");
         String content = "";
 
@@ -43,7 +39,12 @@ public class ModernRequestDecoder implements RequestDecoder {
         }
 
         DecodedRequest decoded = new DecodedRequest();
-        decoded.guid = String.valueOf(post.get("guid"));
+
+        if (post.containsKey("plugin")) {
+            decoded.pluginName = post.get("plugin").toString();
+        }
+
+        decoded.guid = post.get("guid").toString();
         decoded.serverVersion = (new StringBuilder()).append("").append(post.get("server_version")).toString();
         decoded.pluginVersion = (new StringBuilder()).append("").append(post.get("plugin_version")).toString();
         decoded.isPing = post.containsKey("ping");
@@ -100,18 +101,17 @@ public class ModernRequestDecoder implements RequestDecoder {
             }
         }
 
-        decoded.customData = ImmutableMap.copyOf(extractCustomData(plugin, post));
+        decoded.customData = ImmutableMap.copyOf(extractCustomData(post));
         return decoded;
     }
 
     /**
      * Extract custom data from a json post
      *
-     * @param plugin
      * @param post
      * @return
      */
-    private Map<String, Map<String, Long>> extractCustomData(Plugin plugin, JSONObject post) {
+    private Map<String, Map<String, Long>> extractCustomData(JSONObject post) {
         Map<String, Map<String, Long>> result = new HashMap<>();
 
         if (!post.containsKey("graphs")) {

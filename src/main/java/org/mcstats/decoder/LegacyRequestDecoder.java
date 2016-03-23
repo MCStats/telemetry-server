@@ -14,10 +14,8 @@ import java.util.Map;
 
 public class LegacyRequestDecoder implements RequestDecoder {
 
-    /**
-     * {@inheritDoc}
-     */
-    public DecodedRequest decode(Plugin plugin, Request request) throws IOException {
+    @Override
+    public DecodedRequest decode(Request request) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"));
         String content = "";
 
