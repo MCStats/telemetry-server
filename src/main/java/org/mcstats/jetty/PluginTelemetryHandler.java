@@ -59,8 +59,8 @@ public class PluginTelemetryHandler extends AbstractHandler {
 
     public PluginTelemetryHandler(MCStats mcstats) {
         this.mcstats = mcstats;
-        modernDecoder = new ModernRequestDecoder(mcstats);
-        legacyDecoder = new LegacyRequestDecoder(mcstats);
+        modernDecoder = new ModernRequestDecoder();
+        legacyDecoder = new LegacyRequestDecoder();
     }
 
     /**

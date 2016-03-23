@@ -14,12 +14,6 @@ import java.util.Map;
 
 public class LegacyRequestDecoder implements RequestDecoder {
 
-    private MCStats mcstats;
-
-    public LegacyRequestDecoder(MCStats mcstats) {
-        this.mcstats = mcstats;
-    }
-
     /**
      * {@inheritDoc}
      */

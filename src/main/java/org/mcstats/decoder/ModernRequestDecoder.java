@@ -16,12 +16,6 @@ import java.util.zip.GZIPInputStream;
 
 public class ModernRequestDecoder implements RequestDecoder {
 
-    private MCStats mcstats;
-
-    public ModernRequestDecoder(MCStats mcstats) {
-        this.mcstats = mcstats;
-    }
-
     /**
      * {@inheritDoc}
      */
