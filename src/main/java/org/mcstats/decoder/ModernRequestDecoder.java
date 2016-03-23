@@ -98,6 +98,8 @@ public class ModernRequestDecoder implements RequestDecoder {
             return null;
         }
 
+        post.put("plugin", plugin.getName());
+
         long currentNormalizedTime = ReportHandler.normalizeTime();
         if (lastRequestLogTime.getAndSet(currentNormalizedTime) != currentNormalizedTime) {
             synchronized (logWriterLock) {
