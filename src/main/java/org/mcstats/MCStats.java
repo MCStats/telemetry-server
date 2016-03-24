@@ -450,12 +450,9 @@ public class MCStats {
             logger.debug("Loading webapp from " + webApp + " at url " + contextPath);
         }
 
-        URL warURL = getClass().getClassLoader().getResource(webApp);
-        WebAppContext webAppContext = new WebAppContext(warURL.toExternalForm(), contextPath);
-
         // Create the handler list
         HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] { handler , webAppContext });
+        handlers.setHandlers(new Handler[] { handler });
 
         webServer.setHandler(handlers);
 

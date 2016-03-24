@@ -1,7 +1,7 @@
 package org.mcstats.db;
 
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.dbcp.BasicDataSource;
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONValue;
 import org.mcstats.MCStats;
@@ -46,8 +46,8 @@ public class PostgresDatabase implements Database, GraphStore {
         ds.setUsername(username);
         ds.setPassword(password);
         ds.setUrl("jdbc:postgresql://" + hostname + "/" + databaseName);
-        ds.setInitialSize(50);
-        ds.setMaxActive(100);
+        ds.setInitialSize(10);
+        ds.setMaxTotal(100);
     }
 
     public Plugin createPlugin(String name) {
