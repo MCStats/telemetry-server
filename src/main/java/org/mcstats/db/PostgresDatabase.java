@@ -1,8 +1,11 @@
 package org.mcstats.db;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.log4j.Logger;
+import org.json.simple.JSONValue;
 import org.mcstats.MCStats;
+import org.mcstats.generator.Datum;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 
@@ -12,10 +15,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-public class JDBCDatabase implements Database {
+public class PostgresDatabase implements Database, GraphStore {
 
-    private Logger logger = Logger.getLogger(JDBCDatabase.class);
+    private Logger logger = Logger.getLogger(PostgresDatabase.class);
 
     public static long QUERIES = 0;
 
@@ -29,7 +33,7 @@ public class JDBCDatabase implements Database {
      */
     private BasicDataSource ds;
 
-    public JDBCDatabase(MCStats mcstats, String hostname, String databaseName, String username, String password) {
+    public PostgresDatabase(MCStats mcstats, String hostname, String databaseName, String username, String password) {
         if (hostname == null || databaseName == null || username == null || password == null) {
             throw new IllegalArgumentException("All arguments must not be null");
         }
@@ -233,6 +237,43 @@ public class JDBCDatabase implements Database {
         plugin.setActivePlayerCount(set.getInt("active_player_count"));
         plugin.setModified(false);
         return plugin;
+    }
+
+    @Override
+    public void insertGlobalPluginData(String graphName, Map<String, Datum> data, int epoch) {
+        insertGraphData("plugin_graphdata_global", graphName, data, epoch);
+    }
+
+    @Override
+    public void insertPluginData(Plugin plugin, String graphName, Map<String, Datum> data, int epoch) {
+        insertGraphData("plugin_graphdata_" + plugin.getId(), graphName, data, epoch);
+    }
+
+    /**
+     * Inserts graph data
+     *
+     * @param tableName
+     * @param graphName
+     * @param data
+     * @param epoch
+     */
+    private void insertGraphData(String tableName, String graphName, Map<String, Datum> data, int epoch) {
+        List<Map<String, Object>> dataJson = new ArrayList<>();
+
+        data.forEach((name, datum) -> {
+            dataJson.add(ImmutableMap.of("name", name, "sum", datum.getSum(), "count", datum.getCount()));
+        });
+
+        try (Connection connection = ds.getConnection();
+             PreparedStatement statement = connection.prepareStatement("INSERT INTO " + tableName + " (time, graph, data) VALUES (to_timestamp(?), ?, ?)")) {
+            statement.setInt(1, epoch);
+            statement.setString(2, graphName);
+            statement.setString(3, JSONValue.toJSONString(dataJson));
+
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
 }

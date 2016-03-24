@@ -10,10 +10,6 @@ queue.workers=4
 queue.flushes=5000
 queue.maxSize=500000
 
-mongo.host=10.10.1.60
-mongo.db=mcstats
-mongo.collection=graphdata
-
 postgres.hostname=127.0.0.1
 postgres.database=mcstats
 postgres.username=root

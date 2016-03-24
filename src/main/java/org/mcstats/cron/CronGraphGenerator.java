@@ -3,7 +3,6 @@ package org.mcstats.cron;
 import com.google.common.collect.ImmutableMap;
 import org.mcstats.MCStats;
 import org.mcstats.db.GraphStore;
-import org.mcstats.db.MongoDBGraphStore;
 import org.mcstats.generator.Datum;
 import org.mcstats.generator.PluginGenerator;
 import org.mcstats.jetty.PluginTelemetryHandler;
@@ -25,9 +24,7 @@ public class CronGraphGenerator implements Runnable {
         this.pluginGenerator = pluginGenerator;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void run() {
         try {
             logger.info("Beginning graph generation");
@@ -44,19 +41,17 @@ public class CronGraphGenerator implements Runnable {
             int epoch = PluginTelemetryHandler.normalizeTime();
 
             // Generate All Servers
-            // TODO insert all_servers data to its own collection
-            Plugin allServersPlugin = mcstats.loadPlugin(-1);
             ImmutableMap<String, Map<String, Datum>> allServerGeneratedData = pluginGenerator.generateAll();
 
             allServerGeneratedData.forEach((graphName, data) -> {
-                store.insertPluginData(epoch, allServersPlugin, graphName, data);
+                store.insertGlobalPluginData(graphName, data, epoch);
             });
 
             for (Plugin plugin : mcstats.getCachedPlugins()) {
                 ImmutableMap<String, Map<String, Datum>> generatedData = pluginGenerator.generatorFor(plugin);
 
                 generatedData.forEach((graphName, data) -> {
-                    store.insertPluginData(epoch, plugin, graphName, data);
+                    store.insertPluginData(plugin, graphName, data, epoch);
                 });
             }
 
@@ -80,7 +75,6 @@ public class CronGraphGenerator implements Runnable {
                 plugin.saveNow();
             }
 
-            ((MongoDBGraphStore) store).finishGeneration();
             mcstats.resetIntervalData();
 
             logger.info("Finished graph generation in " + (System.currentTimeMillis() - start) + "ms");

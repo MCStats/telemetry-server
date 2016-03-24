@@ -16,8 +16,7 @@ import org.mcstats.cron.CronRanking;
 import org.mcstats.db.Database;
 import org.mcstats.db.DatabaseQueue;
 import org.mcstats.db.GraphStore;
-import org.mcstats.db.JDBCDatabase;
-import org.mcstats.db.MongoDBGraphStore;
+import org.mcstats.db.PostgresDatabase;
 import org.mcstats.generator.PluginGenerator;
 import org.mcstats.generator.aggregator.DecoderReflectionAggregator;
 import org.mcstats.generator.aggregator.IncrementAggregator;
@@ -78,14 +77,9 @@ public class MCStats {
     private Properties config;
 
     /**
-     * The database we are connected to
+     * The pg database
      */
-    private Database database;
-
-    /**
-     * The storage for graph data
-     */
-    private GraphStore graphStore;
+    private PostgresDatabase database;
 
     /**
      * The database save queue
@@ -207,8 +201,6 @@ public class MCStats {
 
         // Connect to the database
         connectToDatabase();
-
-        graphStore = new MongoDBGraphStore(this);
 
         // Load all of the pluginsByName
         for (Plugin plugin : database.loadPlugins()) {
@@ -516,7 +508,7 @@ public class MCStats {
      */
     private void connectToDatabase() {
         // Create the database
-        database = new JDBCDatabase(this, config.getProperty("postgres.hostname"), config.getProperty("postgres.database"),
+        database = new PostgresDatabase(this, config.getProperty("postgres.hostname"), config.getProperty("postgres.database"),
                 config.getProperty("postgres.username"), config.getProperty("postgres.password"));
 
         logger.info("Connected to PostgreSQL");
@@ -537,7 +529,7 @@ public class MCStats {
      * @return
      */
     public GraphStore getGraphStore() {
-        return graphStore;
+        return database;
     }
 
     /**

@@ -12,6 +12,13 @@ public interface GraphStore {
      *
      * @param data
      */
-    void insertPluginData(int epoch, Plugin plugin, String graphName, Map<String, Datum> data);
+    void insertGlobalPluginData(String graphName, Map<String, Datum> data, int epoch);
+
+    /**
+     * Insert data into the graph store
+     *
+     * @param data
+     */
+    void insertPluginData(Plugin plugin, String graphName, Map<String, Datum> data, int epoch);
 
 }
