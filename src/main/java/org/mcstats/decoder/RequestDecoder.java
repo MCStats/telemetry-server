@@ -1,7 +1,6 @@
 package org.mcstats.decoder;
 
 import org.eclipse.jetty.server.Request;
-import org.mcstats.model.Plugin;
 
 import java.io.IOException;
 

@@ -11,13 +11,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public class MySQLDatabase implements Database {
+public class JDBCDatabase implements Database {
 
-    private Logger logger = Logger.getLogger("Database");
+    private Logger logger = Logger.getLogger(JDBCDatabase.class);
 
     public static long QUERIES = 0;
 
@@ -27,16 +25,11 @@ public class MySQLDatabase implements Database {
     private final MCStats mcstats;
 
     /**
-     * A map of the already prepared statements
-     */
-    private final Map<String, PreparedStatement> statementCache = new HashMap<>();
-
-    /**
      * The dataSource.getConnectionion() data source
      */
     private BasicDataSource ds;
 
-    public MySQLDatabase(MCStats mcstats, String hostname, String databaseName, String username, String password) {
+    public JDBCDatabase(MCStats mcstats, String hostname, String databaseName, String username, String password) {
         if (hostname == null || databaseName == null || username == null || password == null) {
             throw new IllegalArgumentException("All arguments must not be null");
         }
@@ -45,17 +38,17 @@ public class MySQLDatabase implements Database {
 
         // Create the mysql data dataSource.getConnectionion() pool
         ds = new BasicDataSource();
-        ds.setDriverClassName("com.mysql.jdbc.Driver");
+        ds.setDriverClassName("org.postgresql.Driver");
         ds.setUsername(username);
         ds.setPassword(password);
-        ds.setUrl("jdbc:mysql://" + hostname + "/" + databaseName);
+        ds.setUrl("jdbc:postgresql://" + hostname + "/" + databaseName);
         ds.setInitialSize(50);
         ds.setMaxActive(100);
     }
 
     public Plugin createPlugin(String name) {
         try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("INSERT INTO Plugin (Name, Author, Hidden, GlobalHits, Created) VALUES (?, '', 0, 0, UNIX_TIMESTAMP())")) {
+             PreparedStatement statement = connection.prepareStatement("INSERT INTO plugins (name, type, hidden, rank, last_rank, last_rank_change, created_at, updated_at) VALUES (?, 'plugin', 0, -1, -1, -1, NOW(), NOW())")) {
             statement.setString(1, name);
             statement.executeUpdate();
             QUERIES++;
@@ -71,7 +64,7 @@ public class MySQLDatabase implements Database {
         List<Plugin> plugins = new ArrayList<>();
 
         try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated, ServerCount30 FROM Plugin WHERE Parent = -1")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT * FROM plugins")) {
             try (ResultSet set = statement.executeQuery()) {
                 while (set.next()) {
                     plugins.add(resolvePlugin(set));
@@ -88,7 +81,7 @@ public class MySQLDatabase implements Database {
 
     public Plugin loadPlugin(int id) {
         try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated, ServerCount30 FROM Plugin WHERE ID = ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT * FROM plugins WHERE id = ?")) {
             statement.setInt(1, id);
 
             try (ResultSet set = statement.executeQuery()) {
@@ -105,7 +98,7 @@ public class MySQLDatabase implements Database {
 
     public Plugin loadPlugin(String name) {
         try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT ID, Parent, Name, Author, Hidden, GlobalHits, Rank, LastRank, LastRankChange, Created, LastUpdated, ServerCount30 FROM Plugin WHERE Name = ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT * FROM plugins WHERE name = ?")) {
             statement.setString(1, name);
 
             try (ResultSet set = statement.executeQuery()) {
@@ -122,16 +115,16 @@ public class MySQLDatabase implements Database {
 
     public void savePlugin(Plugin plugin) {
         try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("UPDATE Plugin SET Name = ?, Hidden = ?, GlobalHits = ?, Rank = ?, LastRank = ?, LastRankChange = ?, Created = ?, LastUpdated = ?, ServerCount30 = ? WHERE ID = ?")) {
+             PreparedStatement statement = connection.prepareStatement("UPDATE plugins SET name = ?, hidden = ?, rank = ?, last_rank = ?, last_rank_change = ?, created_at = to_timestamp(?), updated_at = to_timestamp(?), active_server_count = ?, active_player_count = ? WHERE id = ?")) {
             statement.setString(1, plugin.getName());
-            statement.setInt(2, plugin.getHidden());
-            statement.setInt(3, plugin.getGlobalHits());
-            statement.setInt(4, plugin.getRank());
-            statement.setInt(5, plugin.getLastRank());
-            statement.setInt(6, plugin.getLastRankChange());
-            statement.setInt(7, plugin.getCreated());
-            statement.setInt(8, plugin.getLastUpdated());
-            statement.setInt(9, plugin.getServerCount30());
+            statement.setBoolean(2, plugin.isHidden());
+            statement.setInt(3, plugin.getRank());
+            statement.setInt(4, plugin.getLastRank());
+            statement.setInt(5, plugin.getLastRankChange());
+            statement.setInt(6, plugin.getCreated());
+            statement.setInt(7, plugin.getLastUpdated());
+            statement.setInt(8, plugin.getActiveServerCount());
+            statement.setInt(9, plugin.getActivePlayerCount());
             statement.setInt(10, plugin.getId());
 
             statement.executeUpdate();
@@ -143,13 +136,17 @@ public class MySQLDatabase implements Database {
 
     public Graph createGraph(Plugin plugin, String name) {
         try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("INSERT INTO Graph (Plugin, Type, Active, Name, DisplayName, Scale) VALUES (?, ?, ?, ?, ?, ?)")) {
+             PreparedStatement statement = connection.prepareStatement("INSERT INTO plugin_graphs (plugin_id, name, display_name, type, active, editable, position, scale, halfwidth) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             statement.setInt(1, plugin.getId());
-            statement.setInt(2, 0); // line
-            statement.setInt(3, 0); // active
-            statement.setString(4, name);
-            statement.setString(5, name);
-            statement.setString(6, "linear");
+            statement.setString(2, name);
+            statement.setString(3, name);
+            statement.setInt(4, 0); // line
+            statement.setInt(5, 0); // active
+            statement.setBoolean(6, true);
+            statement.setInt(7, 1);
+            statement.setString(8, "linear");
+            statement.setBoolean(9, false);
+
             statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -160,7 +157,7 @@ public class MySQLDatabase implements Database {
 
     public Graph loadGraph(Plugin plugin, String name) {
         try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT ID, Type, Position, Active, Name, DisplayName, Scale FROM Graph WHERE Plugin = ? AND Name = ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT * FROM plugin_graphs WHERE plugin_id = ? AND name = ?")) {
             statement.setInt(1, plugin.getId());
             statement.setString(2, name);
 
@@ -179,7 +176,7 @@ public class MySQLDatabase implements Database {
     public List<Graph> loadGraphs(Plugin plugin) {
         List<Graph> graphs = new ArrayList<>();
         try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT ID, Type, Position, Active, Name, DisplayName, Scale FROM Graph WHERE Plugin = ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT * FROM plugin_graphs WHERE plugin_id = ?")) {
             statement.setInt(1, plugin.getId());
 
             try (ResultSet set = statement.executeQuery()) {
@@ -204,13 +201,13 @@ public class MySQLDatabase implements Database {
      */
     private Graph resolveGraph(Plugin plugin, ResultSet set) throws SQLException {
         Graph graph = new Graph(mcstats, plugin);
-        graph.setId(set.getInt("ID"));
-        graph.setType(set.getInt("Type"));
-        graph.setPosition(set.getInt("Position"));
-        graph.setActive(set.getInt("Active"));
-        graph.setName(set.getString("Name"));
-        graph.setDisplayName(set.getString("DisplayName"));
-        graph.setScale(set.getString("Scale"));
+        graph.setId(set.getInt("id"));
+        graph.setName(set.getString("name"));
+        graph.setDisplayName(set.getString("display_name"));
+        graph.setType(set.getInt("type"));
+        graph.setPosition(set.getInt("position"));
+        graph.setActive(set.getInt("active"));
+        graph.setScale(set.getString("scale"));
         return graph;
     }
 
@@ -222,18 +219,18 @@ public class MySQLDatabase implements Database {
      */
     private Plugin resolvePlugin(ResultSet set) throws SQLException {
         Plugin plugin = new Plugin(mcstats);
-        plugin.setId(set.getInt("ID"));
-        plugin.setParent(set.getInt("Parent"));
-        plugin.setName(set.getString("Name"));
-        plugin.setAuthors(set.getString("Author"));
-        plugin.setHidden(set.getInt("Hidden"));
-        plugin.setGlobalHits(set.getInt("GlobalHits"));
-        plugin.setRank(set.getInt("Rank"));
-        plugin.setLastRank(set.getInt("LastRank"));
-        plugin.setLastRankChange(set.getInt("LastRankChange"));
-        plugin.setCreated(set.getInt("Created"));
-        plugin.setLastUpdated(set.getInt("LastUpdated"));
-        plugin.setServerCount30(set.getInt("ServerCount30"));
+        plugin.setId(set.getInt("id"));
+        plugin.setName(set.getString("name"));
+        // plugin.setAuthors(set.getString("author"));
+        plugin.setAuthors(""); // TODO authors
+        plugin.setHidden(set.getBoolean("hidden"));
+        plugin.setRank(set.getInt("rank"));
+        plugin.setLastRank(set.getInt("last_rank"));
+        plugin.setLastRankChange(set.getInt("last_rank_change"));
+        plugin.setCreated((int) (set.getDate("created_at").getTime() / 1000L));
+        plugin.setLastUpdated((int) (set.getDate("updated_at").getTime() / 1000L));
+        plugin.setActiveServerCount(set.getInt("active_server_count"));
+        plugin.setActivePlayerCount(set.getInt("active_player_count"));
         plugin.setModified(false);
         return plugin;
     }

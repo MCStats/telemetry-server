@@ -2,7 +2,7 @@
 <%@ page import="org.mcstats.MCStats" %>
 <%@ page import="org.mcstats.util.TimeUtils" %>
 <%@ page import="java.text.DecimalFormat" %>
-<%@ page import="org.mcstats.db.MySQLDatabase" %>
+<%@ page import="org.mcstats.db.JDBCDatabase" %>
 <%
     MCStats mcstats = MCStats.getInstance();
     long requests = mcstats.incrementAndGetRequests();
@@ -203,7 +203,7 @@
                             Total queries
                         </td>
                         <td style="width: 100px; text-align: center;">
-                            <%= numberFormatter.format(MySQLDatabase.QUERIES) %>
+                            <%= numberFormatter.format(JDBCDatabase.QUERIES) %>
                         </td>
                     </tr>
 

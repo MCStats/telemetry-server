@@ -63,18 +63,20 @@ public class CronGraphGenerator implements Runnable {
             logger.info("Beginning final stage of graph generation");
 
             for (Plugin plugin : mcstats.getCachedPlugins()) {
-                int numServers30 = 0;
+                int activeServerCount = 0;
+                int activePlayerCount = 0;
 
                 for (ServerPlugin serverPlugin : mcstats.getServerPlugins(plugin)) {
                     if (serverPlugin.recentlyUpdated()) {
                         serverPlugin.getServer().setViolationCount(0);
-                        // serverPlugin.getServer().save();
-                        // serverPlugin.save();
-                        numServers30 ++;
+
+                        activeServerCount ++;
+                        activePlayerCount += serverPlugin.getServer().getPlayers();
                     }
                 }
 
-                plugin.setServerCount30(numServers30);
+                plugin.setActiveServerCount(activeServerCount);
+                plugin.setActivePlayerCount(activePlayerCount);
                 plugin.saveNow();
             }
 

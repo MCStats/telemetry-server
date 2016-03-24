@@ -19,11 +19,6 @@ public class Plugin implements Savable {
     private int id;
 
     /**
-     * This plugin's parent, that data should be forwarded to instead
-     */
-    private int parent;
-
-    /**
      * The plugin's name
      */
     private String name;
@@ -36,12 +31,7 @@ public class Plugin implements Savable {
     /**
      * If the plugin is hidden
      */
-    private int hidden;
-
-    /**
-     * The total amount of server startups the plugin has received
-     */
-    private int globalHits;
+    private boolean hidden;
 
     /**
      * The plugin's rank
@@ -69,9 +59,14 @@ public class Plugin implements Savable {
     private int lastUpdated;
 
     /**
-     * The number of servers in the last 30 minutes (ish)
+     * The number of active servers using this plugin
      */
-    private int serverCount30;
+    private int activeServerCount = 0;
+
+    /**
+     * The number of active players on servers using this plugin
+     */
+    private int activePlayerCount = 0;
 
     /**
      * If this plugin was modified
@@ -162,21 +157,12 @@ public class Plugin implements Savable {
         modified = true;
     }
 
-    public int getHidden() {
+    public boolean isHidden() {
         return hidden;
     }
 
-    public void setHidden(int hidden) {
+    public void setHidden(boolean hidden) {
         this.hidden = hidden;
-        modified = true;
-    }
-
-    public int getGlobalHits() {
-        return globalHits;
-    }
-
-    public void setGlobalHits(int globalHits) {
-        this.globalHits = globalHits;
         modified = true;
     }
 
@@ -207,16 +193,20 @@ public class Plugin implements Savable {
         modified = true;
     }
 
-    public int getServerCount30() {
-        return serverCount30;
+    public int getActiveServerCount() {
+        return activeServerCount;
     }
 
-    public void setServerCount30(int serverCount30) {
-        this.serverCount30 = serverCount30;
+    public void setActiveServerCount(int activeServerCount) {
+        this.activeServerCount = activeServerCount;
     }
 
-    public boolean isModified() {
-        return modified;
+    public int getActivePlayerCount() {
+        return activePlayerCount;
+    }
+
+    public void setActivePlayerCount(int activePlayerCount) {
+        this.activePlayerCount = activePlayerCount;
     }
 
     public void setModified(boolean modified) {
@@ -240,14 +230,6 @@ public class Plugin implements Savable {
         mcstats.getDatabase().savePlugin(this);
         modified = false;
         queuedForSave = false;
-    }
-
-    public int getParent() {
-        return parent;
-    }
-
-    public void setParent(int parent) {
-        this.parent = parent;
     }
 
     public int getCreated() {

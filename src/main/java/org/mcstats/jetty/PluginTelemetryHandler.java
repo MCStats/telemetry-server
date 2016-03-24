@@ -290,10 +290,6 @@ public class PluginTelemetryHandler extends AbstractHandler {
                     server.setMinecraftVersion(minecraftVersion);
                 }
 
-                if (!decoded.isPing) {
-                    plugin.setGlobalHits(plugin.getGlobalHits() + 1);
-                }
-
                 if ((decoded.revision >= 4) && (!server.getCountry().equals("SG")) && ((geoipCountryCode == null) || (!geoipCountryCode.equals("SG")))) {
                     serverPlugin.setCustomData(decoded.customData);
                 }

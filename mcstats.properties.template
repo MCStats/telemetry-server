@@ -14,9 +14,9 @@ mongo.host=10.10.1.60
 mongo.db=mcstats
 mongo.collection=graphdata
 
-mysql.hostname=127.0.0.1
-mysql.database=metrics
-mysql.username=root
-mysql.password=
+postgres.hostname=127.0.0.1
+postgres.database=mcstats
+postgres.username=root
+postgres.password=
 
 graphs.generate=true

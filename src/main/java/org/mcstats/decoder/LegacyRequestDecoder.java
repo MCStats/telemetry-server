@@ -2,8 +2,6 @@ package org.mcstats.decoder;
 
 import com.google.common.collect.ImmutableMap;
 import org.eclipse.jetty.server.Request;
-import org.mcstats.MCStats;
-import org.mcstats.model.Plugin;
 import org.mcstats.util.URLUtils;
 
 import java.io.BufferedReader;

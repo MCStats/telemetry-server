@@ -16,8 +16,8 @@ import org.mcstats.cron.CronRanking;
 import org.mcstats.db.Database;
 import org.mcstats.db.DatabaseQueue;
 import org.mcstats.db.GraphStore;
+import org.mcstats.db.JDBCDatabase;
 import org.mcstats.db.MongoDBGraphStore;
-import org.mcstats.db.MySQLDatabase;
 import org.mcstats.generator.PluginGenerator;
 import org.mcstats.generator.aggregator.DecoderReflectionAggregator;
 import org.mcstats.generator.aggregator.IncrementAggregator;
@@ -328,19 +328,6 @@ public class MCStats {
             return null;
         }
 
-        // Check if the plugin is just a child
-        if (plugin.getParent() != -1) {
-            // Load the parent
-            Plugin parent = loadPlugin(plugin.getParent());
-
-            if (parent != null) {
-                // cache the child's plugin name via the parent
-                addPlugin(plugin.getName(), parent);
-            }
-
-            return parent;
-        }
-
         // Cache it
         addPlugin(plugin);
 
@@ -376,19 +363,6 @@ public class MCStats {
         if (plugin == null) {
             logger.error("Failed to create plugin for \"" + name + "\"");
             return null;
-        }
-
-        // Check if the plugin is just a child
-        if (plugin.getParent() != -1) {
-            // Load the parent
-            Plugin parent = loadPlugin(plugin.getParent());
-
-            if (parent != null) {
-                // cache the child's plugin name via the parent
-                addPlugin(plugin.getName(), parent);
-            }
-
-            return parent;
         }
 
         // Cache it
@@ -542,10 +516,10 @@ public class MCStats {
      */
     private void connectToDatabase() {
         // Create the database
-        database = new MySQLDatabase(this, config.getProperty("mysql.hostname"), config.getProperty("mysql.database"),
-                config.getProperty("mysql.username"), config.getProperty("mysql.password"));
+        database = new JDBCDatabase(this, config.getProperty("postgres.hostname"), config.getProperty("postgres.database"),
+                config.getProperty("postgres.username"), config.getProperty("postgres.password"));
 
-        logger.info("Connected to MySQL");
+        logger.info("Connected to PostgreSQL");
     }
 
     /**

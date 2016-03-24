@@ -36,11 +36,11 @@ public class CronRanking implements Runnable {
         Map<Plugin, Integer> pluginServerCounts = new HashMap<>();
 
         for (Plugin plugin : mcstats.getCachedPlugins()) {
-            if (plugin.getHidden() == 1) {
+            if (plugin.isHidden()) {
                 continue;
             }
 
-            pluginServerCounts.put(plugin, plugin.getServerCount30());
+            pluginServerCounts.put(plugin, plugin.getActiveServerCount());
         }
 
         int epoch = PluginTelemetryHandler.normalizeTime();
