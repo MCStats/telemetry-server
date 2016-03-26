@@ -68,7 +68,7 @@ public class PluginGenerator implements Generator<Plugin> {
         for (Server server : allServersSupplier.get()) {
             ServerPlugin serverPlugin = server.getPlugin(instance);
 
-            if (serverPlugin == null || !serverPlugin.recentlyUpdated()) {
+            if (serverPlugin == null || !serverPlugin.recentlyLastSentData()) {
                 continue;
             }
 

@@ -62,7 +62,7 @@ public class CronGraphGenerator implements Runnable {
                 int activePlayerCount = 0;
 
                 for (ServerPlugin serverPlugin : mcstats.getServerPlugins(plugin)) {
-                    if (serverPlugin.recentlyUpdated()) {
+                    if (serverPlugin.recentlyLastSentData()) {
                         serverPlugin.getServer().setViolationCount(0);
 
                         activeServerCount ++;

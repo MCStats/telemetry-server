@@ -31,9 +31,9 @@ public class ServerPlugin {
     private int revision = 0;
 
     /**
-     * Unix timestamp of when it was last updated
+     * Unix timestamp of when this plugin last sent data for the server
      */
-    private int updated = 0;
+    private int lastSentData = 0;
 
     /**
      * The last custom data sent to the server
@@ -69,12 +69,21 @@ public class ServerPlugin {
     }
 
     /**
-     * Check if the server plugin has been updated in the last 30 minutes
+     * Check if the server plugin has been lastSentData in the last 30 minutes
      *
      * @return
      */
-    public boolean recentlyUpdated() {
-        return updated > ((System.currentTimeMillis() / 1000) - 1800);
+    public boolean recentlyLastSentData() {
+        return lastSentData > ((System.currentTimeMillis() / 1000) - 1800);
+    }
+
+    /**
+     * Sets the lastSentData value
+     *
+     * @param lastSentData
+     */
+    public void setLastSentData(int lastSentData) {
+        this.lastSentData = lastSentData;
     }
 
     /**

@@ -265,7 +265,7 @@ public class PluginTelemetryHandler extends AbstractHandler {
                     ServerPlugin cbplusplus = server.getPlugin(mcstats.loadPlugin(137));
 
                     if (cbplusplus != null) {
-                        if (cbplusplus.recentlyUpdated()) {
+                        if (cbplusplus.recentlyLastSentData()) {
                             canonicalServerVersion = "CraftBukkit++";
                         }
                     }
@@ -339,8 +339,11 @@ public class PluginTelemetryHandler extends AbstractHandler {
 
                 }
 
-                plugin.setLastUpdated((int) (System.currentTimeMillis() / 1000L));
-                server.setLastSentData((int) (System.currentTimeMillis() / 1000L));
+                int currentEpoch = (int) (System.currentTimeMillis() / 1000L);
+
+                plugin.setLastUpdated(currentEpoch);
+                server.setLastSentData(currentEpoch);
+                serverPlugin.setLastSentData(currentEpoch);
             } catch (Exception e) {
                 e.printStackTrace();
             }
