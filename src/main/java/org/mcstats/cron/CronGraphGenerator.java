@@ -47,13 +47,13 @@ public class CronGraphGenerator implements Runnable {
                 store.insertGlobalPluginData(graphName, data, epoch);
             });
 
-            for (Plugin plugin : mcstats.getCachedPlugins()) {
+            mcstats.getCachedPlugins().parallelStream().forEach(plugin -> {
                 ImmutableMap<String, Map<String, Datum>> generatedData = pluginGenerator.generatorFor(plugin);
 
                 generatedData.forEach((graphName, data) -> {
                     store.insertPluginData(plugin, graphName, data, epoch);
                 });
-            }
+            });
 
             logger.info("Beginning final stage of graph generation");
 
