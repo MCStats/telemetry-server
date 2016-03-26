@@ -8,6 +8,7 @@ import org.mcstats.MCStats;
 import org.mcstats.generator.Datum;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
+import org.postgresql.util.PGobject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -121,7 +122,7 @@ public class PostgresDatabase implements Database, GraphStore {
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement("UPDATE plugins SET name = ?, hidden = ?, rank = ?, last_rank = ?, last_rank_change = ?, created_at = to_timestamp(?), updated_at = to_timestamp(?), active_server_count = ?, active_player_count = ? WHERE id = ?")) {
             statement.setString(1, plugin.getName());
-            statement.setBoolean(2, plugin.isHidden());
+            statement.setInt(2, plugin.isHidden() ? 1 : 0);
             statement.setInt(3, plugin.getRank());
             statement.setInt(4, plugin.getLastRank());
             statement.setInt(5, plugin.getLastRankChange());
@@ -146,10 +147,10 @@ public class PostgresDatabase implements Database, GraphStore {
             statement.setString(3, name);
             statement.setInt(4, 0); // line
             statement.setInt(5, 0); // active
-            statement.setBoolean(6, true);
+            statement.setInt(6, 1);
             statement.setInt(7, 1);
             statement.setString(8, "linear");
-            statement.setBoolean(9, false);
+            statement.setInt(9, 0);
 
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -227,7 +228,7 @@ public class PostgresDatabase implements Database, GraphStore {
         plugin.setName(set.getString("name"));
         // plugin.setAuthors(set.getString("author"));
         plugin.setAuthors(""); // TODO authors
-        plugin.setHidden(set.getBoolean("hidden"));
+        plugin.setHidden(set.getInt("hidden") == 1);
         plugin.setRank(set.getInt("rank"));
         plugin.setLastRank(set.getInt("last_rank"));
         plugin.setLastRankChange(set.getInt("last_rank_change"));
@@ -268,7 +269,12 @@ public class PostgresDatabase implements Database, GraphStore {
              PreparedStatement statement = connection.prepareStatement("INSERT INTO " + tableName + " (time, graph, data) VALUES (to_timestamp(?), ?, ?)")) {
             statement.setInt(1, epoch);
             statement.setString(2, graphName);
-            statement.setString(3, JSONValue.toJSONString(dataJson));
+
+            PGobject jsonObject = new PGobject();
+            jsonObject.setType("json");
+            jsonObject.setValue(JSONValue.toJSONString(dataJson));
+
+            statement.setObject(3, jsonObject);
 
             statement.executeUpdate();
         } catch (SQLException e) {

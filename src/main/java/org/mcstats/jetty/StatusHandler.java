@@ -48,6 +48,18 @@ public class StatusHandler extends AbstractHandler {
         }
 
         {
+            JSONObject pluginCaches = new JSONObject();
+
+            // requests.put("total", mcstats.getRequestsMade());
+            pluginCaches.put("plugins", mcstats.getCachedPlugins().size());
+            pluginCaches.put("servers", mcstats.getCachedServers().size());
+            pluginCaches.put("recentServers", mcstats.countRecentServers());
+            // requests.put("processingTime", mcstats.getRequestProcessingTimeAverage().getAverage());
+
+            responseJson.put("pluginCaches", pluginCaches);
+        }
+
+        {
             JSONObject queues = new JSONObject();
 
             queues.put("sql", mcstats.getDatabaseQueue().size());

@@ -4,7 +4,6 @@ import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.handler.HandlerList;
 import org.mcstats.jetty.PluginTelemetryHandler;
 import org.mcstats.jetty.ServerTelemetryHandler;
 import org.mcstats.jetty.StatusHandler;

@@ -31,7 +31,7 @@ public class CronGraphGenerator implements Runnable {
             GraphStore store = mcstats.getGraphStore();
             PluginTelemetryHandler.SOFT_IGNORE_REQUESTS = true;
 
-            if (mcstats.countRecentServers() < 50000) {
+            if (mcstats.countRecentServers() < 5000) {
                 logger.info("Not enough data. Auto correcting internal caches.");
                 mcstats.resetInternalCaches();
                 return;

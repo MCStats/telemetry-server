@@ -64,15 +64,6 @@ public class PluginTelemetryHandler extends AbstractHandler {
     }
 
     /**
-     * Get the size of the work queue in the background
-     *
-     * @return
-     */
-    public int queueSize() {
-        return 0;
-    }
-
-    /**
      * Finish a request and end it by closing it immediately
      *
      * @param decoded
@@ -182,6 +173,11 @@ public class PluginTelemetryHandler extends AbstractHandler {
             }
 
             final Plugin plugin = mcstats.loadPlugin(pluginName);
+
+            if (plugin == null) {
+                finishRequest(decoded, PluginTelemetryResponseType.ERROR, "Failed to load plugin.", baseRequest, response);
+                return;
+            }
 
             if (mcstats.isDebug()) {
                 logger.debug("Processing request for " + plugin.getName() + " request=" + decoded);
