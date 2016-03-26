@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,12 +52,34 @@ public class PostgresDatabase implements Database, GraphStore {
         ds.setMaxTotal(100);
     }
 
+    /**
+     * Gets the table name for a plugin's graphdata
+     *
+     * @param plugin
+     * @return
+     */
+    private String getPluginGraphDataTableName(Plugin plugin) {
+        return "plugin_graphdata_" + plugin.getId();
+    }
+
     public Plugin createPlugin(String name) {
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement("INSERT INTO plugins (name, type, hidden, rank, last_rank, last_rank_change, created_at, updated_at) VALUES (?, 'plugin', 0, -1, -1, -1, NOW(), NOW())")) {
-            statement.setString(1, name);
-            statement.executeUpdate();
-            QUERIES++;
+        try (Connection connection = ds.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO plugins (name, type, hidden, rank, last_rank, last_rank_change, created_at, updated_at) VALUES (?, 'plugin', 0, -1, -1, -1, NOW(), NOW())")) {
+                statement.setString(1, name);
+                statement.executeUpdate();
+                QUERIES++;
+            }
+
+            Plugin plugin = loadPlugin(name);
+
+            if (plugin != null) {
+                String tableName = getPluginGraphDataTableName(plugin);
+
+                try (Statement statement = connection.createStatement()) {
+                    statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableName + " ( LIKE graphdata_template INCLUDING ALL )");
+                    QUERIES++;
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -247,7 +270,7 @@ public class PostgresDatabase implements Database, GraphStore {
 
     @Override
     public void insertPluginData(Plugin plugin, String graphName, Map<String, Datum> data, int epoch) {
-        insertGraphData("plugin_graphdata_" + plugin.getId(), graphName, data, epoch);
+        insertGraphData(getPluginGraphDataTableName(plugin), graphName, data, epoch);
     }
 
     /**
