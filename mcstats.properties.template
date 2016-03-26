@@ -2,6 +2,7 @@ debug=false
 
 listen.port=9050
 server-telemetry.port=9051
+status.port=9052
 
 queue.workers=4
 queue.flushes=5000

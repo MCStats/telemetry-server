@@ -10,7 +10,6 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.webapp.WebAppContext;
 import org.mcstats.cron.CronGraphGenerator;
 import org.mcstats.cron.CronRanking;
 import org.mcstats.db.Database;
@@ -29,7 +28,6 @@ import org.mcstats.generator.aggregator.plugin.RevisionPluginAggregator;
 import org.mcstats.generator.aggregator.plugin.VersionDemographicsPluginAggregator;
 import org.mcstats.generator.aggregator.plugin.VersionTrendsPluginAggregator;
 import org.mcstats.jetty.PluginTelemetryHandler;
-import org.mcstats.jetty.ServerTelemetryHandler;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
@@ -39,7 +37,6 @@ import org.mcstats.util.ServerBuildIdentifier;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -60,11 +57,6 @@ public class MCStats {
      * The MCStats instance
      */
     private static final MCStats instance = new MCStats();
-
-    /**
-     * The web server object
-     */
-    private org.eclipse.jetty.server.Server webServer;
 
     /**
      * The amount of requests that have been served
@@ -222,8 +214,21 @@ public class MCStats {
 
         logger.info("Loaded " + numGraphs + " graphs");
 
-        // Create & open the webserver
-        createWebServer();
+        if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
+            Scheduler scheduler = new Scheduler();
+            scheduler.schedule("*/30 * * * *", new CronGraphGenerator(this, createPluginGenerator()));
+            scheduler.schedule("45 * * * *", new CronRanking(this));
+            scheduler.start();
+            logger.info("Graph & rank generator is active");
+        } else {
+            logger.info("Graph & rank generator is NOT active");
+        }
+
+        new Scheduler().schedule("*/5 * * * *", () -> {
+            System.gc();
+            System.runFinalization();
+            System.gc();
+        });
     }
 
     /**
@@ -380,21 +385,6 @@ public class MCStats {
     }
 
     /**
-     * Get the number of currently open connections
-     *
-     * @return
-     */
-    public int countOpenConnections() {
-        int conn = 0;
-
-        for (Connector connector : webServer.getConnectors()) {
-            conn += connector.getConnectedEndPoints().size();
-        }
-
-        return conn;
-    }
-
-    /**
      * Creates a new plugin generator
      *
      * @return
@@ -432,72 +422,6 @@ public class MCStats {
         generator.addAggregator(new VersionTrendsPluginAggregator());
 
         return generator;
-    }
-
-    /**
-     * Create and open the web server
-     */
-    private void createWebServer() {
-        int listenPort = Integer.parseInt(config.getProperty("listen.port"));
-        int serverTelemetryPort = Integer.parseInt(config.getProperty("server-telemetry.port"));
-
-        webServer = new org.eclipse.jetty.server.Server();
-
-        String webApp = config.getProperty("webapp.path");
-        String contextPath = config.getProperty("webapp.context");
-
-        if (debug) {
-            logger.debug("Loading webapp from " + webApp + " at url " + contextPath);
-        }
-
-        // Create the handler list
-        HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] { handler });
-
-        webServer.setHandler(handlers);
-
-        ServerConnector connector = new ServerConnector(webServer, 1, 1);
-        connector.setPort(listenPort);
-        connector.setAcceptQueueSize(2048);
-        connector.setSoLingerTime(0);
-        webServer.addConnector(connector);
-
-        org.eclipse.jetty.server.Server serverTelemetryServer = new org.eclipse.jetty.server.Server();
-        serverTelemetryServer.setHandler(new ServerTelemetryHandler());
-        ServerConnector connector2 = new ServerConnector(serverTelemetryServer, 1, 1);
-        connector2.setPort(serverTelemetryPort);
-        connector2.setSoLingerTime(0);
-        serverTelemetryServer.addConnector(connector2);
-
-        if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
-            Scheduler scheduler = new Scheduler();
-            scheduler.schedule("*/30 * * * *", new CronGraphGenerator(this, createPluginGenerator()));
-            scheduler.schedule("45 * * * *", new CronRanking(this));
-            scheduler.start();
-            logger.info("Graph & rank generator is active");
-        } else {
-            logger.info("Graph & rank generator is NOT active");
-        }
-
-        new Scheduler().schedule("*/5 * * * *", () -> {
-            System.gc();
-            System.runFinalization();
-            System.gc();
-        });
-
-        try {
-            // Start the server
-            webServer.start();
-            serverTelemetryServer.start();
-            logger.info("Created plugin telemetry server on port " + listenPort);
-            logger.info("Created server telemetry server on port " + serverTelemetryPort);
-
-            // and now join it
-            webServer.join();
-        } catch (Exception e) {
-            logger.error("Failed to create web server");
-            e.printStackTrace();
-        }
     }
 
     /**
