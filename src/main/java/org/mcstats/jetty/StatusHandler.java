@@ -4,6 +4,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.simple.JSONObject;
 import org.mcstats.MCStats;
+import org.mcstats.Server;
 import org.mcstats.db.PostgresDatabase;
 
 import javax.servlet.ServletException;
@@ -13,11 +14,14 @@ import java.io.IOException;
 
 public class StatusHandler extends AbstractHandler {
 
+    private final Server server;
+
     @Deprecated
     private final MCStats mcstats;
 
-    public StatusHandler(MCStats mcstats) {
+    public StatusHandler(MCStats mcstats, Server server) {
         this.mcstats = mcstats;
+        this.server = server;
     }
 
     @Override
@@ -28,7 +32,7 @@ public class StatusHandler extends AbstractHandler {
         {
             JSONObject connections = new JSONObject();
 
-            // connections.put("open", mcstats.countOpenConnections());
+            connections.put("open", server.openConnections());
 
             responseJson.put("connections", connections);
         }
@@ -37,7 +41,7 @@ public class StatusHandler extends AbstractHandler {
             JSONObject requests = new JSONObject();
 
             // requests.put("total", mcstats.getRequestsMade());
-            // requests.put("perSecond", mcstats.getRequestCalculatorFiveSeconds().calculateRequestsPerSecond());
+            requests.put("perSecond", mcstats.getRequestCalculatorAllTime().calculateRequestsPerSecond());
             // requests.put("processingTime", mcstats.getRequestProcessingTimeAverage().getAverage());
 
             responseJson.put("requests", requests);

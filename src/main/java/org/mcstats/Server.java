@@ -24,7 +24,7 @@ public class Server {
     public Server(MCStats mcstats, int pluginTelemetryPort, int serverTelemetryPort, int statusPort) {
         jettyServers.add(createWebServer(pluginTelemetryPort, new PluginTelemetryHandler(mcstats)));
         jettyServers.add(createWebServer(serverTelemetryPort, new ServerTelemetryHandler()));
-        jettyServers.add(createWebServer(statusPort, new StatusHandler(mcstats)));
+        jettyServers.add(createWebServer(statusPort, new StatusHandler(mcstats, this)));
 
         logger.info("Created plugin telemetry server on port " + pluginTelemetryPort);
         logger.info("Created server telemetry server on port " + serverTelemetryPort);
