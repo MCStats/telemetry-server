@@ -155,7 +155,7 @@ public class ModernRequestDecoder implements RequestDecoder {
         }
 
         String value = input.toString();
-        long longValue = -1L;
+        long longValue;
 
         try {
             longValue = Long.parseLong(value);

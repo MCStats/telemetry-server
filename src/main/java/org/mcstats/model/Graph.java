@@ -1,15 +1,6 @@
 package org.mcstats.model;
 
-import org.apache.log4j.Logger;
-import org.mcstats.MCStats;
-
 public class Graph {
-    private Logger logger = Logger.getLogger("Graph");
-
-    /**
-     * The mcstats object
-     */
-    private MCStats mcstats;
 
     /**
      * The graph id
@@ -51,8 +42,7 @@ public class Graph {
      */
     private String scale;
 
-    public Graph(MCStats mcstats, Plugin plugin) {
-        this.mcstats = mcstats;
+    public Graph(Plugin plugin) {
         this.plugin = plugin;
     }
 

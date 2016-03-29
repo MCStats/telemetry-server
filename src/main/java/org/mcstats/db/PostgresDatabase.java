@@ -228,7 +228,7 @@ public class PostgresDatabase implements Database, GraphStore {
      * @throws SQLException
      */
     private Graph resolveGraph(Plugin plugin, ResultSet set) throws SQLException {
-        Graph graph = new Graph(mcstats, plugin);
+        Graph graph = new Graph(plugin);
         graph.setId(set.getInt("id"));
         graph.setName(set.getString("name"));
         graph.setDisplayName(set.getString("display_name"));

@@ -6,6 +6,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
 import it.sauronsoftware.cron4j.Scheduler;
 import org.apache.log4j.Logger;
+import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.mcstats.cron.CronGraphGenerator;
 import org.mcstats.cron.CronRanking;
 import org.mcstats.db.Database;
@@ -47,7 +48,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class MCStats {
 
-    private Logger logger = Logger.getLogger("MCStats");
+    private static final Logger logger = Logger.getLogger("MCStats");
 
     /**
      * The MCStats instance
@@ -57,7 +58,7 @@ public class MCStats {
     /**
      * The amount of requests that have been served
      */
-    private AtomicLong requests = new AtomicLong(0);
+    private final AtomicLong requests = new AtomicLong(0);
 
     /**
      * MCStats configuration
@@ -77,7 +78,7 @@ public class MCStats {
     /**
      * The report handler for requests
      */
-    private PluginTelemetryHandler handler = new PluginTelemetryHandler(this);
+    private final PluginTelemetryHandler handler = new PluginTelemetryHandler(this);
 
     /**
      * The server build identifier
@@ -191,12 +192,13 @@ public class MCStats {
         connectToDatabase();
 
         // Load all of the pluginsByName
-        for (Plugin plugin : database.loadPlugins()) {
-            if (plugin.getId() >= 0) {
-                addPlugin(plugin);
-                serverPluginsByPlugin.put(plugin, Sets.newSetFromMap(new ConcurrentHashMap<>()));
-            }
-        }
+        database.loadPlugins()
+                .stream()
+                .filter(plugin -> plugin.getId() >= 0)
+                .forEach(plugin -> {
+                    addPlugin(plugin);
+                    serverPluginsByPlugin.put(plugin, new ConcurrentHashSet<>());
+                });
 
         logger.info("Loaded " + pluginsByName.size() + " plugins");
 

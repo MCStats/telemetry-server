@@ -73,7 +73,7 @@ public class RequestCalculator {
      */
     public double calculateRequestsPerSecond() {
         long currentRequests;
-        long requestsOffset = 0;
+        long requestsOffset;
 
         try {
             currentRequests = requestsCallable.call();
