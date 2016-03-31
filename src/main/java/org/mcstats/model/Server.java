@@ -1,8 +1,8 @@
 package org.mcstats.model;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.Validate;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -64,11 +64,6 @@ public class Server {
     private int online_mode = 0;
 
     /**
-     * Unix timestamp of when the server was created
-     */
-    private int created = 0;
-
-    /**
      * The software the server is running
      */
     private String serverSoftware = "";
@@ -89,9 +84,9 @@ public class Server {
     private boolean blacklisted = false;
 
     /**
-     * A map of all of the plugins this server is known to have
+     * All of the plugins this server is known to have
      */
-    private final Map<Plugin, ServerPlugin> plugins = new ConcurrentHashMap<>();
+    private final Map<String, ServerPluginData> plugins = new ConcurrentHashMap<>();
 
     /**
      * Unix timestamp of when it last sent data
@@ -129,32 +124,35 @@ public class Server {
     /**
      * Get all of the plugins that are on the server
      *
-     * @return
+     * @return an immutable copy of the plugins on the server
      */
-    public Map<Plugin, ServerPlugin> getPlugins() {
-        return Collections.unmodifiableMap(plugins);
+    public Map<String, ServerPluginData> getAllPluginData() {
+        return ImmutableMap.copyOf(plugins);
     }
 
     /**
      * Get the ServerPlugin object for the given plugin
      *
      * @param plugin
-     * @return
+     * @return the data for a given plugin
      */
-    public ServerPlugin getPlugin(Plugin plugin) {
+    public ServerPluginData getPluginData(String plugin) {
+        Validate.notNull(plugin);
+
         return plugins.get(plugin);
     }
 
     /**
-     * Add a server plugin to this server
+     * Adds plugin data to this server
      *
-     * @param serverPlugin
+     * @param plugin
+     * @param data
      */
-    public void addPlugin(ServerPlugin serverPlugin) {
-        Validate.notNull(serverPlugin);
-        Validate.isTrue(serverPlugin.getServer() ==  this);
+    public void addPluginData(String plugin, ServerPluginData data) {
+        Validate.notNull(plugin);
+        Validate.notNull(data);
 
-        plugins.put(serverPlugin.getPlugin(), serverPlugin);
+        plugins.put(plugin, data);
     }
 
     public String getUniqueId() {
@@ -183,14 +181,6 @@ public class Server {
 
     public void setServerVersion(String serverVersion) {
         this.serverVersion = serverVersion;
-    }
-
-    public int getCreated() {
-        return created;
-    }
-
-    public void setCreated(int created) {
-        this.created = created;
     }
 
     public int getViolationCount() {

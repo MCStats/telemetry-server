@@ -9,7 +9,6 @@ import org.mcstats.generator.aggregator.ReflectionAggregator;
 import org.mcstats.generator.aggregator.ReflectionDonutAggregator;
 import org.mcstats.generator.aggregator.plugin.CountryAggregator;
 import org.mcstats.generator.aggregator.plugin.CustomDataPluginAggregator;
-import org.mcstats.generator.aggregator.plugin.RankPluginAggregator;
 import org.mcstats.generator.aggregator.plugin.RevisionPluginAggregator;
 import org.mcstats.generator.aggregator.plugin.VersionDemographicsPluginAggregator;
 import org.mcstats.generator.aggregator.plugin.VersionTrendsPluginAggregator;
@@ -61,7 +60,6 @@ public class TestPluginGenerator {
         }));
 
         generator.addAggregator(new CountryAggregator());
-        generator.addAggregator(new RankPluginAggregator());
         generator.addAggregator(new RevisionPluginAggregator());
         generator.addAggregator(new CustomDataPluginAggregator());
         generator.addAggregator(new VersionDemographicsPluginAggregator());

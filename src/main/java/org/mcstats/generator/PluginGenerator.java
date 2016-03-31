@@ -6,7 +6,7 @@ import org.mcstats.generator.aggregator.BasicAggregator;
 import org.mcstats.generator.aggregator.PluginAggregator;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
-import org.mcstats.model.ServerPlugin;
+import org.mcstats.model.ServerPluginData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,9 +66,9 @@ public class PluginGenerator implements Generator<Plugin> {
         DataContainer container = new DataContainer();
 
         for (Server server : allServersSupplier.get()) {
-            ServerPlugin serverPlugin = server.getPlugin(instance);
+            ServerPluginData data = server.getPluginData(instance.getName());
 
-            if (serverPlugin == null || !serverPlugin.recentlyLastSentData()) {
+            if (data == null || !data.recentlyLastSentData()) {
                 continue;
             }
 
@@ -78,7 +78,7 @@ public class PluginGenerator implements Generator<Plugin> {
 
             // Mix in plugin-specific vars
             for (PluginAggregator aggregator : pluginAggregators) {
-                aggregator.aggregate(container, server, serverPlugin);
+                aggregator.aggregate(container, server, data);
             }
         }
 

@@ -3,10 +3,9 @@ package org.mcstats;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
 import it.sauronsoftware.cron4j.Scheduler;
 import org.apache.log4j.Logger;
-import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.mcstats.cron.CronGraphGenerator;
 import org.mcstats.cron.CronRanking;
 import org.mcstats.db.Database;
@@ -20,14 +19,13 @@ import org.mcstats.generator.aggregator.ReflectionAggregator;
 import org.mcstats.generator.aggregator.ReflectionDonutAggregator;
 import org.mcstats.generator.aggregator.plugin.CountryAggregator;
 import org.mcstats.generator.aggregator.plugin.CustomDataPluginAggregator;
-import org.mcstats.generator.aggregator.plugin.RankPluginAggregator;
 import org.mcstats.generator.aggregator.plugin.RevisionPluginAggregator;
 import org.mcstats.generator.aggregator.plugin.VersionDemographicsPluginAggregator;
 import org.mcstats.generator.aggregator.plugin.VersionTrendsPluginAggregator;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
-import org.mcstats.model.ServerPlugin;
+import org.mcstats.model.ServerPluginData;
 import org.mcstats.util.RequestCalculator;
 
 import java.io.FileInputStream;
@@ -42,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 public class MCStats {
 
@@ -96,9 +95,9 @@ public class MCStats {
     private final Map<Integer, Plugin> pluginsById = new ConcurrentHashMap<>();
 
     /**
-     * Cache of server plugins mapped by their plugins
+     * Servers that have sent data for plugins
      */
-    private final Map<Plugin, Set<ServerPlugin>> serverPluginsByPlugin = new ConcurrentHashMap<>();
+    private final Map<String, Set<Server>> serversByPlugin = new ConcurrentHashMap<>();
 
     public MCStats() {
         requestsAllTime = new RequestCalculator(RequestCalculator.CalculationMethod.ALL_TIME, requests::get);
@@ -110,7 +109,7 @@ public class MCStats {
     public void resetIntervalData() {
         servers.invalidateAll();
         resetInternalCaches();
-        serverPluginsByPlugin.clear();
+        serversByPlugin.clear();
     }
 
     /**
@@ -161,10 +160,7 @@ public class MCStats {
         database.loadPlugins()
                 .stream()
                 .filter(plugin -> plugin.getId() >= 0)
-                .forEach(plugin -> {
-                    addPlugin(plugin);
-                    serverPluginsByPlugin.put(plugin, new ConcurrentHashSet<>());
-                });
+                .forEach(this::addPlugin);
 
         logger.info("Loaded " + pluginsByName.size() + " plugins");
 
@@ -180,7 +176,7 @@ public class MCStats {
 
         if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
             Scheduler scheduler = new Scheduler();
-            scheduler.schedule("*/30 * * * *", new CronGraphGenerator(this, createPluginGenerator()));
+            scheduler.schedule("*/5 * * * *", new CronGraphGenerator(this, createPluginGenerator()));
             scheduler.schedule("45 * * * *", new CronRanking(this));
             scheduler.start();
             logger.info("Graph & rank generator is active");
@@ -222,28 +218,30 @@ public class MCStats {
      * @param plugin
      * @return
      */
-    public Set<ServerPlugin> getServerPlugins(Plugin plugin) {
-        return serverPluginsByPlugin.containsKey(plugin) ? serverPluginsByPlugin.get(plugin) : new HashSet<>();
+    public Set<ServerPluginData> getServerPlugins(String plugin) {
+        if (serversByPlugin.containsKey(plugin)) {
+            return serversByPlugin
+                    .get(plugin)
+                    .stream()
+                    .map(x -> x.getPluginData(plugin))
+                    .collect(Collectors.toSet());
+        } else {
+            return ImmutableSet.of();
+        }
     }
 
     /**
-     * Notify an addition of server plugin
+     * Called when a plugin received data for a server
      *
-     * @param serverPlugin
+     * @param plugin
+     * @param server
      */
-    public void notifyServerPlugin(ServerPlugin serverPlugin) {
-        if (serverPlugin == null) {
-            return;
+    public void receivedNewPluginServer(String plugin, Server server) {
+        if (!serversByPlugin.containsKey(plugin)) {
+            serversByPlugin.put(plugin, new HashSet<>());
         }
 
-        Set<ServerPlugin> serverPlugins = serverPluginsByPlugin.get(serverPlugin.getPlugin());
-
-        if (serverPlugins == null) {
-            serverPlugins = Sets.newSetFromMap(new ConcurrentHashMap<>());
-            serverPluginsByPlugin.put(serverPlugin.getPlugin(), serverPlugins);
-        }
-
-        serverPlugins.add(serverPlugin);
+        serversByPlugin.get(plugin).add(server);
     }
 
     /**
@@ -253,32 +251,6 @@ public class MCStats {
      */
     public long incrementAndGetRequests() {
         return requests.incrementAndGet();
-    }
-
-    /**
-     * Load a plugin using its id
-     *
-     * @param id
-     * @return
-     */
-    public Plugin loadPlugin(int id) {
-        if (pluginsById.containsKey(id)) {
-            return pluginsById.get(id);
-        }
-
-        // Attempt to load from the database
-        Plugin plugin = database.loadPlugin(id);
-
-        // Did we not find it ?
-        if (plugin == null) {
-            return null;
-        }
-
-        // Cache it
-        addPlugin(plugin);
-
-        // and go !
-        return plugin;
     }
 
     /**
@@ -364,7 +336,6 @@ public class MCStats {
         }));
 
         generator.addAggregator(new CountryAggregator());
-        generator.addAggregator(new RankPluginAggregator());
         generator.addAggregator(new RevisionPluginAggregator());
         generator.addAggregator(new CustomDataPluginAggregator());
         generator.addAggregator(new VersionDemographicsPluginAggregator());
@@ -428,6 +399,7 @@ public class MCStats {
     private void addPlugin(Plugin plugin) {
         pluginsById.put(plugin.getId(), plugin);
         pluginsByName.put(plugin.getName().toLowerCase(), plugin);
+        serversByPlugin.put(plugin.getName(), new HashSet<>());
     }
 
 }

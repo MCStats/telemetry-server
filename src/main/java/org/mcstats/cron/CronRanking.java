@@ -63,6 +63,8 @@ public class CronRanking implements Runnable {
             plugin.setLastRank(plugin.getRank());
             plugin.setRank(newRank);
             plugin.save();
+
+            // TODO add to Rank graph
         }
 
     }

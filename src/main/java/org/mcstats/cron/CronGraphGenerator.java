@@ -7,7 +7,7 @@ import org.mcstats.generator.Datum;
 import org.mcstats.generator.PluginGenerator;
 import org.mcstats.jetty.PluginTelemetryHandler;
 import org.mcstats.model.Plugin;
-import org.mcstats.model.ServerPlugin;
+import org.mcstats.model.ServerPluginData;
 
 import java.util.Map;
 import java.util.logging.Logger;
@@ -47,13 +47,13 @@ public class CronGraphGenerator implements Runnable {
                 store.insertGlobalPluginData(graphName, data, epoch);
             });
 
-            mcstats.getCachedPlugins().parallelStream().forEach(plugin -> {
+            /* mcstats.getCachedPlugins().parallelStream().forEach(plugin -> {
                 ImmutableMap<String, Map<String, Datum>> generatedData = pluginGenerator.generatorFor(plugin);
 
                 generatedData.forEach((graphName, data) -> {
                     store.insertPluginData(plugin, graphName, data, epoch);
                 });
-            });
+            }); */
 
             logger.info("Beginning final stage of graph generation");
 
@@ -61,12 +61,12 @@ public class CronGraphGenerator implements Runnable {
                 int activeServerCount = 0;
                 int activePlayerCount = 0;
 
-                for (ServerPlugin serverPlugin : mcstats.getServerPlugins(plugin)) {
-                    if (serverPlugin.recentlyLastSentData()) {
-                        serverPlugin.getServer().setViolationCount(0);
+                for (ServerPluginData data : mcstats.getServerPlugins(plugin.getName())) {
+                    if (data.recentlyLastSentData()) {
+                        data.getServer().setViolationCount(0);
 
                         activeServerCount ++;
-                        activePlayerCount += serverPlugin.getServer().getPlayers();
+                        activePlayerCount += data.getServer().getPlayers();
                     }
                 }
 

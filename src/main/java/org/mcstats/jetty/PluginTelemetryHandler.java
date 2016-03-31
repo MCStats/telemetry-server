@@ -11,7 +11,7 @@ import org.mcstats.decoder.ModernRequestDecoder;
 import org.mcstats.decoder.RequestDecoder;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
-import org.mcstats.model.ServerPlugin;
+import org.mcstats.model.ServerPluginData;
 import org.mcstats.util.ServerBuildIdentifier;
 import org.mcstats.util.URLUtils;
 
@@ -228,24 +228,23 @@ public class PluginTelemetryHandler extends AbstractHandler {
                     return;
                 }
 
-                ServerPlugin serverPlugin = server.getPlugin(plugin);
+                ServerPluginData data = server.getPluginData(plugin.getName());
 
-                if (serverPlugin == null) {
-                    serverPlugin = new ServerPlugin(server, plugin);
-                    serverPlugin.setVersion(decoded.pluginVersion);
+                if (data == null) {
+                    data = new ServerPluginData(server, decoded.pluginVersion, decoded.revision);
 
-                    server.addPlugin(serverPlugin);
-                    mcstats.notifyServerPlugin(serverPlugin);
+                    server.addPluginData(plugin.getName(), data);
+                    mcstats.receivedNewPluginServer(plugin.getName(), server);
                 }
 
-                if ((!serverPlugin.getVersion().equals(decoded.pluginVersion)) && (!server.isBlacklisted())) {
-                    serverPlugin.addVersionChange(serverPlugin.getVersion(), decoded.pluginVersion);
-                    serverPlugin.setVersion(decoded.pluginVersion);
+                if ((!data.getVersion().equals(decoded.pluginVersion)) && (!server.isBlacklisted())) {
+                    data.addVersionChange(data.getVersion(), decoded.pluginVersion);
+                    data.setVersion(decoded.pluginVersion);
                     server.incrementViolations();
                 }
 
-                if (serverPlugin.getRevision() != decoded.revision) {
-                    serverPlugin.setRevision(decoded.revision);
+                if (data.getRevision() != decoded.revision) {
+                    data.setRevision(decoded.revision);
                 }
 
                 if (!server.getServerVersion().equals(decoded.serverVersion)) {
@@ -264,19 +263,17 @@ public class PluginTelemetryHandler extends AbstractHandler {
                 String minecraftVersion = serverBuildIdentifier.getMinecraftVersion(decoded.serverVersion);
 
                 if (canonicalServerVersion.equals("CraftBukkit")) {
-                    ServerPlugin cbplusplus = server.getPlugin(mcstats.loadPlugin(137));
+                    ServerPluginData cbplusplusPluginData = server.getPluginData("CraftBukkit++");
 
-                    if (cbplusplus != null) {
-                        if (cbplusplus.recentlyLastSentData()) {
-                            canonicalServerVersion = "CraftBukkit++";
-                        }
+                    if (cbplusplusPluginData != null && cbplusplusPluginData.recentlyLastSentData()) {
+                        canonicalServerVersion = "CraftBukkit++";
                     }
                 }
 
                 // BungeeCord doesn't send a proper version string, so detect it via the metrics data it sends with the server
-                ServerPlugin bungeeCordPlugin = server.getPlugin(mcstats.loadPlugin(5921));
+                ServerPluginData bungeeCordPluginData = server.getPluginData("BungeeCord");
 
-                if (bungeeCordPlugin != null) {
+                if (bungeeCordPluginData != null) {
                     canonicalServerVersion = "BungeeCord";
                 }
 
@@ -289,7 +286,7 @@ public class PluginTelemetryHandler extends AbstractHandler {
                 }
 
                 if ((decoded.revision >= 4) && (!server.getCountry().equals("SG")) && ((geoipCountryCode == null) || (!geoipCountryCode.equals("SG")))) {
-                    serverPlugin.setCustomData(decoded.customData);
+                    data.setCustomData(decoded.customData);
                 }
 
                 if (decoded.revision >= 6) {
@@ -345,7 +342,7 @@ public class PluginTelemetryHandler extends AbstractHandler {
 
                 plugin.setLastUpdated(currentEpoch);
                 server.setLastSentData(currentEpoch);
-                serverPlugin.setLastSentData(currentEpoch);
+                data.setRecentlyLastDataTimeToNow();
             } catch (Exception e) {
                 e.printStackTrace();
             }
