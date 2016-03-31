@@ -187,12 +187,6 @@ public class MCStats {
         } else {
             logger.info("Graph & rank generator is NOT active");
         }
-
-        new Scheduler().schedule("*/5 * * * *", () -> {
-            System.gc();
-            System.runFinalization();
-            System.gc();
-        });
     }
 
     /**
