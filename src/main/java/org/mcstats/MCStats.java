@@ -24,13 +24,11 @@ import org.mcstats.generator.aggregator.plugin.RankPluginAggregator;
 import org.mcstats.generator.aggregator.plugin.RevisionPluginAggregator;
 import org.mcstats.generator.aggregator.plugin.VersionDemographicsPluginAggregator;
 import org.mcstats.generator.aggregator.plugin.VersionTrendsPluginAggregator;
-import org.mcstats.jetty.PluginTelemetryHandler;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
 import org.mcstats.util.RequestCalculator;
-import org.mcstats.util.ServerBuildIdentifier;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -41,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -49,11 +46,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class MCStats {
 
     private static final Logger logger = Logger.getLogger("MCStats");
-
-    /**
-     * The MCStats instance
-     */
-    private static final MCStats instance = new MCStats();
 
     /**
      * The amount of requests that have been served
@@ -76,29 +68,9 @@ public class MCStats {
     private DatabaseQueue databaseQueue;
 
     /**
-     * The report handler for requests
-     */
-    private final PluginTelemetryHandler handler = new PluginTelemetryHandler(this);
-
-    /**
-     * The server build identifier
-     */
-    private final ServerBuildIdentifier serverBuildIdentifier = new ServerBuildIdentifier();
-
-    /**
      * The request calculator for requests per second since the server started
      */
     private final RequestCalculator requestsAllTime;
-
-    /**
-     * The request calculator for requests per second for the last 5 seconds
-     */
-    private final RequestCalculator requestsFiveSeconds;
-
-    /**
-     * Debug mode
-     */
-    private boolean debug = false;
 
     /**
      * A map of all of the currently loaded servers
@@ -128,11 +100,8 @@ public class MCStats {
      */
     private final Map<Plugin, Set<ServerPlugin>> serverPluginsByPlugin = new ConcurrentHashMap<>();
 
-    private MCStats() {
-        Callable<Long> requestsCallable = requests::get;
-
-        requestsAllTime = new RequestCalculator(RequestCalculator.CalculationMethod.ALL_TIME, requestsCallable);
-        requestsFiveSeconds = new RequestCalculator(RequestCalculator.CalculationMethod.FIVE_SECONDS, requestsCallable);
+    public MCStats() {
+        requestsAllTime = new RequestCalculator(RequestCalculator.CalculationMethod.ALL_TIME, requests::get);
     }
 
     /**
@@ -181,10 +150,7 @@ public class MCStats {
             return;
         }
 
-        debug = config.getProperty("debug").equalsIgnoreCase("true");
-
         logger.info("Starting MCStats");
-        logger.info("Debug mode is " + (debug ? "ON" : "OFF"));
 
         databaseQueue = new DatabaseQueue(this);
 
@@ -236,15 +202,6 @@ public class MCStats {
      */
     public Properties getConfig() {
         return config;
-    }
-
-    /**
-     * Check if the service is in debug mode
-     *
-     * @return
-     */
-    public boolean isDebug() {
-        return debug;
     }
 
     /**
@@ -470,23 +427,6 @@ public class MCStats {
     }
 
     /**
-     * Get the request calculator for requests in the last 5 seconds
-     *
-     * @return
-     */
-    public RequestCalculator getRequestCalculatorFiveSeconds() {
-        return requestsFiveSeconds;
-    }
-
-    /**
-     * Get the {@link PluginTelemetryHandler}
-     * @return
-     */
-    public PluginTelemetryHandler getReportHandler() {
-        return handler;
-    }
-
-    /**
      * Add a plugin to the cache
      *
      * @param plugin
@@ -496,27 +436,4 @@ public class MCStats {
         pluginsByName.put(plugin.getName().toLowerCase(), plugin);
     }
 
-    /**
-     * Add a plugin to the cache with the given name
-     *
-     * @param name
-     * @param plugin
-     */
-    private void addPlugin(String name, Plugin plugin) {
-        pluginsById.put(plugin.getId(), plugin);
-        pluginsByName.put(name.toLowerCase().toLowerCase(), plugin);
-    }
-
-    /**
-     * Get the MCStats instance
-     *
-     * @return
-     */
-    public static MCStats getInstance() {
-        return instance;
-    }
-
-    public ServerBuildIdentifier getServerBuildIdentifier() {
-        return serverBuildIdentifier;
-    }
 }

@@ -14,7 +14,7 @@ public class Main {
         BasicConfigurator.configure();
 
         // start
-        MCStats mcstats = MCStats.getInstance();
+        MCStats mcstats = new MCStats();
 
         mcstats.start();
 

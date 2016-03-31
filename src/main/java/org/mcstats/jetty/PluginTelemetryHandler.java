@@ -12,6 +12,7 @@ import org.mcstats.decoder.RequestDecoder;
 import org.mcstats.model.Plugin;
 import org.mcstats.model.Server;
 import org.mcstats.model.ServerPlugin;
+import org.mcstats.util.ServerBuildIdentifier;
 import org.mcstats.util.URLUtils;
 
 import javax.servlet.ServletException;
@@ -56,6 +57,11 @@ public class PluginTelemetryHandler extends AbstractHandler {
      * Cache of the last sent times
      */
     private Map<String, Integer> serverLastSendCache = new ConcurrentHashMap<>();
+
+    /**
+     * The server build identifier
+     */
+    private final ServerBuildIdentifier serverBuildIdentifier = new ServerBuildIdentifier();
 
     public PluginTelemetryHandler(MCStats mcstats) {
         this.mcstats = mcstats;
@@ -179,10 +185,6 @@ public class PluginTelemetryHandler extends AbstractHandler {
                 return;
             }
 
-            if (mcstats.isDebug()) {
-                logger.debug("Processing request for " + plugin.getName() + " request=" + decoded);
-            }
-
             String geoipCountryCodeNonFinal = request.getHeader("GEOIP_COUNTRY_CODE") == null ? request.getHeader("HTTP_X_GEOIP") : request.getHeader("GEOIP_COUNTRY_CODE");
 
             if (geoipCountryCodeNonFinal == null) {
@@ -258,8 +260,8 @@ public class PluginTelemetryHandler extends AbstractHandler {
                     server.setCountry(geoipCountryCode);
                 }
 
-                String canonicalServerVersion = mcstats.getServerBuildIdentifier().getServerVersion(decoded.serverVersion);
-                String minecraftVersion = mcstats.getServerBuildIdentifier().getMinecraftVersion(decoded.serverVersion);
+                String canonicalServerVersion = serverBuildIdentifier.getServerVersion(decoded.serverVersion);
+                String minecraftVersion = serverBuildIdentifier.getMinecraftVersion(decoded.serverVersion);
 
                 if (canonicalServerVersion.equals("CraftBukkit")) {
                     ServerPlugin cbplusplus = server.getPlugin(mcstats.loadPlugin(137));
