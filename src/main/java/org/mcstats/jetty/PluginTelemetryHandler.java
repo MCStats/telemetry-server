@@ -392,34 +392,4 @@ public class PluginTelemetryHandler extends AbstractHandler {
         }
     }
 
-    /**
-     * Process a post request and return all of its key/value pairs
-     *
-     * @param content
-     * @return
-     */
-    private Map<String, String> processPostRequest(String content) {
-        Map<String, String> store = new HashMap<>();
-
-        // Split the post data by &
-        for (String entry : content.split("&")) {
-            // Split it by =
-            String[] data = entry.split("=");
-
-            // Check that there is sufficient data in the data array
-            if (data.length != 2) {
-                continue;
-            }
-
-            // decode the data
-            String key = URLUtils.decode(data[0]);
-            String value = URLUtils.decode(data[1]);
-
-            // Add it to the store
-            store.put(key, value);
-        }
-
-        return store;
-    }
-
 }
