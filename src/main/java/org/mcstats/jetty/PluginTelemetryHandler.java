@@ -201,7 +201,7 @@ public class PluginTelemetryHandler extends AbstractHandler {
 
             long lastSent = 0L;
 
-            String serverCacheKey = decoded.guid + "/" + plugin.getId();
+            String serverCacheKey = decoded.serverId + "/" + plugin.getId();
 
             if (serverLastSendCache.containsKey(serverCacheKey)) {
                 lastSent = serverLastSendCache.get(serverCacheKey);
@@ -221,7 +221,7 @@ public class PluginTelemetryHandler extends AbstractHandler {
             }
 
             try {
-                Server server = mcstats.loadServer(decoded.guid);
+                Server server = mcstats.loadServer(decoded.serverId);
 
                 if ((server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) && (!server.isBlacklisted())) {
                     server.setBlacklisted(true);

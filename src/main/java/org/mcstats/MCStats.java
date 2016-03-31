@@ -293,14 +293,14 @@ public class MCStats {
     /**
      * Load a server and if it does not exist it will be created
      *
-     * @param guid
+     * @param id
      * @return
      */
-    public Server loadServer(String guid) {
+    public Server loadServer(String id) {
         try {
-            return servers.get(guid); /* automatically loaded by CacheLoader if needed */
+            return servers.get(id); /* automatically loaded by CacheLoader if needed */
         } catch (ExecutionException e) {
-            logger.error("Exception occurred while loading server (loadServer(" + guid + "))",  e);
+            logger.error("Exception occurred while loading server (loadServer(" + id + "))",  e);
             return null;
         }
     }

@@ -25,7 +25,7 @@ public class DecodedRequest {
     /**
      * The guid in the request
      */
-    public String guid;
+    public String serverId;
 
     /**
      * The version of the server software

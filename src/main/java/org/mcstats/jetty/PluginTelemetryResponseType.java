@@ -13,7 +13,7 @@ public enum PluginTelemetryResponseType {
     OK_FIRST_REQUEST,
 
     /**
-     * Tell the server to regenerate its guid
+     * Tell the server to regenerate its id
      */
     OK_REGENERATE_GUID,
 

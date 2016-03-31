@@ -93,8 +93,8 @@ public class Server {
      */
     private int lastSentData = (int) (System.currentTimeMillis() / 1000L);
 
-    public Server(String guid) {
-        this.id = guid;
+    public Server(String id) {
+        this.id = id;
     }
 
     /**
