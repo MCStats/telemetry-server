@@ -176,7 +176,7 @@ public class MCStats {
 
         if (Boolean.parseBoolean(config.getProperty("graphs.generate"))) {
             Scheduler scheduler = new Scheduler();
-            scheduler.schedule("*/5 * * * *", new CronGraphGenerator(this, createPluginGenerator()));
+            scheduler.schedule("*/30 * * * *", new CronGraphGenerator(this, createPluginGenerator()));
             scheduler.schedule("45 * * * *", new CronRanking(this));
             scheduler.start();
             logger.info("Graph & rank generator is active");
