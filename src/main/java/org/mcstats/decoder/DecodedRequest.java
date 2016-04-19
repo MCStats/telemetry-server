@@ -1,8 +1,10 @@
 package org.mcstats.decoder;
 
+import org.json.simple.JSONObject;
 import org.mcstats.model.Column;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.Map;
 
 public class DecodedRequest {
@@ -101,6 +103,43 @@ public class DecodedRequest {
 
         result.append("}");
         return result.toString();
+    }
+
+    /**
+     * Converts the request to JSON
+     *
+     * @return
+     */
+    public JSONObject toJson() {
+        JSONObject root = new JSONObject();
+
+        root.put("revision", revision);
+        root.put("isPing", Boolean.toString(isPing));
+        root.put("serverVersion", serverVersion);
+        root.put("pluginVersion", pluginVersion);
+        root.put("playersOnline", playersOnline);
+        root.put("osname", osname);
+        root.put("osversion", osversion);
+        root.put("osarch", osarch);
+        root.put("javaName", javaName);
+        root.put("javaVersion", javaVersion);
+        root.put("cores", cores);
+        root.put("authMode", authMode);
+
+        Map<String, Map<String, Long>> customDataRoot = new HashMap<>();
+
+        customData.forEach((column, value) -> {
+            String graphName = column.getGraph().getName();
+            String columnName = column.getName();
+
+            Map<String, Long> columnDataRoot = customDataRoot.getOrDefault(graphName, new HashMap<>());
+
+            columnDataRoot.put(columnName, value);
+        });
+
+        root.put("customData", customData);
+
+        return root;
     }
 
 }

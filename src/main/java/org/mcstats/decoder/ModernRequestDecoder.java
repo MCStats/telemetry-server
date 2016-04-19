@@ -5,24 +5,16 @@ import org.eclipse.jetty.server.Request;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.mcstats.MCStats;
-import org.mcstats.handler.ReportHandler;
 import org.mcstats.model.Column;
 import org.mcstats.model.Graph;
 import org.mcstats.model.Plugin;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 public class ModernRequestDecoder implements RequestDecoder {
 
@@ -30,46 +22,8 @@ public class ModernRequestDecoder implements RequestDecoder {
 
     private MCStats mcstats;
 
-    /**
-     * Writer to the log file
-     */
-    private BufferedWriter logWriter;
-    private final Object logWriterLock = new Object();
-
-    private AtomicLong lastRequestLogTime = new AtomicLong(-1);
-
     public ModernRequestDecoder(MCStats mcstats) {
         this.mcstats = mcstats;
-    }
-
-    /**
-     * Creates the writer to be used on the log. It can return null, if some error occurred.
-     *
-     * @return
-     */
-    private BufferedWriter createLogWriter() {
-        Path baseLogDirectory = Paths.get(mcstats.getConfig().getProperty("logs.path", "logs"));
-        baseLogDirectory = baseLogDirectory.resolve("plugin-telemetry-modern");
-
-        if (!Files.exists(baseLogDirectory)) {
-            try {
-                Files.createDirectories(baseLogDirectory);
-            } catch (IOException e) {
-                logger.error("Failed to create base log directory", e);
-                return null;
-            }
-        }
-
-        String logFileName = ReportHandler.normalizeTime() + ".log.gz";
-
-        Path logFilePath = baseLogDirectory.resolve(logFileName);
-
-        try {
-            return new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(Files.newOutputStream(logFilePath))));
-        } catch (IOException e) {
-            logger.error("Failed to create log writer", e);
-            return null;
-        }
     }
 
     /**
@@ -99,24 +53,6 @@ public class ModernRequestDecoder implements RequestDecoder {
         }
 
         post.put("plugin", plugin.getName());
-
-        long currentNormalizedTime = ReportHandler.normalizeTime();
-        if (lastRequestLogTime.getAndSet(currentNormalizedTime) != currentNormalizedTime) {
-            synchronized (logWriterLock) {
-                if (logWriter != null) {
-                    logWriter.close();
-                }
-
-                logWriter = createLogWriter();
-            }
-        }
-
-        synchronized (logWriterLock) {
-            if (logWriter != null) {
-                logWriter.write(post.toJSONString());
-                logWriter.newLine();
-            }
-        }
 
         DecodedRequest decoded = new DecodedRequest();
         decoded.guid = String.valueOf(post.get("guid"));

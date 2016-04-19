@@ -19,11 +19,18 @@ import org.mcstats.util.URLUtils;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.GZIPOutputStream;
 
 public class ReportHandler extends AbstractHandler {
 
@@ -58,6 +65,14 @@ public class ReportHandler extends AbstractHandler {
      * Cache of the last sent times
      */
     private Map<String, Integer> serverLastSendCache = new ConcurrentHashMap<>();
+
+    /**
+     * Writer to the log file
+     */
+    private BufferedWriter logWriter;
+    private final Object logWriterLock = new Object();
+
+    private AtomicLong lastRequestLogTime = new AtomicLong(-1);
 
     public ReportHandler(MCStats mcstats) {
         this.mcstats = mcstats;
@@ -140,6 +155,36 @@ public class ReportHandler extends AbstractHandler {
         finishRequest(decoded, responseType, "", baseRequest, response);
     }
 
+    /**
+     * Creates the writer to be used on the log. It can return null, if some error occurred.
+     *
+     * @return
+     */
+    private BufferedWriter createLogWriter() {
+        Path baseLogDirectory = Paths.get(mcstats.getConfig().getProperty("logs.path", "logs"));
+        baseLogDirectory = baseLogDirectory.resolve("plugin-telemetry-modern");
+
+        if (!Files.exists(baseLogDirectory)) {
+            try {
+                Files.createDirectories(baseLogDirectory);
+            } catch (IOException e) {
+                logger.error("Failed to create base log directory", e);
+                return null;
+            }
+        }
+
+        String logFileName = ReportHandler.normalizeTime() + ".log.gz";
+
+        Path logFilePath = baseLogDirectory.resolve(logFileName);
+
+        try {
+            return new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(Files.newOutputStream(logFilePath))));
+        } catch (IOException e) {
+            logger.error("Failed to create log writer", e);
+            return null;
+        }
+    }
+
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         try {
             if (!request.getMethod().equals("POST")) {
@@ -194,6 +239,24 @@ public class ReportHandler extends AbstractHandler {
 
             if (mcstats.isDebug()) {
                 logger.debug("Processing request for " + plugin.getName() + " request=" + decoded);
+            }
+
+            long currentNormalizedTime = ReportHandler.normalizeTime();
+            if (lastRequestLogTime.getAndSet(currentNormalizedTime) != currentNormalizedTime) {
+                synchronized (logWriterLock) {
+                    if (logWriter != null) {
+                        logWriter.close();
+                    }
+
+                    logWriter = createLogWriter();
+                }
+            }
+
+            synchronized (logWriterLock) {
+                if (logWriter != null) {
+                    logWriter.write(decoded.toJson().toJSONString());
+                    logWriter.newLine();
+                }
             }
 
             String geoipCountryCodeNonFinal = request.getHeader("GEOIP_COUNTRY_CODE") == null ? request.getHeader("HTTP_X_GEOIP") : request.getHeader("GEOIP_COUNTRY_CODE");
