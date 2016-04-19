@@ -36,12 +36,12 @@ public class LegacyRequestDecoder implements RequestDecoder {
 
         Map<String, String> post = processPostRequest(content);
 
-        if (!post.containsKey("guid")) {
+        if (!post.containsKey("serverId")) {
             return null;
         }
 
         DecodedRequest decoded = new DecodedRequest();
-        decoded.guid = post.get("guid");
+        decoded.serverId = post.get("serverId");
         decoded.serverVersion = post.get("server");
         decoded.pluginVersion = post.get("version");
         decoded.isPing = post.containsKey("ping");
@@ -53,7 +53,7 @@ public class LegacyRequestDecoder implements RequestDecoder {
             return null;
         }
 
-        if (decoded.guid == null || decoded.serverVersion == null || decoded.pluginVersion == null) {
+        if (decoded.serverId == null || decoded.serverVersion == null || decoded.pluginVersion == null) {
             return null;
         }
 

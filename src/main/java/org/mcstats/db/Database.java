@@ -129,7 +129,7 @@ public interface Database {
     public void addPluginVersionHistory(Server server, PluginVersion version);
 
     /**
-     * Create a server in the database using the given guid
+     * Create a server in the database using the given serverId
      *
      * @param guid
      * @return
@@ -137,7 +137,7 @@ public interface Database {
     public Server createServer(String guid);
 
     /**
-     * Load a server from the database with the given guid
+     * Load a server from the database with the given serverId
      *
      * @param guid
      * @return

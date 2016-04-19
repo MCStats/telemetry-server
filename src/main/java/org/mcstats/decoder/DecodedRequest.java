@@ -20,9 +20,19 @@ public class DecodedRequest {
     public boolean isPing;
 
     /**
-     * The guid in the request
+     * The plugin data is being sent for
      */
-    public String guid;
+    public String pluginName;
+
+    /**
+     * The serverId in the request
+     */
+    public String serverId;
+
+    /**
+     * Two letter country code this request is from
+     */
+    public String countryCode = "ZZ";
 
     /**
      * The version of the server software

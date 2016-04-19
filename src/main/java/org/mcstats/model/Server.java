@@ -20,7 +20,7 @@ public class Server implements Savable {
     private int id;
 
     /**
-     * The server's guid
+     * The server's serverId
      */
     private String guid;
 

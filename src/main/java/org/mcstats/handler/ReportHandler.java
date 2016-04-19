@@ -237,6 +237,16 @@ public class ReportHandler extends AbstractHandler {
                 return;
             }
 
+            String geoipCountryCodeNonFinal = request.getHeader("GEOIP_COUNTRY_CODE") == null ? request.getHeader("HTTP_X_GEOIP") : request.getHeader("GEOIP_COUNTRY_CODE");
+
+            if (geoipCountryCodeNonFinal == null) {
+                geoipCountryCodeNonFinal = "ZZ";
+            }
+            final String geoipCountryCode = geoipCountryCodeNonFinal;
+
+            decoded.pluginName = plugin.getName();
+            decoded.countryCode = geoipCountryCode;
+
             if (mcstats.isDebug()) {
                 logger.debug("Processing request for " + plugin.getName() + " request=" + decoded);
             }
@@ -259,13 +269,6 @@ public class ReportHandler extends AbstractHandler {
                 }
             }
 
-            String geoipCountryCodeNonFinal = request.getHeader("GEOIP_COUNTRY_CODE") == null ? request.getHeader("HTTP_X_GEOIP") : request.getHeader("GEOIP_COUNTRY_CODE");
-
-            if (geoipCountryCodeNonFinal == null) {
-                geoipCountryCodeNonFinal = "ZZ";
-            }
-            final String geoipCountryCode = geoipCountryCodeNonFinal;
-
             if (plugin.getId() == -1) {
                 finishRequest(decoded, ResponseType.ERROR, "Rejected.", baseRequest, response);
                 return;
@@ -275,7 +278,7 @@ public class ReportHandler extends AbstractHandler {
 
             long lastSent = 0L;
 
-            String serverCacheKey = decoded.guid + "/" + plugin.getId();
+            String serverCacheKey = decoded.serverId + "/" + plugin.getId();
 
             if (serverLastSendCache.containsKey(serverCacheKey)) {
                 lastSent = serverLastSendCache.get(serverCacheKey);
@@ -295,7 +298,7 @@ public class ReportHandler extends AbstractHandler {
             }
 
             try {
-                Server server = mcstats.loadServer(decoded.guid);
+                Server server = mcstats.loadServer(decoded.serverId);
 
                 if ((server.getViolationCount() >= MAX_VIOLATIONS_ALLOWED) && (!server.isBlacklisted())) {
                     server.setBlacklisted(true);
