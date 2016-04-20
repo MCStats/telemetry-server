@@ -36,12 +36,12 @@ public class LegacyRequestDecoder implements RequestDecoder {
 
         Map<String, String> post = processPostRequest(content);
 
-        if (!post.containsKey("serverId")) {
+        if (!post.containsKey("guid")) {
             return null;
         }
 
         DecodedRequest decoded = new DecodedRequest();
-        decoded.serverId = post.get("serverId");
+        decoded.serverId = post.get("guid");
         decoded.serverVersion = post.get("server");
         decoded.pluginVersion = post.get("version");
         decoded.isPing = post.containsKey("ping");

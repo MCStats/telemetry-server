@@ -48,14 +48,12 @@ public class ModernRequestDecoder implements RequestDecoder {
         reader.close();
         JSONObject post = (JSONObject) JSONValue.parse(content);
 
-        if (post == null || !post.containsKey("serverId")) {
+        if (post == null || !post.containsKey("guid")) {
             return null;
         }
 
-        post.put("plugin", plugin.getName());
-
         DecodedRequest decoded = new DecodedRequest();
-        decoded.serverId = String.valueOf(post.get("serverId"));
+        decoded.serverId = String.valueOf(post.get("guid"));
         decoded.serverVersion = (new StringBuilder()).append("").append(post.get("server_version")).toString();
         decoded.pluginVersion = (new StringBuilder()).append("").append(post.get("plugin_version")).toString();
         decoded.isPing = post.containsKey("ping");

@@ -123,6 +123,9 @@ public class DecodedRequest {
     public JSONObject toJson() {
         JSONObject root = new JSONObject();
 
+        root.put("serverId", serverId);
+        root.put("pluginName", pluginName);
+        root.put("countryCode", countryCode);
         root.put("revision", revision);
         root.put("isPing", Boolean.toString(isPing));
         root.put("serverVersion", serverVersion);
@@ -147,7 +150,7 @@ public class DecodedRequest {
             columnDataRoot.put(columnName, value);
         });
 
-        root.put("customData", customData);
+        root.put("customData", customDataRoot);
 
         return root;
     }

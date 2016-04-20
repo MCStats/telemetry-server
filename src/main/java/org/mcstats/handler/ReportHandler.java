@@ -69,9 +69,8 @@ public class ReportHandler extends AbstractHandler {
     /**
      * Writer to the log file
      */
-    private BufferedWriter logWriter;
+    private BufferedWriter logWriter = null;
     private final Object logWriterLock = new Object();
-
     private AtomicLong lastRequestLogTime = new AtomicLong(-1);
 
     public ReportHandler(MCStats mcstats) {
@@ -173,7 +172,7 @@ public class ReportHandler extends AbstractHandler {
             }
         }
 
-        String logFileName = ReportHandler.normalizeTime() + ".log.gz";
+        String logFileName = normalizeTime() + ".log.gz";
 
         Path logFilePath = baseLogDirectory.resolve(logFileName);
 
