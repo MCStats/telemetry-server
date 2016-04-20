@@ -145,8 +145,11 @@ public class DecodedRequest {
             String graphName = column.getGraph().getName();
             String columnName = column.getName();
 
-            Map<String, Long> columnDataRoot = customDataRoot.getOrDefault(graphName, new HashMap<>());
+            if (!customDataRoot.containsKey(graphName)) {
+                customDataRoot.put(graphName, new HashMap<>());
+            }
 
+            Map<String, Long> columnDataRoot = customDataRoot.get(graphName);
             columnDataRoot.put(columnName, value);
         });
 
