@@ -10,6 +10,11 @@ import java.util.Map;
 public class DecodedRequest {
 
     /**
+     * Unix timestamp in seconds
+     */
+    public long timestamp = System.currentTimeMillis() / 1000L;
+
+    /**
      * Revision number of the client
      */
     public int revision;
@@ -123,6 +128,7 @@ public class DecodedRequest {
     public JSONObject toJson() {
         JSONObject root = new JSONObject();
 
+        root.put("timestamp", timestamp);
         root.put("serverId", serverId);
         root.put("pluginName", pluginName);
         root.put("countryCode", countryCode);
