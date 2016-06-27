@@ -562,6 +562,7 @@ public class MCStats {
      * Create and open the web server
      */
     private void createWebServer() {
+        String listenHost = config.getProperty("listen.host", "127.0.0.1");
         int listenPort = Integer.parseInt(config.getProperty("listen.port"));
         int blackholePort = Integer.parseInt(config.getProperty("blackhole.port"));
         webServer = new org.eclipse.jetty.server.Server();
@@ -585,6 +586,7 @@ public class MCStats {
         webServer.setHandler(handlers);
 
         ServerConnector connector = new ServerConnector(webServer, 1, 1);
+        connector.setHost(listenHost);
         connector.setPort(listenPort);
         connector.setAcceptQueueSize(2048);
         connector.setSoLingerTime(0);
@@ -593,6 +595,7 @@ public class MCStats {
         org.eclipse.jetty.server.Server blackholeServer = new org.eclipse.jetty.server.Server();
         blackholeServer.setHandler(new BlackholeHandler());
         ServerConnector connector2 = new ServerConnector(blackholeServer, 1, 1);
+        connector2.setHost(listenHost);
         connector2.setPort(blackholePort);
         connector2.setSoLingerTime(0);
         blackholeServer.addConnector(connector2);

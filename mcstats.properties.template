@@ -1,5 +1,6 @@
 debug=false
 
+listen.host=127.0.0.1
 listen.port=9050
 blackhole.port=9051
 
